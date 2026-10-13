@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Command Tower",
+  "set": "cmr",
+  "cn": "705"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1z-t7SQdNDtKv3_Jjhw9fUMaKAg0ddiED",
+   "name": "Command Tower (3)",
+   "source": "MaleMPC",
+   "dpi": 1200,
+   "prefilter": 39.0
+  },
+  {
+   "n": 2,
+   "id": "1eguT0X74whDhYFGz2cmb6FEUu_4Kw-0S",
+   "name": "Command Tower (a)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 42.42
+  },
+  {
+   "n": 3,
+   "id": "1K7gzYZrSX4BvtE1TXSsApyjz2-q_UUcC",
+   "name": "Command Tower (Extended Ryan Yee)",
+   "source": "MrTeferi",
+   "dpi": 1200,
+   "prefilter": 42.6
+  },
+  {
+   "n": 4,
+   "id": "1NKbnfPOEHuaSJp6fOKW5nb89unK683DX",
+   "name": "Command Tower (z)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 49.67
+  },
+  {
+   "n": 5,
+   "id": "1ePlzWgkaaBRfW2i_WC4aXMxQFsUuZ4X9",
+   "name": "Command Tower (za)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 49.93
+  },
+  {
+   "n": 6,
+   "id": "1AEhAafkyWebk4HaGOpDFUDRVLqJOTBsK",
+   "name": "Command Tower (n)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 50.53
+  },
+  {
+   "n": 7,
+   "id": "16SF_gB-vMQO4cEa0-qlDmeyHi_Y9mI0o",
+   "name": "Command Tower (g)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 51.46
+  },
+  {
+   "n": 8,
+   "id": "1NclzCGZxoaRD-5-Zp5AvtrRgGYb6ES5s",
+   "name": "Command Tower (p)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 52.05
+  },
+  {
+   "n": 9,
+   "id": "1IQgp4MUIQ0dsYNux3tv8wgZg31-T9dJ_",
+   "name": "Command Tower (q)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 52.29
+  },
+  {
+   "n": 10,
+   "id": "19euY3S9SGshdPKoLLRU1h9EqRhPd1kjd",
+   "name": "Command Tower (d)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 52.48
+  },
+  {
+   "n": 11,
+   "id": "1XhfklLML5VwJ3TjBvXFhhVReb2SHtJ_Y",
+   "name": "Command Tower (o)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.13
+  },
+  {
+   "n": 12,
+   "id": "1X1NHufJyG4-sIxZdWtDmLLy0gTz7WSjO",
+   "name": "Command Tower (v)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.14
+  },
+  {
+   "n": 13,
+   "id": "1Us4SaN8X_hm6nu4s9XIQTdNHSvyHOLpo",
+   "name": "Command Tower (y)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 54.06
+  },
+  {
+   "n": 14,
+   "id": "1ILw4AlCVRT0COqlR0vqN5NY7ENTZj0wJ",
+   "name": "Command Tower (Ryan Yee)",
+   "source": "MrTeferi",
+   "dpi": 1200,
+   "prefilter": 54.82
+  },
+  {
+   "n": 15,
+   "id": "1ca_h3RWdBkZJi11MSyuzVZrcD3Y8iAPg",
+   "name": "Command Tower (t)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 55.01
+  },
+  {
+   "n": 16,
+   "id": "1fyPGHKu_1YQibmCf7UQqALNJQqRviXjp",
+   "name": "Command Tower (e)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 55.4
+  }
+ ]
+}

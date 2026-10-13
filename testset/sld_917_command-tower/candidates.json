@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Command Tower",
+  "set": "sld",
+  "cn": "917"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1ZznuF_49xQHMydWvCXL5ALrxxNIqYsTE",
+   "name": "Command Tower (Borderless M)",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 41.36
+  },
+  {
+   "n": 2,
+   "id": "1mf5IyZ8v2AiV8GxDP4OowvbxFYXxb3hr",
+   "name": "Command Tower (Min- Joseph Meehan)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 44.99
+  },
+  {
+   "n": 3,
+   "id": "1ychj0DfmDoTrs1aWHkII7a1eIOwOWQnb",
+   "name": "Command Tower (Borderless Joseph Meehan)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 46.03
+  },
+  {
+   "n": 4,
+   "id": "1XxpnNWFzMQi13_Akqw8a7o45UXSGnjCc",
+   "name": "Command Tower",
+   "source": "Nelynes",
+   "dpi": 800,
+   "prefilter": 46.55
+  },
+  {
+   "n": 5,
+   "id": "1oGACS1fL9Ztn_j7uq86InIXkDDMUdER0",
+   "name": "Command Tower [J12] {8}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 46.87
+  },
+  {
+   "n": 6,
+   "id": "1A6dou1y06QRj7v_XjTE4MtYSAO-SQ8Y_",
+   "name": "Command Tower {1697}",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 47.02
+  },
+  {
+   "n": 7,
+   "id": "1ZtsA7d7VuQLudT2_TJL1FHXGWKvTx76J",
+   "name": "Command Tower (Borderless Ryan Yee)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 48.61
+  },
+  {
+   "n": 8,
+   "id": "1isFK9yOr4uY1wnCkO5WeD_3zomb5K5tN",
+   "name": "Command Tower {1697} (1)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 49.14
+  },
+  {
+   "n": 9,
+   "id": "16rIESpy-z-rdblblVtMVODbqceBsLfZ6",
+   "name": "Command Tower (Custom)",
+   "source": "SilvanMTG",
+   "dpi": 1200,
+   "prefilter": 49.66
+  },
+  {
+   "n": 10,
+   "id": "1KQtMSGME3KEnJQ4srIOfO9lRuBaSKhpl",
+   "name": "Command Tower (Borderless Julian Kok Joon Wen)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 50.06
+  },
+  {
+   "n": 11,
+   "id": "1V8W5wKh5Ok-3SXy4M993Mpe5YR27s3HI",
+   "name": "Command Tower [CMM] {659}",
+   "source": "PsilosX",
+   "dpi": 800,
+   "prefilter": 50.85
+  },
+  {
+   "n": 12,
+   "id": "10ufqCcJCeAhi7eD9nApO3JhEmYbftIqe",
+   "name": "Command Tower {1496}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 51.12
+  },
+  {
+   "n": 13,
+   "id": "1S9jyA64lE339nRHGSbsw09XwbIq1rCzL",
+   "name": "Command Tower (Golden Age 2 Adam Paquette)",
+   "source": "WarpDandy",
+   "dpi": 1200,
+   "prefilter": 51.16
+  },
+  {
+   "n": 14,
+   "id": "1tCcXJ4clNlxktsO6Ca75xad_esZF91Nq",
+   "name": "Command Tower (CMM Borderless)",
+   "source": "Nelynes",
+   "dpi": 600,
+   "prefilter": 51.32
+  },
+  {
+   "n": 15,
+   "id": "1F-Kk_mBrFzNRjfY6JC6_g5kTcV2BalqU",
+   "name": "Command Tower (Donato Giancola) [CMM] {659}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 51.8
+  },
+  {
+   "n": 16,
+   "id": "1ZAO166PSzIexRfbWgcj096HhZxUpI8W4",
+   "name": "Command Tower (Borderless Ryan Yee)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 51.86
+  }
+ ]
+}
