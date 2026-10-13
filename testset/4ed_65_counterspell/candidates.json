@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Counterspell",
+  "set": "4ed",
+  "cn": "65"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1rJsFgOWtB4wUpc8yU1wtfUp_7of0REtG",
+   "name": "Counterspell (Ryan Yee-308)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 62.44
+  },
+  {
+   "n": 2,
+   "id": "1letfu5wHMhVWpjd7c3wkzzDCgmfOAiKs",
+   "name": "Counterspell (Zack Stella-45)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 63.44
+  },
+  {
+   "n": 3,
+   "id": "1dLE1EsMu0iI89MxYbrGwP-dCTcudrSgP",
+   "name": "Counterspell (Jason Chan-24)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 65.15
+  },
+  {
+   "n": 4,
+   "id": "183Vh7WiJlNwX4ubzCkPgFJpK42H7oQLN",
+   "name": "Counterspell (Mateus Manhanini-331)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 65.32
+  },
+  {
+   "n": 5,
+   "id": "1WRitsb3oogzO6ErOls10QoBsrxg7Xz5Y",
+   "name": "Counterspell (Rindo Karasuba-78)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 65.87
+  },
+  {
+   "n": 6,
+   "id": "1bRk3vn-YIzs6LgeGt4LGLDZYCa1b2Rwo",
+   "name": "Counterspell (Batman Alter Cube Symbol)",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 70.62
+  },
+  {
+   "n": 7,
+   "id": "1P4XU19bVo5_ZYG8--n6CDYUQa_nKFOvs",
+   "name": "Counterspell (Batman Alter 6ED)",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 70.62
+  },
+  {
+   "n": 8,
+   "id": "19A77F1_-XUJPxgIs4x4YGT22IPF7Oskg",
+   "name": "Counterspell {175}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 70.97
+  },
+  {
+   "n": 9,
+   "id": "1Q29wBtz-DM1A7KkpDZ9QEbRkvEM7I9av",
+   "name": "Counterspell (Sketch Rindo Karasuba-78)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 71.16
+  },
+  {
+   "n": 10,
+   "id": "1OFSHkTG_Fexdm1xBmG3FVFtMQ5q0P2N4",
+   "name": "Counterspell (Sketch Jason Chan-24)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 72.13
+  },
+  {
+   "n": 11,
+   "id": "1_MiH-1yXlpBy6R27t3nydsBx1qoCEoLo",
+   "name": "Counterspell (Sketch Ryan Yee-308)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 73.75
+  },
+  {
+   "n": 12,
+   "id": "1HGz_SZMGGyl-ygmLvjqNU52czhyI_87f",
+   "name": "Counterspell (Sketch Mateus Manhanini-331)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 73.79
+  },
+  {
+   "n": 13,
+   "id": "1QP-qlnk3_NVhBFOilFJFjiCycbgAYHrO",
+   "name": "Counterspell (Sketch Zack Stella-45)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 73.94
+  },
+  {
+   "n": 14,
+   "id": "1JIzXmhLKvAhERHYIW9lKM-EMHZ5TqDzM",
+   "name": "Counterspell (Classic Promo)",
+   "source": "MrTeferi",
+   "dpi": 1200,
+   "prefilter": 75.18
+  },
+  {
+   "n": 15,
+   "id": "1l2weAw651aVZzNw6fNig584KDj-3c2DZ",
+   "name": "Counterspell (Sketch Olena Richards-15)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 75.39
+  },
+  {
+   "n": 16,
+   "id": "1e68av5tYHv1o7MUef5WSmym6AnhTK51C",
+   "name": "Counterspell (Normal) {175}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 76.6
+  }
+ ]
+}
