@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Snuff Out",
+  "set": "mb2",
+  "cn": "187"
+ },
+ "total_hits": 71,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1X1DWrUjBa8f9eOooyGeP9jifM9QnLFZY",
+   "name": "Snuff Out (Extended Steve Argyle)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 41.46
+  },
+  {
+   "n": 2,
+   "id": "1vJEbVVkEKdEvkdew1Kmr9aSo_ypTTlDz",
+   "name": "Snuff Out",
+   "source": "Ringabel",
+   "dpi": 1200,
+   "prefilter": 41.69
+  },
+  {
+   "n": 3,
+   "id": "1BrjmGkn0AieI2spcFGzVwWMO2OsCMuZI",
+   "name": "Snuff Out",
+   "source": "iDerp",
+   "dpi": 1210,
+   "prefilter": 49.52
+  },
+  {
+   "n": 4,
+   "id": "1POiarmMvJIiT5dEQXpztLqIDBHY-0Iu6",
+   "name": "Snuff Out (Modern Steve Argyle)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 50.46
+  },
+  {
+   "n": 5,
+   "id": "1LkyS3JvmsvwHxET2uTqVUz82ejfrspMe",
+   "name": "Snuff Out",
+   "source": "CompC",
+   "dpi": 600,
+   "prefilter": 52.43
+  },
+  {
+   "n": 6,
+   "id": "1jV-ws7Qa15ZYs3jfIE9L-utjYdCYrS8Z",
+   "name": "Snuff Out",
+   "source": "Anonymox",
+   "dpi": 1200,
+   "prefilter": 52.44
+  },
+  {
+   "n": 7,
+   "id": "1Hlf6qybQjbedrqRvnKG5UdRiuGMr_wVd",
+   "name": "Snuff Out",
+   "source": "j1va",
+   "dpi": 1200,
+   "prefilter": 52.48
+  },
+  {
+   "n": 8,
+   "id": "1X-3lqqr7mJ-7axA2XdRBqHpxoiBTO-61",
+   "name": "Snuff Out (Extended Mike Ploog)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 52.54
+  },
+  {
+   "n": 9,
+   "id": "1etZJOpD0rkFbjp5vbgrROH40fwGSJ1PH",
+   "name": "Snuff Out",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 52.63
+  },
+  {
+   "n": 10,
+   "id": "1WHl5R7Lpgug7g9Bhe6geMLaBW43rTy5o",
+   "name": "Snuff Out (Ancient Mike Ploog)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 53.09
+  },
+  {
+   "n": 11,
+   "id": "1XjZSMPfiUf9Gg4KwViqEi7xB80BZJ2Ds",
+   "name": "Snuff Out (GVL 53)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 53.16
+  },
+  {
+   "n": 12,
+   "id": "1w7GL8e0PuJ1OS3nHya1WL04XJBDVHFWq",
+   "name": "Snuff Out (Ancient Steve Argyle)",
+   "source": "keleryn",
+   "dpi": 1200,
+   "prefilter": 53.18
+  },
+  {
+   "n": 13,
+   "id": "1S-123RswonH7Ep-xsCABw-H7cpNOY1zt",
+   "name": "Snuff Out (Ancient Mike Ploog)",
+   "source": "Anonymox",
+   "dpi": 1200,
+   "prefilter": 53.9
+  },
+  {
+   "n": 14,
+   "id": "1OmhxOuOs8KVnQeWwb9sWobgtK384fkNx",
+   "name": "Snuff Out (Phyrexian Steve Argyle)",
+   "source": "Marsupial",
+   "dpi": 1200,
+   "prefilter": 53.94
+  },
+  {
+   "n": 15,
+   "id": "1WOaKB8A73j5z1Jv74wK_1qZA7nE5rUPC",
+   "name": "Snuff Out (OSRS)",
+   "source": "brvcifer",
+   "dpi": 1080,
+   "prefilter": 55.19
+  },
+  {
+   "n": 16,
+   "id": "11EmMnMJxFLVpB2ngDbK9PJx731vFRsxf",
+   "name": "Snuff Out",
+   "source": "Iraqball",
+   "dpi": 800,
+   "prefilter": 55.33
+  }
+ ]
+}

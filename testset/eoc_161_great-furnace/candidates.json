@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Great Furnace",
+  "set": "eoc",
+  "cn": "161"
+ },
+ "total_hits": 47,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1alsjZnPktPp7ilClIf5YuTYZJk65Dj38",
+   "name": "Great Furnace",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 34.25
+  },
+  {
+   "n": 2,
+   "id": "1qV3aLKDRwMD8r1dl3fmAst28nzrgwmQ7",
+   "name": "Great Furnace (C21 292)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 34.48
+  },
+  {
+   "n": 3,
+   "id": "1e-OjsYPuxbpO1m20N_Fh-nxvmQ0DOlUn",
+   "name": "Great Furnace",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 34.57
+  },
+  {
+   "n": 4,
+   "id": "1T5q9BytdWZ3mJlTRuXOqVfFNtrvMUgHN",
+   "name": "Great Furnace",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 34.92
+  },
+  {
+   "n": 5,
+   "id": "1x94Eh1vSERk4gg4avLnjNCH5PCJjL_CP",
+   "name": "Great Furnace (Normal, Rob Alexander) [MRD] {282}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 37.84
+  },
+  {
+   "n": 6,
+   "id": "1YQHDhlpvtKjgJ30dfhEdLrVCRO3gA7MB",
+   "name": "Great Furnace (Normal, Rob Alexander)",
+   "source": "Celid",
+   "dpi": 1200,
+   "prefilter": 37.84
+  },
+  {
+   "n": 7,
+   "id": "1kNxn4Ds6KylsZiJws397PUjA19IWEvdw",
+   "name": "Great Furnace (Rob Alexander)",
+   "source": "Mal76",
+   "dpi": 1200,
+   "prefilter": 38.94
+  },
+  {
+   "n": 8,
+   "id": "1M0DQVTlAwAAEwCsxYg0Cz-Nhw2JW-FBT",
+   "name": "Great Furnace",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 39.16
+  },
+  {
+   "n": 9,
+   "id": "1r-jo8wluXzm09-Ea7WFU_70_rkXH3I0B",
+   "name": "Great Furnace (Modern Rob Alexander)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 40.76
+  },
+  {
+   "n": 10,
+   "id": "1qIYZQW3NptBcWhaZUxGry-ZtY-Ezcs-Z",
+   "name": "Great Furnace (Extended Rob Alexander)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 42.51
+  },
+  {
+   "n": 11,
+   "id": "1u0mXjN5KL_Ivu491Ddk96GZIMir2z4r6",
+   "name": "Great Furnace (Sci-Fi)",
+   "source": "Coderanger",
+   "dpi": 800,
+   "prefilter": 43.2
+  },
+  {
+   "n": 12,
+   "id": "1RJHwzhCsw3srnhxkhCdJ7LzGE0NRD-t6",
+   "name": "Great Furnace (Classic Rob Alexander)",
+   "source": "Mithrane",
+   "dpi": 1200,
+   "prefilter": 43.66
+  },
+  {
+   "n": 13,
+   "id": "17inMr6prQpb_JunpXfDPI3-fGfo3OfCA",
+   "name": "Great Furnace [MRD] {282}",
+   "source": "Hathwellcrisping",
+   "dpi": 800,
+   "prefilter": 46.18
+  },
+  {
+   "n": 14,
+   "id": "113QnNDTQvokm7Gq0dIyIgXF-0QZXZykR",
+   "name": "Great Furnace [MRD] {282}",
+   "source": "Zahakis",
+   "dpi": 800,
+   "prefilter": 47.27
+  },
+  {
+   "n": 15,
+   "id": "1Ke-W7qGxUGF4tSf-aslHlYraCaotTJBo",
+   "name": "great furnace",
+   "source": "MaleMPC",
+   "dpi": 1200,
+   "prefilter": 48.63
+  },
+  {
+   "n": 16,
+   "id": "1gnLNKWw00mDchRxgUVj_UXnGp-_F3rWp",
+   "name": "Great Furnace (Classic DXTR)",
+   "source": "Mithrane",
+   "dpi": 1200,
+   "prefilter": 50.17
+  }
+ ]
+}
