@@ -33,3 +33,12 @@ O `<id>` é o ID do Google Drive, que aparece igual ao do `id=` da thumbnail. **
 - Ler os termos de uso do MPCFill/rate limit (não achei limite documentado; manter ~1 req/s).
 - Deck Moxfield real para testar `api2.moxfield.com`.
 - Conjunto de teste com pares conferidos à mão (antes da fase 4).
+
+## Achados do conjunto de teste (2026-10-13)
+- **OCR do rodapé funciona** (RapidOCR, `pip install rapidocr-onnxruntime`): leu 15 de 16 rodapés de teste. Em molduras de 2015 em diante o rodapé traz número, código do set e idioma (`C 0161 · EOC · EN`). É o sinal mais forte e barato. Não existe em molduras antigas (usar texto, moldura e arte).
+- **Rodapé igual não basta**: arte estendida e moldura normal da mesma impressão têm o mesmo rodapé. Precisa do formato da moldura junto.
+- **Vários candidatos idênticos** (mesma impressão de uploaders diferentes): o teste deve aceitar uma lista de ids certos por carta (`accept` em `testset/pairs.json`).
+- **Referências da The List (`plst`)** têm o símbolo de planeswalker no rodapé e nenhum candidato tem: o certo é "nenhum exato".
+- **Corte de 100 candidatos** no gerador de folhas perde artes em cartas populares (Sol Ring tem 719). Para o bot real, baixar todos.
+- Marcador de Universes Beyond (triângulo) diferencia impressões que têm o mesmo rodapé.
+- `testset/pairs.json`: propostas do Claude, **ainda não conferidas pelo usuário**. Não usar para ajustar pesos antes da conferência.
