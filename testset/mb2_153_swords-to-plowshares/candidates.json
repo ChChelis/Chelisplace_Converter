@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Swords to Plowshares",
+  "set": "mb2",
+  "cn": "153"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1mZNOf0kmB_m9jR9htzov5Lq2aP4wbjbr",
+   "name": "Swords to Plowshares (Normal) [BLC] {109}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 54.15
+  },
+  {
+   "n": 2,
+   "id": "1HobIAHp5X1Nr38qJylxXeYCe1QdpwVEh",
+   "name": "Swords to Plowshares (Normal, Dmitry Burmak) {110}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 56.14
+  },
+  {
+   "n": 3,
+   "id": "1ZRoS9f9CIDZukwD1Msx7LelU6LR0qFFv",
+   "name": "Swords to Plowshares [DDF] {22}",
+   "source": "Hathwellcrisping",
+   "dpi": 800,
+   "prefilter": 56.23
+  },
+  {
+   "n": 4,
+   "id": "1sM3ITq55OIAyFqpllydA_wPXx407eJ29",
+   "name": "Swords to Plowshares (V13 2)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 56.27
+  },
+  {
+   "n": 5,
+   "id": "1mh_uHyEGWCBz3iW9ah0Mwe8ejRPSmrwX",
+   "name": "Swords to Plowshares",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 56.96
+  },
+  {
+   "n": 6,
+   "id": "1jeu4Pd0gJ7YI9es0WqfENovQswVvc_0e",
+   "name": "Swords to Plowshares",
+   "source": "TorchProxies",
+   "dpi": 610,
+   "prefilter": 57.27
+  },
+  {
+   "n": 7,
+   "id": "1rkPIZrUdlD57BViu6WSJoQRWfz1bAMi7",
+   "name": "Swords to Plowshares (SLD 110)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 57.72
+  },
+  {
+   "n": 8,
+   "id": "10ZUlv5ZTpT8drYfA8K49mAbxhfeEhNtf",
+   "name": "Swords to Plowshares (Normal) [F01] {6}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 57.94
+  },
+  {
+   "n": 9,
+   "id": "1mejC26kcz5GflRLr4KfRsoJAaFFbEzI2",
+   "name": "Swords to Plowshares [F01] {6}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 59.09
+  },
+  {
+   "n": 10,
+   "id": "1h1Uo9tK0_E0EejLTMFjGgc27USZb8baq",
+   "name": "Swords to Plowshares [ICE] {54}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 60.56
+  },
+  {
+   "n": 11,
+   "id": "1NYLPzZbLvevK4d7KlnLYGAU8VCxbPR-e",
+   "name": "Swords to Plowshares (Normal) {190}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 60.99
+  },
+  {
+   "n": 12,
+   "id": "1i1j7Wr5BNwGSWMY5bDS7gWT0S7FOWTaz",
+   "name": "Swords to Plowshares {110}",
+   "source": "PsilosX",
+   "dpi": 800,
+   "prefilter": 61.47
+  },
+  {
+   "n": 13,
+   "id": "13K79FV6A65QmNwCuk2DDOGpOFnjI89rj",
+   "name": "Swords to Plowshares (Kaja Foglio)",
+   "source": "WarpDandy",
+   "dpi": 560,
+   "prefilter": 62.24
+  },
+  {
+   "n": 14,
+   "id": "11fPc-1NQX3KaA5rAMqi7DNNGm9Byf1A9",
+   "name": "Swords to Plowshares (Sketch Kaja Foglio-338)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 62.7
+  },
+  {
+   "n": 15,
+   "id": "1z4XH-t5zu_INydLhm5ruwA0Q0y2yyDR4",
+   "name": "Swords to Plowshares (b)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 64.33
+  },
+  {
+   "n": 16,
+   "id": "1uhbREowjjTYvAlYZ3EDOFSF4MpIeqpwq",
+   "name": "Swords to Plowshares (PreM15)",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 65.42
+  }
+ ]
+}

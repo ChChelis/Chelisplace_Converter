@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Swords to Plowshares",
+  "set": "4ed",
+  "cn": "52"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "16J4AdsiOC_nzjjBPiXCSCuwgHcK1S8e3",
+   "name": "Swords to Plowshares (Riyou Kamei-21)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 51.29
+  },
+  {
+   "n": 2,
+   "id": "12tOTJQPWQKPv-PPeEXGv4haRWUsIHep9",
+   "name": "Swords to Plowshares (Nagano-73)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 51.81
+  },
+  {
+   "n": 3,
+   "id": "1VU253zvavjASHlPI72TJ7L2BoqUSBJJ0",
+   "name": "Swords to Plowshares (Sketch Terese Nielsen-22)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 57.58
+  },
+  {
+   "n": 4,
+   "id": "18NJygn31OgxTPENpg8I2uHlVo2UxHg9v",
+   "name": "Swords to Plowshares (Sketch Nagano-73)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 63.28
+  },
+  {
+   "n": 5,
+   "id": "11fPc-1NQX3KaA5rAMqi7DNNGm9Byf1A9",
+   "name": "Swords to Plowshares (Sketch Kaja Foglio-338)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 64.85
+  },
+  {
+   "n": 6,
+   "id": "11Umzyjok1PLTWqrd9_PHhI6zvf6hOC4X",
+   "name": "Swords to Plowshares (Mystical Archive)",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 65.07
+  },
+  {
+   "n": 7,
+   "id": "18FiPLlbwx5D25GA_dkUICy5TjMIkuMJi",
+   "name": "Swords to Plowshares (Mystical Archive) [STA] {10}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 65.42
+  },
+  {
+   "n": 8,
+   "id": "1RGm5SzvCYYo-VmiFzhhBM0U8qd1VIDkb",
+   "name": "Swords to Plowshares (Sketch Jesper Ejsing-99)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 65.44
+  },
+  {
+   "n": 9,
+   "id": "1Tcqk80PAi3vYrMX2EKnbBpWLSi2OKETN",
+   "name": "Swords to Plowshares (Sketch Riyou Kamei-21)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 65.6
+  },
+  {
+   "n": 10,
+   "id": "1Sy5eYDxZ0fvrbmf_5-Y4w1a4XXRk1g6e",
+   "name": "Swords to Plowshares (DnD)",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 66.76
+  },
+  {
+   "n": 11,
+   "id": "1i1j7Wr5BNwGSWMY5bDS7gWT0S7FOWTaz",
+   "name": "Swords to Plowshares {110}",
+   "source": "PsilosX",
+   "dpi": 800,
+   "prefilter": 74.91
+  },
+  {
+   "n": 12,
+   "id": "1ivJjWQt-MVDDODeC7F4JOFghQwvVJV1P",
+   "name": "Swords to Plowshares (Borderless Jesper Ejsing)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 75.77
+  },
+  {
+   "n": 13,
+   "id": "1mejC26kcz5GflRLr4KfRsoJAaFFbEzI2",
+   "name": "Swords to Plowshares [F01] {6}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 76.4
+  },
+  {
+   "n": 14,
+   "id": "19DbwkIcVaGFz5Kow6xHvkgEXmXoP5CY8",
+   "name": "Swords to Plowshares (Borderless Riyou Kamei)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 78.18
+  },
+  {
+   "n": 15,
+   "id": "10ZUlv5ZTpT8drYfA8K49mAbxhfeEhNtf",
+   "name": "Swords to Plowshares (Normal) [F01] {6}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 78.73
+  },
+  {
+   "n": 16,
+   "id": "1OJuxVBGOy2QVKUJreBNjWqMhbrhZs0sR",
+   "name": "Swords to Plowshares (MF SLD Promo short)",
+   "source": "Nelynes",
+   "dpi": 800,
+   "prefilter": 81.36
+  }
+ ]
+}

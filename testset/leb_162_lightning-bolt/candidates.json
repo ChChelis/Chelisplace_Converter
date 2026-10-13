@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Lightning Bolt",
+  "set": "leb",
+  "cn": "162"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1If7ee2GDvgsKmXZ0gu0GIbzKz5mjx5uA",
+   "name": "Lightning Bolt",
+   "source": "WarpDandy",
+   "dpi": 560,
+   "prefilter": 29.78
+  },
+  {
+   "n": 2,
+   "id": "1eRFBWHFY76ZfP7IHHcJFqrbkXiyO7cOa",
+   "name": "Lightning Bolt",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 31.39
+  },
+  {
+   "n": 3,
+   "id": "127cw3deDvbGpDyPsA9nWmHQ79C-BLpOC",
+   "name": "Lightning Bolt (Full Art Extended C)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 41.73
+  },
+  {
+   "n": 4,
+   "id": "1rrfi6BTEddq_YIClVH7w2YdHJH43eMjI",
+   "name": "Lightning Bolt (Full Art C)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 42.69
+  },
+  {
+   "n": 5,
+   "id": "1-m1g9c6XYo4zaFy6YJBC33THmitZE8IF",
+   "name": "Lightning Bolt (Full Art Extended B)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 42.9
+  },
+  {
+   "n": 6,
+   "id": "1uKQYOZJQecd2AkpvUlUF2PXUK6O86D44",
+   "name": "Lightning Bolt",
+   "source": "WarpDandy",
+   "dpi": 1210,
+   "prefilter": 43.5
+  },
+  {
+   "n": 7,
+   "id": "1MsVtWxw2bJO9xrduU0fUBraSVuvBW0zq",
+   "name": "Lightning Bolt (Full Art Extended D)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 44.3
+  },
+  {
+   "n": 8,
+   "id": "1YOj6ifT3NmXcb2p4VzF9F3FFKic0oaCY",
+   "name": "Lightning Bolt (Full Art Extended E)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 44.56
+  },
+  {
+   "n": 9,
+   "id": "1W_lXDXX9sTl58AaqIC5zyN3tzfUNS4AD",
+   "name": "Lightning Bolt (Full Art D)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 45.86
+  },
+  {
+   "n": 10,
+   "id": "1taR38keSBJgplwmZkX3NETXQSblhPYSh",
+   "name": "Lightning Bolt (Full Art B)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 46.5
+  },
+  {
+   "n": 11,
+   "id": "1AYrJHEYjKD5pI_UWzOf4eg85fj3NrPBL",
+   "name": "Lightning Bolt (Full Art Extended F)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 46.52
+  },
+  {
+   "n": 12,
+   "id": "17s_SVj1yO27yt6hIy8qJR3k0enQhNLZp",
+   "name": "Lightning Bolt (Full Art E)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 46.55
+  },
+  {
+   "n": 13,
+   "id": "1z9N-D63Xjx9CVBfzps_-uCSBaqHdKoX6",
+   "name": "Lightning Bolt (Showcase Short Véronique Meignaud)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 47.35
+  },
+  {
+   "n": 14,
+   "id": "135t_KzbZypmdkXj9IvJ386brP9C23kcv",
+   "name": "Lightning Bolt (Full Art F)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 47.48
+  },
+  {
+   "n": 15,
+   "id": "1WQAt575a-low1z1uelcKqHvMsYiiZ9ZR",
+   "name": "Lightning Bolt (Christopher Moeller-146)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 47.76
+  },
+  {
+   "n": 16,
+   "id": "1gkQozbIv66HuZ7iEPcfxZTkC-ZlIjnTi",
+   "name": "Lightning Bolt (Christopher Moeller-146)",
+   "source": "Trix Are For Scoot",
+   "dpi": 810,
+   "prefilter": 47.98
+  }
+ ]
+}
