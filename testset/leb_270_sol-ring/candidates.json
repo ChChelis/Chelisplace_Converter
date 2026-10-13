@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Sol Ring",
+  "set": "leb",
+  "cn": "270"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1g7G_5EWX85Ex-1v8fd88nNe3FvJXSSO1",
+   "name": "Sol Ring (Skyscraper Mark Tedin)",
+   "source": "WarpDandy",
+   "dpi": 1200,
+   "prefilter": 34.51
+  },
+  {
+   "n": 2,
+   "id": "17WtgWsO-MqOYZ-wa2bwOClRjp81rllCm",
+   "name": "Sol Ring (MPS 24)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 43.87
+  },
+  {
+   "n": 3,
+   "id": "17srTy0E6LBh4orD63s4HiTC77WtFAXEx",
+   "name": "Sol Ring",
+   "source": "WarpDandy",
+   "dpi": 560,
+   "prefilter": 45.86
+  },
+  {
+   "n": 4,
+   "id": "19FyvPNRxNA3I9dPW-Ynedeb325bObYJU",
+   "name": "Sol Ring (Nana Qi - Cat) {1664}",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 52.21
+  },
+  {
+   "n": 5,
+   "id": "1FxZuSHKAxPBO5znSfRq6HIsBSSizP1VS",
+   "name": "Sol Ring (a)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.99
+  },
+  {
+   "n": 6,
+   "id": "1O0sPQ2foOJbmI4zYDn_4N_kQkoysJZ0D",
+   "name": "Sol Ring (Classic Promo Dom)",
+   "source": "MrTeferi",
+   "dpi": 1200,
+   "prefilter": 54.63
+  },
+  {
+   "n": 7,
+   "id": "1E1blB79BePL9bvmg96PjEe2JrpI3a3aM",
+   "name": "Sol Ring (Randy Gallegos) [LTC] {284}",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 55.16
+  },
+  {
+   "n": 8,
+   "id": "1d16Sux8V1O3QYc9VOuZzy4vGT9DNEB9P",
+   "name": "Sol Ring (Phyrexian)",
+   "source": "Nelynes",
+   "dpi": 600,
+   "prefilter": 55.48
+  },
+  {
+   "n": 9,
+   "id": "1lbQ466uL_e99xT2xpCTTG4rgnSPKAS0X",
+   "name": "Sol Ring (Borderless Randy Gallegos)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 55.71
+  },
+  {
+   "n": 10,
+   "id": "1WWZ9QqQf974OiSgB-4Ao0VXlomY26CnG",
+   "name": "Sol Ring (c)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 56.35
+  },
+  {
+   "n": 11,
+   "id": "1XPEm-9kSp4PnK-XyB4tUpo_-qVxoVSih",
+   "name": "Sol Ring (n)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 56.71
+  },
+  {
+   "n": 12,
+   "id": "1uKffBJ9_zLdbD5UprR7Om81UqZdH2mr7",
+   "name": "Sol Ring (u)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 57.15
+  },
+  {
+   "n": 13,
+   "id": "141vBePhOtr4sRflSVR9I_hTSR3lJkSk5",
+   "name": "Sol Ring (Borderless Erikas Perl)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 58.54
+  },
+  {
+   "n": 14,
+   "id": "1rn3w7wtl7ua7buO5Ore_VMLUuVAGOFV8",
+   "name": "Sol Ring (Borderless Volkan Baga)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 58.67
+  },
+  {
+   "n": 15,
+   "id": "1ieDs_aYy8xNcoem7vP5cux0P5g8XFWxk",
+   "name": "Sol Ring (zc)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 58.82
+  },
+  {
+   "n": 16,
+   "id": "1xiK7QduN87wdiJCQeDaYW7PAVR-V8cgp",
+   "name": "Sol Ring (Borderless Mark Poole)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 58.98
+  }
+ ]
+}
