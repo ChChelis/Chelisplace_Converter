@@ -1,0 +1,98 @@
+{
+ "ref": {
+  "name": "Prismatic Strands",
+  "set": "c19",
+  "cn": "69"
+ },
+ "total_hits": 11,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1hZnIdBLawpc9wHBCyiKDYC9GRhiQUTs8",
+   "name": "Prismatic Strands",
+   "source": "CompC",
+   "dpi": 600,
+   "prefilter": 45.09
+  },
+  {
+   "n": 2,
+   "id": "1nSmZELAwCNHiyy-E6PCoRPgAwMRYzkE3",
+   "name": "Prismatic Strands (C19 69)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 48.68
+  },
+  {
+   "n": 3,
+   "id": "1IsKtBQSzRXGbdA8F2VfYjLWDK0-R_RX3",
+   "name": "Prismatic Strands",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 49.56
+  },
+  {
+   "n": 4,
+   "id": "1nsCkHpIJ8wYEO_eXvTf5kq3eKWCZPVb5",
+   "name": "Prismatic Strands (GrafitArt)",
+   "source": "Mursu",
+   "dpi": 560,
+   "prefilter": 51.77
+  },
+  {
+   "n": 5,
+   "id": "1jeubWRGV3vmNY5Jfpxmfa5a5INiL4POO",
+   "name": "Prismatic Strands (Extended GrafitArt)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 54.92
+  },
+  {
+   "n": 6,
+   "id": "1oZ33RK3sHtdjS-adiTRmIq7huPIoZ2iO",
+   "name": "Prismatic Strands (GrafitArt)",
+   "source": "Mursu",
+   "dpi": 800,
+   "prefilter": 56.15
+  },
+  {
+   "n": 7,
+   "id": "1J3vkd7DRayNBQazvDaAJLVv9WBz480kd",
+   "name": "Prismatic Strands",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 58.19
+  },
+  {
+   "n": 8,
+   "id": "1jccfdGBNKFqb6mPqRJQYhMqdFKsDDnpp",
+   "name": "Prismatic Strands (Extended Eric Peterson)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 60.14
+  },
+  {
+   "n": 9,
+   "id": "1sc-v2PUxguYZdogH6A59H4jf6GF0PvJ8",
+   "name": "Prismatic Strands (b)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 60.29
+  },
+  {
+   "n": 10,
+   "id": "1VTT5wom0Asjb0BwUuVcKAdiDeFtyx_zW",
+   "name": "Prismatic Strands (a)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 64.2
+  },
+  {
+   "n": 11,
+   "id": "1QGEz7tdEchZ8fFEo9HmJntinUyDdpV2k",
+   "name": "Prismatic Strands",
+   "source": "Asmodeus",
+   "dpi": 1200,
+   "prefilter": 87.87
+  }
+ ]
+}

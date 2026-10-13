@@ -1,0 +1,58 @@
+{
+ "ref": {
+  "name": "Krark-Clan Shaman",
+  "set": "mrd",
+  "cn": "98"
+ },
+ "total_hits": 6,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1kOVngwbvRQK7IgjQQ5z0gXZ57J0q0vUI",
+   "name": "Krark-Clan Shaman (MRD 98)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 36.77
+  },
+  {
+   "n": 2,
+   "id": "1uvtIfo96Te0-DbJiMtsUcbRbgqYlKAUU",
+   "name": "Krark-Clan Shaman",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 38.44
+  },
+  {
+   "n": 3,
+   "id": "1qPC4uJgcglE8XZcl8-AHwbjJsYJlUmDd",
+   "name": "Krark-Clan Shaman (Extended Thomas M. Baxa)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 45.83
+  },
+  {
+   "n": 4,
+   "id": "1oG2YeZKpRfHe51HNdsLvB7E_BDdsC9KL",
+   "name": "Krark-Clan Shaman (Thomas M. Baxa)",
+   "source": "Mursu",
+   "dpi": 800,
+   "prefilter": 53.28
+  },
+  {
+   "n": 5,
+   "id": "1BSEDY7frup3O6Lb-BYE32Nvq4D8qZIhk",
+   "name": "Krark-Clan Shaman (Thomas M. Baxa)",
+   "source": "Mursu",
+   "dpi": 560,
+   "prefilter": 63.59
+  },
+  {
+   "n": 6,
+   "id": "19Ta25JduXAAfdHHlUT1UHTxRa4LJb7HM",
+   "name": "Krark-Clan Shaman (Min- Delve)",
+   "source": "FuriousMYLK",
+   "dpi": 810,
+   "prefilter": 93.29
+  }
+ ]
+}

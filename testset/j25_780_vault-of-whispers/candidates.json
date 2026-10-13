@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Vault of Whispers",
+  "set": "j25",
+  "cn": "780"
+ },
+ "total_hits": 45,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1ZyLsPy6txseUcNq7W6yX3tsFZsS78Zgj",
+   "name": "Vault of Whispers (Normal, Rob Alexander)",
+   "source": "Celid",
+   "dpi": 1200,
+   "prefilter": 31.49
+  },
+  {
+   "n": 2,
+   "id": "1dcGN6UiZyDed9A_usxnkxPBJU-cqYfkl",
+   "name": "Vault of Whispers",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 32.33
+  },
+  {
+   "n": 3,
+   "id": "1hfV8cLJjCXXW_UAeGooNgJ-dOh424Rk_",
+   "name": "Vault of Whispers",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 32.56
+  },
+  {
+   "n": 4,
+   "id": "1VfmybxAy70IeudmhXrC7THBf-mFqQMb3",
+   "name": "Vault of Whispers (HOP 141)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 33.25
+  },
+  {
+   "n": 5,
+   "id": "1goES1-2gMbnrrrUDrUz8Pwq-Lq6AZA85",
+   "name": "Vault of Whispers",
+   "source": "InvalidCards",
+   "dpi": 800,
+   "prefilter": 34.04
+  },
+  {
+   "n": 6,
+   "id": "15dOSaqXSME3eulvTGI60f9aTc3_p_I_t",
+   "name": "Vault of Whispers (Rob Alexander)",
+   "source": "Mal76",
+   "dpi": 1200,
+   "prefilter": 34.74
+  },
+  {
+   "n": 7,
+   "id": "1rRuZjQut5OWpGTwVXo8Ls1leaveqHYMU",
+   "name": "Vault of Whispers (Normal) [DSC] {322}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 35.37
+  },
+  {
+   "n": 8,
+   "id": "1W-0Fg_uW9mgPkVxiFCL9AWLwK9Eq3c6E",
+   "name": "Vault of Whispers (Normal) [MRD]",
+   "source": "j1va",
+   "dpi": 1200,
+   "prefilter": 35.38
+  },
+  {
+   "n": 9,
+   "id": "17_f7mHQm71y_kHipi9KSwFehJA_nbxXt",
+   "name": "Vault of Whispers",
+   "source": "RustyShackleford",
+   "dpi": 460,
+   "prefilter": 37.27
+  },
+  {
+   "n": 10,
+   "id": "1uOm3RIpqDQRE5n7Y1qn1-a1WJBSevuWN",
+   "name": "Vault of Whispers (Ancient Rob Alexander)",
+   "source": "keleryn",
+   "dpi": 1200,
+   "prefilter": 38.04
+  },
+  {
+   "n": 11,
+   "id": "1rONWM0d8VxSD3JcLREFtVcFunZnKi38I",
+   "name": "Vault of Whispers (Extended Rob Alexander)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 39.01
+  },
+  {
+   "n": 12,
+   "id": "16JkLk1JjKIujg5Gi_H6-p1H3I-ZtWgDv",
+   "name": "Vault of Whispers [MRD] {286}",
+   "source": "Zahakis",
+   "dpi": 800,
+   "prefilter": 41.29
+  },
+  {
+   "n": 13,
+   "id": "1rOK8V_BoZJr40gTWWNOEUCOCwKwYP1bL",
+   "name": "Vault of Whispers (Extended DXTR)",
+   "source": "Pozzum",
+   "dpi": 1200,
+   "prefilter": 42.35
+  },
+  {
+   "n": 14,
+   "id": "1KAfcBtUlhzls12HJsvQU51uutb1cWfOT",
+   "name": "Vault of Whispers (Ancient Rob Alexander)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 43.22
+  },
+  {
+   "n": 15,
+   "id": "1xwVn8xZzxiU8vcX94YrmoXmCCv4nVWpO",
+   "name": "vault of whispers",
+   "source": "MaleMPC",
+   "dpi": 1200,
+   "prefilter": 44.37
+  },
+  {
+   "n": 16,
+   "id": "1KikADlzkebXzCfvQEWN_tj9rMMDFrkyo",
+   "name": "Vault of Whispers (Extended Rob Alexander)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 44.4
+  }
+ ]
+}
