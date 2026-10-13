@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Cultivate",
+  "set": "sld",
+  "cn": "2437"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1IJdQMPzQFUOtjGipqmrgKV_7oqLpkzps",
+   "name": "Cultivate",
+   "source": "Kelpsk",
+   "dpi": 800,
+   "prefilter": 52.29
+  },
+  {
+   "n": 2,
+   "id": "1fxBI4yKK_Uu9pIqmVGbls-ea3S4MBsxQ",
+   "name": "Cultivate (Borderless Jason Felix)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 54.87
+  },
+  {
+   "n": 3,
+   "id": "1rLV5rOuMWr-s02B-hm24SkpIMM0V4ymj",
+   "name": "Cultivate (Borderless Warren Mahy)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 56.02
+  },
+  {
+   "n": 4,
+   "id": "1Kzi_Za9jLGFYj2CuFbnzV-o1HebQeFOV",
+   "name": "Cultivate (M21 Showcase)",
+   "source": "Chilli_Axe",
+   "dpi": 1210,
+   "prefilter": 58.8
+  },
+  {
+   "n": 5,
+   "id": "1sox_rwhwjFshhnIVGp7VmearpiNd1i8w",
+   "name": "Cultivate (Borderless Julia Metzger)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 59.17
+  },
+  {
+   "n": 6,
+   "id": "1rjF9SiEFIcbm9vN8kMUn3rvIW9QvUFiz",
+   "name": "Cultivate (Full)",
+   "source": "SilvanMTG",
+   "dpi": 1210,
+   "prefilter": 59.25
+  },
+  {
+   "n": 7,
+   "id": "1R3cLScOP7kAKQdjYYxaMhKtCTv7P0has",
+   "name": "Cultivate (SLDFullArt)",
+   "source": "SamiQuick",
+   "dpi": 1210,
+   "prefilter": 60.02
+  },
+  {
+   "n": 8,
+   "id": "1zxUkfVYAX-B_toRhGg6beONJpHMkUbhU",
+   "name": "Cultivate (Borderless John Avon)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 60.44
+  },
+  {
+   "n": 9,
+   "id": "1wSy9gUdAm8QhPc7oHdcRLKVmpwf_k5O2",
+   "name": "Cultivate [M21] {317} (1)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 61.1
+  },
+  {
+   "n": 10,
+   "id": "1E0UAwXTlb4q3U_1eUl2r_hI5Rlx8WADp",
+   "name": "Cultivate {246} (1)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 62.07
+  },
+  {
+   "n": 11,
+   "id": "19u5AZvMpy-GEtB9f20KNgKkfcHMCloGD",
+   "name": "Cultivate (Borderless Hillary Wilson)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 62.19
+  },
+  {
+   "n": 12,
+   "id": "15G5n7_nHXkzAEoOc7r3utmvQWQXQZEVg",
+   "name": "Cultivate (Shrine 1)",
+   "source": "Sid",
+   "dpi": 1210,
+   "prefilter": 62.57
+  },
+  {
+   "n": 13,
+   "id": "1HYAlDvlpTHtPsgpiP5bK6ouyiZBfd6VG",
+   "name": "Cultivate (M210317)",
+   "source": "Apples Animate",
+   "dpi": 900,
+   "prefilter": 62.58
+  },
+  {
+   "n": 14,
+   "id": "1qFSCrkI5lKwfiT5WCv9LVLIKBbLRcxDd",
+   "name": "Cultivate (Borderless Billy Christian)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 62.63
+  },
+  {
+   "n": 15,
+   "id": "11BluhN85O0VZ7hKQN_ZfFSaJhm9aLa4-",
+   "name": "Cultivate [M21] {317}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 63.28
+  },
+  {
+   "n": 16,
+   "id": "1SKx4iCXU60mJZNHuXsxs-7KU-Uhtm8ZO",
+   "name": "Cultivate {246}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 63.31
+  }
+ ]
+}
