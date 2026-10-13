@@ -1,0 +1,42 @@
+{
+ "ref": {
+  "name": "Sneaky Snacker",
+  "set": "mh3",
+  "cn": "205"
+ },
+ "total_hits": 4,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1Kr0tmNDp055cbzefDRrjW_SdS15JGYek",
+   "name": "Sneaky Snacker (Normal) [MH3] {205}",
+   "source": "WarpDandy",
+   "dpi": 1200,
+   "prefilter": 37.66
+  },
+  {
+   "n": 2,
+   "id": "1swb_rYO2N71wj-G5AKGusagV8JY797UD",
+   "name": "Sneaky Snacker",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 41.29
+  },
+  {
+   "n": 3,
+   "id": "14IqM6g5lwrzrmeCoLoIIV-8W0Ti5oDvT",
+   "name": "Sneaky Snacker",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.81
+  },
+  {
+   "n": 4,
+   "id": "184koVjltVQDe1fiFJlZg2L4DPVO5vED0",
+   "name": "Sneaky Snacker (MH30205)",
+   "source": "Apples Animate",
+   "dpi": 900,
+   "prefilter": 70.45
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "ref": {
+  "name": "Refurbished Familiar",
+  "set": "mh3",
+  "cn": "105"
+ },
+ "total_hits": 5,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1fZcsVPCFTfdS0dqtwt2Xo0UoHITuLiPp",
+   "name": "Refurbished Familiar (Normal) [MH3] {105}",
+   "source": "WarpDandy",
+   "dpi": 1200,
+   "prefilter": 33.5
+  },
+  {
+   "n": 2,
+   "id": "1CGejw04-ekol5thZQZVQFoVSLrWqFsxH",
+   "name": "Refurbished Familiar (Normal) [MH3] {105}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 34.53
+  },
+  {
+   "n": 3,
+   "id": "1ouwzL40fTgJLLfIRK7f68u8Lh0IPWe-6",
+   "name": "Refurbished Familiar",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 36.3
+  },
+  {
+   "n": 4,
+   "id": "1s9CufwnbOkbnbVzoGWQYcYwaUhHhX_VY",
+   "name": "Refurbished Familiar",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 47.22
+  },
+  {
+   "n": 5,
+   "id": "11oCC9SpVDRzwlb2qWqC7Cp--wC4lWdaV",
+   "name": "Refurbished Familiar [MH3] {105}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 62.17
+  }
+ ]
+}

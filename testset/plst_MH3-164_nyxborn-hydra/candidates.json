@@ -1,0 +1,66 @@
+{
+ "ref": {
+  "name": "Nyxborn Hydra",
+  "set": "plst",
+  "cn": "MH3-164"
+ },
+ "total_hits": 7,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1XolZ1aHDOZaSUWYXwjXBeO89IBB8lLdq",
+   "name": "Nyxborn Hydra (LQ)",
+   "source": "Nelynes",
+   "dpi": 800,
+   "prefilter": 34.04
+  },
+  {
+   "n": 2,
+   "id": "1Hzz3PEdDlWy19WR-p7JADaGqS31Wn3-L",
+   "name": "Nyxborn Hydra (Normal) [MH3] {164}",
+   "source": "MrOppsokopolis",
+   "dpi": 1200,
+   "prefilter": 35.82
+  },
+  {
+   "n": 3,
+   "id": "1XrtLMnxyka9-NNOf5O7Jgpvq1OF7uxN4",
+   "name": "Nyxborn Hydra (Normal) [MH3] {164}",
+   "source": "WarpDandy",
+   "dpi": 1200,
+   "prefilter": 35.85
+  },
+  {
+   "n": 4,
+   "id": "1JgZn6KcFk0m0map4LGUJ3twIPYaOR0Px",
+   "name": "Nyxborn Hydra",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 38.58
+  },
+  {
+   "n": 5,
+   "id": "1eD6xclw35a1TYVQkvmjJsWJo16kz9OMs",
+   "name": "Nyxborn Hydra",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 45.72
+  },
+  {
+   "n": 6,
+   "id": "1uQ1XcCiQ-5hDg73UvP9Fv9eIlyewb_va",
+   "name": "Nyxborn Hydra [MH3] {164}",
+   "source": "MrOppsokopolis",
+   "dpi": 1200,
+   "prefilter": 52.18
+  },
+  {
+   "n": 7,
+   "id": "1rws-PglYt6g81MN0KxdidPYFnpmXcCFz",
+   "name": "Nyxborn Hydra [MH3] {164}",
+   "source": "MrOppsokopolis",
+   "dpi": 1200,
+   "prefilter": 68.92
+  }
+ ]
+}
