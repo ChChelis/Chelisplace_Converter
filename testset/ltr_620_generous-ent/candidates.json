@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Generous Ent",
+  "set": "ltr",
+  "cn": "620"
+ },
+ "total_hits": 20,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1lGMJCxkcni6GacHOKRQauB_T1bpe0CMz",
+   "name": "Generous Ent",
+   "source": "CompC",
+   "dpi": 800,
+   "prefilter": 29.14
+  },
+  {
+   "n": 2,
+   "id": "1Nve1u-QUjUa_u8UroaTf6a9WvD0j45xU",
+   "name": "Generous Ent (PZ1)",
+   "source": "DankProxyStash",
+   "dpi": 800,
+   "prefilter": 31.08
+  },
+  {
+   "n": 3,
+   "id": "1Heu70T53q3WA978qMGvMRLIovjRmePZw",
+   "name": "Generous Ent (Normal) {169}",
+   "source": "Brett",
+   "dpi": 1200,
+   "prefilter": 31.65
+  },
+  {
+   "n": 4,
+   "id": "1jwqmTt5z1t1dOHkxrk9RPMEuVqG7TknO",
+   "name": "Generous Ent (Normal)",
+   "source": "ProxiesdoUiu",
+   "dpi": 1200,
+   "prefilter": 32.46
+  },
+  {
+   "n": 5,
+   "id": "141snVH66ngXf7n9b5LIzrBrXKk4vNoAz",
+   "name": "Generous Ent",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 33.08
+  },
+  {
+   "n": 6,
+   "id": "1O7QJR5ptKUMY6UoNqCsJZUYiw0FptXvE",
+   "name": "Generous Ent (Normal) {169}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 33.31
+  },
+  {
+   "n": 7,
+   "id": "1IWWV8Hoa_ptPa7Y4JRQOvFWQwsW1B1Ut",
+   "name": "Generous Ent {169}",
+   "source": "Brett",
+   "dpi": 1200,
+   "prefilter": 36.66
+  },
+  {
+   "n": 8,
+   "id": "1drzV2EE9pZL0ZLoHgMcOG67C20OtF3J5",
+   "name": "Generous Ent (Hot Pie, Accomplished baker)",
+   "source": "Apcebo",
+   "dpi": 800,
+   "prefilter": 38.02
+  },
+  {
+   "n": 9,
+   "id": "19evv9L7aQYb2S71uizpQEPr-F6hrbmsi",
+   "name": "Generous Ent (Simon Dominic)",
+   "source": "Mursu",
+   "dpi": 800,
+   "prefilter": 39.74
+  },
+  {
+   "n": 10,
+   "id": "1Z_SmpPTX8EPUM4jL-T11GWKTuE8mL-Xu",
+   "name": "Generous Ent (Normal Universes Within)",
+   "source": "Brett",
+   "dpi": 800,
+   "prefilter": 41.35
+  },
+  {
+   "n": 11,
+   "id": "17wBbW8TZxWuXP7BVShhwxez255vOILI3",
+   "name": "Generous Ent (Normal Universes Within)",
+   "source": "Cardstock Distro",
+   "dpi": 800,
+   "prefilter": 41.53
+  },
+  {
+   "n": 12,
+   "id": "1sO9UkDKw10mYiwMmkVjXplOzD5LmvBvQ",
+   "name": "Generous Ent",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 42.41
+  },
+  {
+   "n": 13,
+   "id": "1MaG0_22iKxvt69MXEwCN6K-auEudrQRb",
+   "name": "Generous Ent",
+   "source": "Smaug",
+   "dpi": 800,
+   "prefilter": 47.61
+  },
+  {
+   "n": 14,
+   "id": "1twTEMNa7U82KOZL-H4WgGLNAekrMw_tb",
+   "name": "Generous Ent (VME)",
+   "source": "Smaug",
+   "dpi": 620,
+   "prefilter": 49.8
+  },
+  {
+   "n": 15,
+   "id": "1RFZ6jO7hAs64u_NzkFwNiWu0MANTK2_2",
+   "name": "Generous Ent (Simon Dominic)",
+   "source": "Mike",
+   "dpi": 1200,
+   "prefilter": 54.78
+  },
+  {
+   "n": 16,
+   "id": "1yf97wokNwCNHe2GarXlzNintpzQZIclb",
+   "name": "Generous Ent {169} (1)",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 55.17
+  }
+ ]
+}

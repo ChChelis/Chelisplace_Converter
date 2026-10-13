@@ -1,0 +1,26 @@
+{
+ "ref": {
+  "name": "Avenging Hunter",
+  "set": "clb",
+  "cn": "215"
+ },
+ "total_hits": 2,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1NUz1MASblkDTKo_TrQPieFsO4hMAfKph",
+   "name": "Avenging Hunter",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 59.56
+  },
+  {
+   "n": 2,
+   "id": "1jP11Pl5T9mCEuY0LmBr5PJYglvWfUEL4",
+   "name": "Avenging Hunter",
+   "source": "ProxiesdoUiu",
+   "dpi": 1200,
+   "prefilter": 76.08
+  }
+ ]
+}

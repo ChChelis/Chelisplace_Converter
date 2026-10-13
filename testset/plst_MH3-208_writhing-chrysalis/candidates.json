@@ -1,0 +1,58 @@
+{
+ "ref": {
+  "name": "Writhing Chrysalis",
+  "set": "plst",
+  "cn": "MH3-208"
+ },
+ "total_hits": 6,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1a0y0NpDnB83WXF5parl88chPoQXjIxBT",
+   "name": "Writhing Chrysalis",
+   "source": "CompC",
+   "dpi": 810,
+   "prefilter": 35.68
+  },
+  {
+   "n": 2,
+   "id": "1PjuD-WabuStk4f1lzUwXUE4YV6dnYfsY",
+   "name": "Writhing Chrysalis (Normal) [MH3] {208}",
+   "source": "WarpDandy",
+   "dpi": 1200,
+   "prefilter": 38.64
+  },
+  {
+   "n": 3,
+   "id": "1b7Z1gcp1jaTwgnLOqhnrCIUIz7r-f8u1",
+   "name": "Writhing Chrysalis (MH3 208)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 39.06
+  },
+  {
+   "n": 4,
+   "id": "1t3qChgX0uHVlJGlWpQvrBHtQgKDx1MNC",
+   "name": "Writhing Chrysalis",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 43.27
+  },
+  {
+   "n": 5,
+   "id": "1a8upMgBVrGl4lWVsItmUxkcrA2PhfSHa",
+   "name": "Writhing Chrysalis [MH3] {208}",
+   "source": "Esax",
+   "dpi": 1200,
+   "prefilter": 49.49
+  },
+  {
+   "n": 6,
+   "id": "1huCON17sN8BDaPAaHnm3CT_Ls0Lye5rS",
+   "name": "Writhing Chrysalis",
+   "source": "Apcebo",
+   "dpi": 800,
+   "prefilter": 50.56
+  }
+ ]
+}
