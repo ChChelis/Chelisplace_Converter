@@ -2,61 +2,193 @@
  "mb2_187_snuff-out": {
   "status": "proposto",
   "pick": null,
-  "alt": [
+  "conf": "media",
+  "note": "nenhum exato: referência tem moldura 'future' cinza; #14 (Phyrexian) e #1 (extended) têm a mesma arte",
+  "accept": [],
+  "near": [
    14,
    1
-  ],
-  "conf": "media",
-  "note": "nenhum exato: referência tem moldura 'future' cinza; #14 (Phyrexian) e #1 (extended) têm a mesma arte"
+  ]
  },
  "eoc_161_great-furnace": {
   "status": "proposto",
   "pick": 3,
-  "alt": [],
   "conf": "alta",
-  "note": "rodapé 'C 0161 EOC • EN' igual à referência; #1=C18, #2=NDP, #4=C14 têm outro rodapé"
+  "note": "rodapé 'C 0161 EOC • EN' igual à referência; #1=C18, #2=NDP, #4=C14 têm outro rodapé",
+  "accept": [
+   3
+  ],
+  "near": []
  },
  "clb_215_avenging-hunter": {
   "status": "proposto",
   "pick": 2,
-  "alt": [
-   1
-  ],
   "conf": "media",
-  "note": "só 2 candidatos; #2 tem a moldura normal sem sangria, #1 é arte estendida"
+  "note": "só 2 candidatos; #2 tem a moldura normal sem sangria, #1 é arte estendida",
+  "accept": [
+   2
+  ],
+  "near": [
+   1
+  ]
  },
  "c19_69_prismatic-strands": {
   "status": "proposto",
   "pick": 1,
-  "alt": [
+  "conf": "media",
+  "note": "#1, #3 e #5 têm rodapé 069/302 C19; #5 é arte estendida; #1 (600 dpi) e #3 (460 dpi) são moldura normal",
+  "accept": [
+   1,
    3
   ],
-  "conf": "media",
-  "note": "#1, #3 e #5 têm rodapé 069/302 C19; #5 é arte estendida; #1 (600 dpi) e #3 (460 dpi) são moldura normal"
+  "near": [
+   5
+  ]
  },
  "hoc_179_l-rien-revealed": {
   "status": "proposto",
   "pick": 8,
-  "alt": [],
   "conf": "alta",
-  "note": "rodapé 'C 0179 HOC • EN' igual à referência"
+  "note": "rodapé 'C 0179 HOC • EN' igual à referência",
+  "accept": [
+   8
+  ],
+  "near": []
  },
  "hop_141_vault-of-whispers": {
   "status": "proposto",
   "pick": null,
-  "alt": [
-   7
-  ],
   "conf": "media",
-  "note": "nenhum exato: referência é moldura 2003 do Planechase; #7 tem a mesma redação mas moldura marrom diferente"
+  "note": "nenhum exato: referência é moldura 2003 do Planechase; #7 tem a mesma redação mas moldura marrom diferente",
+  "accept": [],
+  "near": [
+   7
+  ]
  },
  "ltr_169_generous-ent": {
   "status": "proposto",
   "pick": 5,
-  "alt": [
+  "conf": "media",
+  "note": "#5 tem o triângulo Universes Beyond como a referência; #4 tem o mesmo rodapé 'C 0169 LTR • EN' mas sem triângulo",
+  "accept": [
+   5
+  ],
+  "near": [
+   4
+  ]
+ },
+ "mh3_105_refurbished-familiar": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1,
+   2,
+   3
+  ],
+  "near": [
+   4,
+   5
+  ],
+  "conf": "alta",
+  "note": "#1, #2 e #3 têm o mesmo rodapé 'C 0105 MH3 • EN' e moldura normal; #4 e #5 são arte estendida"
+ },
+ "mh3_205_sneaky-snacker": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1,
+   2
+  ],
+  "near": [
+   3,
    4
   ],
+  "conf": "alta",
+  "note": "#1 e #2 rodapé 'C 0205 MH3 • EN' moldura normal; #3 estendida; #4 tem caixa de texto escura (outra moldura)"
+ },
+ "mrd_98_krark-clan-shaman": {
+  "status": "proposto",
+  "pick": 2,
+  "accept": [
+   2
+  ],
+  "near": [
+   1,
+   3
+  ],
   "conf": "media",
-  "note": "#5 tem o triângulo Universes Beyond como a referência; #4 tem o mesmo rodapé 'C 0169 LTR • EN' mas sem triângulo"
+  "note": "#2 tem a moldura 2003 de Mirrodin com © 1993-2003 como a referência; #1 é moldura moderna NDP; #3 é estendida"
+ },
+ "plst_MH3-164_nyxborn-hydra": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   2,
+   3,
+   4
+  ],
+  "conf": "alta",
+  "note": "nenhum exato: a referência (The List) tem o símbolo de planeswalker no rodapé; #2, #3 e #4 são a versão MH3 normal, idêntica no resto; #1 é playtest, #5 e #7 estendidas"
+ },
+ "plst_MH3-208_writhing-chrysalis": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   1
+  ],
+  "conf": "alta",
+  "note": "nenhum exato: falta o símbolo da The List no rodapé; #1 é a versão MH3 normal; #2 tem moldura dourada diferente"
+ },
+ "j25_780_vault-of-whispers": {
+  "status": "proposto",
+  "pick": 3,
+  "accept": [
+   3
+  ],
+  "near": [
+   2,
+   7
+  ],
+  "conf": "alta",
+  "note": "rodapé 'C 0780 J25 • EN' igual à referência; #2 e #7 são DSC 0322"
+ },
+ "sld_1792_snuff-out": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1
+  ],
+  "near": [],
+  "conf": "alta",
+  "note": "a referência é o Secret Lair 'Beholder's Death Ray' (nome de sabor, mesma carta Snuff Out); #1 é a mesma arte e moldura; os demais são outras artes"
+ },
+ "sld_303_great-furnace": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1
+  ],
+  "near": [
+   7,
+   2
+  ],
+  "conf": "alta",
+  "note": "rodapé '303 R SLD • EN DXTR' igual à referência; #7 diz '303/001 R' (variante) e é arte estendida; #2 é proxy PsilosX"
+ },
+ "mmq_162_snuff-out": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1
+  ],
+  "near": [
+   4,
+   7,
+   6
+  ],
+  "conf": "baixa",
+  "note": "referência é moldura 1999 com texto antigo 'instead of paying Snuff Out's mana cost'; #1 tem texto e moldura parecidos mas rodapé diferente ('1999 • MMQ 162/350'); #4 também parece servir e o rodapé não dá para ler; #6 tem o texto moderno"
  }
 }
