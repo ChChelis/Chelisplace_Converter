@@ -190,5 +190,209 @@
   ],
   "conf": "baixa",
   "note": "referência é moldura 1999 com texto antigo 'instead of paying Snuff Out's mana cost'; #1 tem texto e moldura parecidos mas rodapé diferente ('1999 • MMQ 162/350'); #4 também parece servir e o rodapé não dá para ler; #6 tem o texto moderno"
+ },
+ "sld_917_command-tower": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [],
+  "conf": "baixa",
+  "note": "nenhum dos 16 tem a arte da referência (Avengers Tower, Secret Lair Marvel). A busca só baixou 100 candidatos: a arte pode existir além do corte. Refazer com todos os resultados antes de aceitar como 'nenhum'"
+ },
+ "sld_2672_sol-ring": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [],
+  "conf": "baixa",
+  "note": "nenhum dos 16 tem a arte da referência (Garfield, Secret Lair). Sol Ring tem 719 candidatos e só 100 foram baixados: refazer com todos antes de aceitar como 'nenhum'"
+ },
+ "cmr_705_command-tower": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1
+  ],
+  "near": [
+   2,
+   3
+  ],
+  "conf": "media",
+  "note": "referência é arte estendida (Ryan Yee) sem texto de sabor; #1 é estendida sem sabor; #2 é estendida mas com texto de sabor; #3 é moldura normal 350/361"
+ },
+ "leb_270_sol-ring": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   3,
+   1
+  ],
+  "conf": "baixa",
+  "note": "referência é Alpha/Beta com texto antigo ('Add 2 colorless mana... can be played as an interrupt'); nenhum dos 16 tem esse texto; #3 tem moldura clássica com texto moderno, #1 é moldura moderna LEA. Só 100 de 719 candidatos baixados: refazer completo"
+ },
+ "leb_162_lightning-bolt": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   1,
+   2
+  ],
+  "conf": "baixa",
+  "note": "referência é Alpha com texto antigo 'does 3 damage to one target'; #1 e #2 têm a mesma arte e moldura clássica, mas texto moderno ('any target'); #2 acrescenta texto de sabor. Só 100 candidatos baixados: refazer completo"
+ },
+ "4ed_52_swords-to-plowshares": {
+  "status": "proposto",
+  "pick": 13,
+  "accept": [
+   13
+  ],
+  "near": [
+   15
+  ],
+  "conf": "baixa",
+  "note": "mesma arte (Jeff A. Menges); #13 tem moldura clássica bege parecida com a 4ª edição mas texto de sabor extra; #15 é moldura moderna. Só 100 candidatos baixados"
+ },
+ "4ed_65_counterspell": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   8,
+   16
+  ],
+  "conf": "baixa",
+  "note": "referência é 4ª edição com tipo 'Interrupt' (Mark Poole); #8 tem a mesma arte e moldura azul mas diz 'Instant'; #16 é o Secret Lair 175. Só 100 candidatos baixados"
+ },
+ "mb2_153_swords-to-plowshares": {
+  "status": "proposto",
+  "pick": 3,
+  "accept": [
+   3
+  ],
+  "near": [
+   4,
+   5,
+   6
+  ],
+  "conf": "baixa",
+  "note": "mesma arte e texto de sabor 'smallest seed of regret'; #3 é a mais próxima na moldura; #4 é playtest; #5 e #6 têm outro texto de sabor"
+ },
+ "pf25_13_lightning-bolt": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   1,
+   2
+  ],
+  "conf": "media",
+  "note": "mesma arte (Christopher Mueller) em #1 e #2, mas ambos têm texto de sabor e a referência não tem; #2 é estendida"
+ },
+ "pf26_5_counterspell": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   16
+  ],
+  "conf": "media",
+  "note": "referência é moldura normal com arte do mago de manto vermelho e texto de sabor de Ertai; só #16 tem essa arte, mas é versão estendida de proxy"
+ },
+ "ltr_511_l-rien-revealed": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [],
+  "conf": "media",
+  "note": "referência é o showcase de moldura dourada em pergaminho (LTR 511); nenhum dos 16 tem essa moldura"
+ },
+ "ltr_620_generous-ent": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   1,
+   15
+  ],
+  "conf": "baixa",
+  "note": "referência é o showcase em pergaminho amarelo com texto sem lembrete; #1 tem moldura amarela parecida mas com texto de lembrete; #15 tem o texto curto mas moldura estendida escura"
+ },
+ "plst_JUD-18_prismatic-strands": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   1,
+   2
+  ],
+  "conf": "media",
+  "note": "referência é a Judgment com o símbolo da The List no canto inferior esquerdo; #1 tem a mesma moldura e arte mas sem o símbolo; #2 é a mesma moldura sobre fundo dourado com aviso de proxy"
+ },
+ "c13_139_cultivate": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   3,
+   5
+  ],
+  "conf": "media",
+  "note": "referência é C13 (© 2013, 139/356, moldura 2003); o OCR do rodapé dos 16 candidatos não achou C13: #3 e #5 têm o mesmo visual com rodapé M11 168/249, #1 é C21 187. Os demais têm rodapé de proxy ilegível"
+ },
+ "cm1_15_rhystic-study": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [
+   5,
+   2,
+   3
+  ],
+  "conf": "media",
+  "note": "referência é Commander's Arsenal (© 2012, 15/18); nenhum rodapé dos candidatos é CM1: #2, #5 e #8 são Prophecy (PCY 45/143), #3 é Jumpstart (JMP 169/495)"
+ },
+ "cmr_689_arcane-signet": {
+  "status": "proposto",
+  "pick": 2,
+  "accept": [
+   2
+  ],
+  "near": [
+   1,
+   14
+  ],
+  "conf": "media",
+  "note": "referência é arte estendida (Dan Scott, CMR 689); #2 é estendida com a mesma arte, mas com rodapé de proxy; #1 e #14 são a versão normal CMR 297/361"
+ },
+ "wot_25_rhystic-study": {
+  "status": "proposto",
+  "pick": 1,
+  "accept": [
+   1
+  ],
+  "near": [
+   2,
+   9
+  ],
+  "conf": "alta",
+  "note": "#1 tem a mesma arte (Sereba Malzon), moldura e rodapé 'M 0025 WOT • EN'; #2 e #9 são proxies estendidos"
+ },
+ "sld_2437_cultivate": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [],
+  "conf": "baixa",
+  "note": "nenhum dos 16 tem a arte da referência (Secret Lair da Hatsune Miku). Só 100 candidatos baixados: refazer completo antes de aceitar como 'nenhum'"
+ },
+ "tle_315_arcane-signet": {
+  "status": "proposto",
+  "pick": null,
+  "accept": [],
+  "near": [],
+  "conf": "baixa",
+  "note": "nenhum dos 16 tem a arte da referência (Avatar, brinquedos e tartaruga). Só 100 candidatos baixados: refazer completo antes de aceitar como 'nenhum'"
  }
 }

@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Arcane Signet",
+  "set": "tle",
+  "cn": "315"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1eXjupX5xQ0O2Q-xyyAP8Ar_04fev_nXv",
+   "name": "Arcane Signet (Sketch Gaboleps-696)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 56.98
+  },
+  {
+   "n": 2,
+   "id": "1YgylHaKs6B2riyiBehp6PrvnRKu1ZM5s",
+   "name": "Arcane Signet (Sketch Dani Pendergast-201)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 58.63
+  },
+  {
+   "n": 3,
+   "id": "1wFId2wCEvEghfGIHxDVOj-7eWKdXAuW_",
+   "name": "Arcane Signet (Borderless Dan Frazier)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 59.13
+  },
+  {
+   "n": 4,
+   "id": "1rUjE0r2foBwB7PQWpCidcGj-npaPe8Y5",
+   "name": "Arcane Signet (Sketch Sam White-298)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 59.58
+  },
+  {
+   "n": 5,
+   "id": "1OnjqgrK-hxhrmPorvztrzKUOhqIOZ2mn",
+   "name": "Arcane Signet (Sketch Dan Scott-331)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 59.79
+  },
+  {
+   "n": 6,
+   "id": "1krgh-Qb4qduBxLcXsSYR9pbmjei8eDW2",
+   "name": "Arcane Signet (Sketch David Astruga-227)",
+   "source": "Trix Are For Scoot 2",
+   "dpi": 810,
+   "prefilter": 61.19
+  },
+  {
+   "n": 7,
+   "id": "1T0Zx0X5_NmMJsr8oerCS-oMxxA5cjkzD",
+   "name": "Arcane Signet (Dan Frazier) {589}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 62.39
+  },
+  {
+   "n": 8,
+   "id": "1ES8TfKHK8zpRmVh3g4iJoLslS-_vXxEw",
+   "name": "Arcane Signet [P30M] {1}",
+   "source": "PsilosX",
+   "dpi": 1200,
+   "prefilter": 64.59
+  },
+  {
+   "n": 9,
+   "id": "1GItRt5wD1mnOBjiSLHY12TFUSReG61lB",
+   "name": "Arcane Signet (Borderless Gaboleps)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 64.63
+  },
+  {
+   "n": 10,
+   "id": "1lOnWjUCpJsBhj8m8UuHHnvJE2nsxU-II",
+   "name": "Arcane Signet (c)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 69.41
+  },
+  {
+   "n": 11,
+   "id": "1q3XHyZ2Ewjs6to6gjkslzhr0kCSyv1SU",
+   "name": "Arcane Signet (Borderless Drew Tucker)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 69.87
+  },
+  {
+   "n": 12,
+   "id": "1UFOFOnmnSND4z2ABZ2K9qVvaFnpHDkrl",
+   "name": "Arcane Signet (Borderless Randy Gallegos)",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 70.0
+  },
+  {
+   "n": 13,
+   "id": "1jXDryCfEj06R_mmIDTqizDHJZL27YUpJ",
+   "name": "Arcane Signet (Randy Gallegos) [LTC] {273}",
+   "source": "JohnPrime",
+   "dpi": 1200,
+   "prefilter": 70.42
+  },
+  {
+   "n": 14,
+   "id": "1nDsmgncTxsUP7p0Cb1TDpKtJhdQUwPRQ",
+   "name": "Arcane Signet (d)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 72.73
+  },
+  {
+   "n": 15,
+   "id": "1up6l6EVCrJVSAUjYfKUctW6N_6UM7Iyf",
+   "name": "Arcane Signet (Modern SL)",
+   "source": "Nelynes",
+   "dpi": 600,
+   "prefilter": 74.28
+  },
+  {
+   "n": 16,
+   "id": "1QZCIhs5VLA6cpkAHDVBnFS0jgS45odUs",
+   "name": "Arcane Signet (i)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 74.32
+  }
+ ]
+}

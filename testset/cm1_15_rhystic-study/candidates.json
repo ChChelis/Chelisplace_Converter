@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Rhystic Study",
+  "set": "cm1",
+  "cn": "15"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1P_k8tqD0N4hiqPiYYr0XuYh2DnjuFRNT",
+   "name": "Rhystic Study (1iIWUqQ1y1hci0qaGtroSqo5Uj_lnKF1Z)",
+   "source": "St. Milton",
+   "dpi": 1210,
+   "prefilter": 39.57
+  },
+  {
+   "n": 2,
+   "id": "1zuYh1yEMc5cDYflOwMXrqPLeTAGbHJkR",
+   "name": "Rhystic Study (Terese Nielsen)",
+   "source": "Mal76",
+   "dpi": 1200,
+   "prefilter": 39.88
+  },
+  {
+   "n": 3,
+   "id": "1boidrYTeMfnT4n0rIYuWKIIZPSiu4Scf",
+   "name": "Rhystic Study (NormalPlus Terese Nielsen)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 42.03
+  },
+  {
+   "n": 4,
+   "id": "1iIWUqQ1y1hci0qaGtroSqo5Uj_lnKF1Z",
+   "name": "Rhystic Study (JMP 169)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 42.68
+  },
+  {
+   "n": 5,
+   "id": "1yf09LFZxfy-pPydHeLzsswIw5AxNOnDX",
+   "name": "Rhystic Study (Modern Terese Nielsen)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 46.0
+  },
+  {
+   "n": 6,
+   "id": "1UoxcNLJHc_8LRghQsnwCHgTd8tgytkHU",
+   "name": "Rhystic Study (Ancient Terese Nielsen)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 47.93
+  },
+  {
+   "n": 7,
+   "id": "1g35dM4-s0ZwaLawToZO61gY25kfq1siB",
+   "name": "Rhystic Study [PCY] {45}",
+   "source": "Hathwellcrisping",
+   "dpi": 800,
+   "prefilter": 48.56
+  },
+  {
+   "n": 8,
+   "id": "1BNDSrOxCP7cqfSSscRoPpF6OJMrtFcDs",
+   "name": "Rhystic Study (Ancient Terese Nielsen)",
+   "source": "Mal76",
+   "dpi": 1200,
+   "prefilter": 48.95
+  },
+  {
+   "n": 9,
+   "id": "1PC7PwKMhtHj6024TW8zwwVMmcMA9HOfk",
+   "name": "Rhystic Study",
+   "source": "Hathwellcrisping",
+   "dpi": 600,
+   "prefilter": 49.51
+  },
+  {
+   "n": 10,
+   "id": "1p9ew0tie51-mM2JKKpaNhfjDTcR5OTDJ",
+   "name": "Rhystic Study (Normal) [J18] {7}",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 49.67
+  },
+  {
+   "n": 11,
+   "id": "1NccYqhZfc1A8v3eBmK-b-Fezh4m5n8rz",
+   "name": "Rhystic Study (Terese Nielsen)",
+   "source": "Mursu",
+   "dpi": 560,
+   "prefilter": 49.76
+  },
+  {
+   "n": 12,
+   "id": "1bueRh1De4_ggPOyWZ6xCA0PRYk4JegMd",
+   "name": "Rhystic Study (NormalPlus Paul Scott Canavan)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 50.3
+  },
+  {
+   "n": 13,
+   "id": "1TWzyAEyZHt7I6JuFeVcXJMDaXwTwdzX1",
+   "name": "Rhystic Study (NormalPlus Paul Scott Canavan)",
+   "source": "Hathwellcrisping",
+   "dpi": 1200,
+   "prefilter": 50.37
+  },
+  {
+   "n": 14,
+   "id": "14m4XBUzWnXAC4CObTRZUNr_ywgC8smNc",
+   "name": "Rhystic Study (Terese Nielsen)",
+   "source": "Mursu",
+   "dpi": 800,
+   "prefilter": 50.76
+  },
+  {
+   "n": 15,
+   "id": "1NBn_kFdesrGCnrf9TE2ZG1QpEAXfI62X",
+   "name": "Rhystic Study",
+   "source": "Diogenies",
+   "dpi": 600,
+   "prefilter": 50.94
+  },
+  {
+   "n": 16,
+   "id": "1LeJEx2HPQSr8UjNKjmmC4lYRYa7UqEV2",
+   "name": "Rhystic Study (holo)",
+   "source": "Mursu",
+   "dpi": 560,
+   "prefilter": 51.49
+  }
+ ]
+}

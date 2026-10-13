@@ -1,0 +1,138 @@
+{
+ "ref": {
+  "name": "Arcane Signet",
+  "set": "cmr",
+  "cn": "689"
+ },
+ "total_hits": 100,
+ "candidates": [
+  {
+   "n": 1,
+   "id": "1xfUQYUrlHYIYyVxrOnDhRoG-usiRfGc4",
+   "name": "Arcane Signet (Extended Dan Scott)",
+   "source": "MrTeferi",
+   "dpi": 1200,
+   "prefilter": 41.75
+  },
+  {
+   "n": 2,
+   "id": "1miwOg1ofZ1NRD3iQELPkdtbsvH6PgjDI",
+   "name": "Arcane Signet (a)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 47.36
+  },
+  {
+   "n": 3,
+   "id": "1YOts6NAzTRHudGW4HtgfTdaRezEi-n99",
+   "name": "Arcane Signet (j)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 47.54
+  },
+  {
+   "n": 4,
+   "id": "1_sJtdZyF0UItjcRmHo4lT3PFKVVmqsZd",
+   "name": "Arcane Signet (o)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 51.43
+  },
+  {
+   "n": 5,
+   "id": "1hQSn7-ooBW7oIhk9bFVGHwgX614pWZGA",
+   "name": "Arcane Signet (g)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 51.78
+  },
+  {
+   "n": 6,
+   "id": "1aRetAmzwBGp0AuSu5WG81ekU4Rj4F4UJ",
+   "name": "Arcane Signet (t)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 52.62
+  },
+  {
+   "n": 7,
+   "id": "1MGf1_xbtxjHNF-08O2dTfDIrTwgi4nLH",
+   "name": "Arcane Signet (h)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 52.79
+  },
+  {
+   "n": 8,
+   "id": "1ZW_i42SXPdH8ugNaXn6d7yWgdvKY4xs5",
+   "name": "Arcane Signet (MB2 FutureShifted)",
+   "source": "Nelynes",
+   "dpi": 800,
+   "prefilter": 52.99
+  },
+  {
+   "n": 9,
+   "id": "19a9bycmEzHYuIlKNgUYTDpE5Z7x8TI0u",
+   "name": "Arcane Signet (e)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.21
+  },
+  {
+   "n": 10,
+   "id": "1LSkq91W7-SQG-CYNzYpiM1v1UKYxg0Kj",
+   "name": "Arcane Signet (l)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.26
+  },
+  {
+   "n": 11,
+   "id": "1xjIH5T1bnhOguwFYSSMZuJ2d19b1SIpd",
+   "name": "Arcane Signet (f)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 53.35
+  },
+  {
+   "n": 12,
+   "id": "1PHNGGCQ8b4bBHiGGPETvtpRcC9EMf4dV",
+   "name": "Arcane Signet (v)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 54.3
+  },
+  {
+   "n": 13,
+   "id": "19JDjy9wkF9R1zEg8cQYnCXAqJBX6UkuS",
+   "name": "Arcane Signet (u)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 55.34
+  },
+  {
+   "n": 14,
+   "id": "13MEPJCeqY9ikhRfUnKwOm8LJ_FuW5pXj",
+   "name": "Arcane Signet (Dan Scott)",
+   "source": "MrTeferi",
+   "dpi": 1200,
+   "prefilter": 55.36
+  },
+  {
+   "n": 15,
+   "id": "1FJOIbTfH6xuHm1_sGK4abiFjVqXTJvY_",
+   "name": "Arcane Signet (w)",
+   "source": "WillieTanner",
+   "dpi": 810,
+   "prefilter": 55.38
+  },
+  {
+   "n": 16,
+   "id": "1GkcL_TYIS2OTcjQmRng0lsxa-bBLk8I0",
+   "name": "Arcane Signet (ELD 331)",
+   "source": "Chilli_Axe",
+   "dpi": 800,
+   "prefilter": 55.51
+  }
+ ]
+}
