@@ -16,3 +16,57 @@
   51 candidatos
 006_mh2_223_brainstone  (1x)
   14 candidatos
+013_mh2_295_cursed-totem  (1x)
+  43 candidatos
+008_bro_4_calamity-s-wake  (1x)
+  5 candidatos
+009_mh3_21_charitable-levy  (1x)
+  5 candidatos
+011_sld_1533_command-beacon  (1x)
+  68 candidatos
+012_afc_59_component-pouch  (1x)
+  4 candidatos
+015_m3c_32_eldrazi-confluence  (1x)
+  11 candidatos
+016_war_245_emergence-zone  (1x)
+  35 candidatos
+014_brr_76_defense-grid  (1x)
+  52 candidatos
+018_lcc_112_expedition-map  (1x)
+  67 candidatos
+019_sld_1487_felidar-guardian  (1x)
+  34 candidatos
+017_znr_12_emeria-s-call  (1x)
+  21 candidatos
+022_2x2_339_flickerwisp  (1x)
+  47 candidatos
+021_thb_16_flicker-of-fate  (1x)
+  10 candidatos
+017_znr_12_emeria-shattered-skyclave  (1x)
+  19 candidatos
+024_clb_27_icewind-stalwart  (1x)
+  4 candidatos
+027_plst_PLC-25_mana-tithe  (1x)
+  47 candidatos
+025_mbc_75_jeweled-amulet  (1x)
+  16 candidatos
+020_sld_7137_fiend-hunter  (1x)
+  28 candidatos
+030_afr_29_paladin-class  (1x)
+  7 candidatos
+028_neo_369_march-of-otherworldly-light  (1x)
+  23 candidatos
+033_afr_398_portable-hole  (1x)
+023_hob_239_gleaming-splendor  (1x)
+  21 candidatos
+  7 candidatos
+026_fra_14_loyal-tutor  (1x)
+  8 candidatos
+031_plst_TMP-300_pearl-medallion  (1x)
+  39 candidatos
+036_mmq_323_remote-farm  (1x)
+  6 candidatos
+029_mh3_323_orim-s-chant  (1x)
+  25 candidatos
+039_6ed_327_ruins-of-trokair  (1x)
+  13 candidatos
