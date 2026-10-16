@@ -43,4 +43,5 @@ def main(out):
     print(len(cards), "cartas;", round(os.path.getsize(path) / 1e6, 1), "MB")
 
 
-main(sys.argv[1])
+if __name__ == "__main__":
+    main(sys.argv[1])

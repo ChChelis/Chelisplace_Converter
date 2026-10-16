@@ -108,24 +108,30 @@ def pairs():
         yield k, g[k], meta["candidates"], os.path.join(TS, k, "ref.jpg")
 
 
+_ocr = None
+
+
+def ocr_footer(path, key):
+    """Lê o rodapé da imagem e guarda em cache/ocr_<key>.txt (não repete)."""
+    global _ocr
+    if os.path.exists(ocr_path(key)):
+        return
+    if _ocr is None:
+        from rapidocr_onnxruntime import RapidOCR
+        _ocr = RapidOCR()
+    im = load(path)
+    w, h = im.size
+    c = im.crop((0, int(h * .90), int(w * .6), h))
+    r, _ = _ocr(np.asarray(c.resize((c.size[0] * 2, c.size[1] * 2))))
+    open(ocr_path(key), "w", encoding="utf-8").write(" | ".join(t[1] for t in (r or [])))
+
+
 def cmd_ocr():
-    from rapidocr_onnxruntime import RapidOCR
-    ocr = RapidOCR()
-
-    def read(path, key):
-        if os.path.exists(ocr_path(key)):
-            return
-        im = load(path)
-        w, h = im.size
-        c = im.crop((0, int(h * .90), int(w * .6), h))
-        r, _ = ocr(np.asarray(c.resize((c.size[0] * 2, c.size[1] * 2))))
-        open(ocr_path(key), "w", encoding="utf-8").write(" | ".join(t[1] for t in (r or [])))
-
     n = 0
     for k, _, cands, refp in pairs():
-        read(refp, "ref_" + k)
+        ocr_footer(refp, "ref_" + k)
         for c in cands:
-            read(os.path.join(CACHE, f"mpc_{c['id']}.jpg"), c["id"])
+            ocr_footer(os.path.join(CACHE, f"mpc_{c['id']}.jpg"), c["id"])
             n += 1
     print("ocr ok:", n, "candidatos")
 
