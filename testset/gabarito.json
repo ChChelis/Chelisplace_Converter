@@ -1,0 +1,359 @@
+{
+ "4ed_52_swords-to-plowshares": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:07:43.460Z"
+ },
+ "4ed_65_counterspell": {
+  "status": "ok",
+  "accept": [
+   8
+  ],
+  "accept_ids": [
+   "19A77F1_-XUJPxgIs4x4YGT22IPF7Oskg"
+  ],
+  "note": "Nesse caso, na falta da borda branca, vai a preta, o inverso é que não pode rolar",
+  "confirmed_at": "2026-10-16T13:08:41.734Z"
+ },
+ "c13_139_cultivate": {
+  "status": "ok",
+  "accept": [
+   3
+  ],
+  "accept_ids": [
+   "1pGjkVYdKW7U9amoneskDNO51HjsngmEx"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:08:41.821Z"
+ },
+ "c19_69_prismatic-strands": {
+  "status": "ok",
+  "accept": [
+   1,
+   3
+  ],
+  "accept_ids": [
+   "1hZnIdBLawpc9wHBCyiKDYC9GRhiQUTs8",
+   "1IsKtBQSzRXGbdA8F2VfYjLWDK0-R_RX3"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:04:12.568Z"
+ },
+ "clb_215_avenging-hunter": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1NUz1MASblkDTKo_TrQPieFsO4hMAfKph"
+  ],
+  "note": "Se não tiver um match 100%, prefira a borda preta à borda branca, se o usuário quis borda preta, mesmo que seja arte extendida",
+  "confirmed_at": "2026-10-16T13:04:53.685Z"
+ },
+ "cm1_15_rhystic-study": {
+  "status": "ok",
+  "accept": [
+   2
+  ],
+  "accept_ids": [
+   "1zuYh1yEMc5cDYflOwMXrqPLeTAGbHJkR"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:08:51.890Z"
+ },
+ "cmr_689_arcane-signet": {
+  "status": "ok",
+  "accept": [
+   2
+  ],
+  "accept_ids": [
+   "1miwOg1ofZ1NRD3iQELPkdtbsvH6PgjDI"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:06:57.328Z"
+ },
+ "cmr_705_command-tower": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1z-t7SQdNDtKv3_Jjhw9fUMaKAg0ddiED"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:07:06.684Z"
+ },
+ "eoc_161_great-furnace": {
+  "status": "ok",
+  "accept": [
+   3
+  ],
+  "accept_ids": [
+   "1e-OjsYPuxbpO1m20N_Fh-nxvmQ0DOlUn"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:13.740Z"
+ },
+ "hoc_179_l-rien-revealed": {
+  "status": "ok",
+  "accept": [
+   8
+  ],
+  "accept_ids": [
+   "1Oflr-MkFRdcu70sFdNosyR1D70qluJFR"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:25.485Z"
+ },
+ "hop_141_vault-of-whispers": {
+  "status": "ok",
+  "accept": [
+   7
+  ],
+  "accept_ids": [
+   "17_f7mHQm71y_kHipi9KSwFehJA_nbxXt"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:08:58.477Z"
+ },
+ "j25_780_vault-of-whispers": {
+  "status": "ok",
+  "accept": [
+   3
+  ],
+  "accept_ids": [
+   "1hfV8cLJjCXXW_UAeGooNgJ-dOh424Rk_"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:31.434Z"
+ },
+ "leb_162_lightning-bolt": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1If7ee2GDvgsKmXZ0gu0GIbzKz5mjx5uA"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:09:04.589Z"
+ },
+ "leb_270_sol-ring": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:09:16.598Z"
+ },
+ "ltr_169_generous-ent": {
+  "status": "ok",
+  "accept": [
+   5
+  ],
+  "accept_ids": [
+   "141snVH66ngXf7n9b5LIzrBrXKk4vNoAz"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:07:12.840Z"
+ },
+ "ltr_511_l-rien-revealed": {
+  "status": "ok",
+  "accept": [
+   2
+  ],
+  "accept_ids": [
+   "1wltnE71Tppee4G5Y9f8Cnxxj46WbIAS0"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:09:22.943Z"
+ },
+ "ltr_620_generous-ent": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1lGMJCxkcni6GacHOKRQauB_T1bpe0CMz"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:09:26.675Z"
+ },
+ "mb2_153_swords-to-plowshares": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:07:56.722Z"
+ },
+ "mb2_187_snuff-out": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:09:34.253Z"
+ },
+ "mh3_105_refurbished-familiar": {
+  "status": "ok",
+  "accept": [
+   1,
+   2,
+   3
+  ],
+  "accept_ids": [
+   "1fZcsVPCFTfdS0dqtwt2Xo0UoHITuLiPp",
+   "1CGejw04-ekol5thZQZVQFoVSLrWqFsxH",
+   "1ouwzL40fTgJLLfIRK7f68u8Lh0IPWe-6"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:39.252Z"
+ },
+ "mh3_205_sneaky-snacker": {
+  "status": "ok",
+  "accept": [
+   1,
+   2
+  ],
+  "accept_ids": [
+   "1Kr0tmNDp055cbzefDRrjW_SdS15JGYek",
+   "1swb_rYO2N71wj-G5AKGusagV8JY797UD"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:42.886Z"
+ },
+ "mmq_162_snuff-out": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1mlw8XvYT-LzcipYLTgMxEB-Vf90MeRD7"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:08:09.091Z"
+ },
+ "mrd_98_krark-clan-shaman": {
+  "status": "ok",
+  "accept": [
+   2
+  ],
+  "accept_ids": [
+   "1uvtIfo96Te0-DbJiMtsUcbRbgqYlKAUU"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:07:17.490Z"
+ },
+ "pf25_13_lightning-bolt": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:09:37.287Z"
+ },
+ "pf26_5_counterspell": {
+  "status": "ok",
+  "accept": [
+   2
+  ],
+  "accept_ids": [
+   "1wmqmC_g_qamc4FSSq2q9LBGlrnhgm50_"
+  ],
+  "note": "Quando for assim, priorize o frame sobre a arte, se a pessoa pediu old frame é mais fácil ela aceitar outra arte do que outro frame",
+  "confirmed_at": "2026-10-16T13:10:17.038Z"
+ },
+ "plst_JUD-18_prismatic-strands": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1J3vkd7DRayNBQazvDaAJLVv9WBz480kd"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:10:17.110Z"
+ },
+ "plst_MH3-164_nyxborn-hydra": {
+  "status": "ok",
+  "accept": [
+   2
+  ],
+  "accept_ids": [
+   "1Hzz3PEdDlWy19WR-p7JADaGqS31Wn3-L"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:10:19.165Z"
+ },
+ "plst_MH3-208_writhing-chrysalis": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1a0y0NpDnB83WXF5parl88chPoQXjIxBT"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:10:21.151Z"
+ },
+ "sld_1792_snuff-out": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "154VhMKzfbi8Ao-IcJ9kILPDNOki5wSaR"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:50.239Z"
+ },
+ "sld_2437_cultivate": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "Quando a pessoa pede uma arte específica assim de secret lair, tem que ser ela. Ai aqui eu preciso de um alerta pra poder falar com ela \"olha, não tem, serve outra?\"",
+  "confirmed_at": "2026-10-16T13:10:53.634Z"
+ },
+ "sld_2672_sol-ring": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "Quando a pessoa pede uma arte específica assim de secret lair, tem que ser ela. Ai aqui eu preciso de um alerta pra poder falar com ela \"olha, não tem, serve outra?\"",
+  "confirmed_at": "2026-10-16T13:11:08.757Z"
+ },
+ "sld_303_great-furnace": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1foXALT-csn-Br27AIRyH1AkUjZAC-oR9"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:03:59.212Z"
+ },
+ "sld_917_command-tower": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "Quando a pessoa pede uma arte específica assim de secret lair, tem que ser ela. Ai aqui eu preciso de um alerta pra poder falar com ela \"olha, não tem, serve outra?\"",
+  "confirmed_at": "2026-10-16T13:11:12.290Z"
+ },
+ "tle_315_arcane-signet": {
+  "status": "nenhum",
+  "accept": [],
+  "accept_ids": [],
+  "note": "Quando a pessoa pede uma arte específica assim de secret lair, tem que ser ela. Ai aqui eu preciso de um alerta pra poder falar com ela \"olha, não tem, serve outra?\"",
+  "confirmed_at": "2026-10-16T13:11:24.329Z"
+ },
+ "wot_25_rhystic-study": {
+  "status": "ok",
+  "accept": [
+   1
+  ],
+  "accept_ids": [
+   "1YEi8RLrxPMgSGiK4iIbUCq-5ubKLiWZt"
+  ],
+  "note": "",
+  "confirmed_at": "2026-10-16T13:04:03.986Z"
+ }
+}
