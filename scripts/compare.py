@@ -155,7 +155,7 @@ def cmd_ocr():
 
 
 def dataset():
-    X, y, grp, idx = [], [], [], []
+    X, y, grp, idx, src = [], [], [], [], []
     for k, g, cands, refp in pairs():
         ref, rtok = load(refp), tokens(footer_text("ref_" + k))
         acc, ids = set(g["accept"]), set(g.get("accept_ids", []))
@@ -166,8 +166,27 @@ def dataset():
                 continue
             X.append(features(ref, rtok, im, tokens(footer_text(c["id"]))))
             y.append(1.0 if (c["n"] in acc or c["id"] in ids) else 0.0)
-            grp.append(k); idx.append(c["n"])
+            grp.append(k); idx.append(c["n"]); src.append(c.get("source", ""))
+    dataset.src = np.array(src)  # fontes, na mesma ordem das linhas de X (sem mudar a assinatura)
     return np.array(X), np.array(y), grp, idx
+
+
+def src_stats(src, y):
+    """Quantas vezes cada uploader teve candidato aceito (aprendido das escolhas do usuário)."""
+    st = {}
+    for sname, v in zip(src, y):
+        p, n = st.get(sname, (0.0, 0)); st[sname] = (p + v, n + 1)
+    return float(y.mean()), st
+
+
+def src_feat(stats, src, y=None, a=5.0):
+    """log(taxa suavizada de aceite do uploader / taxa geral). Com y: tira a própria amostra (evita vazamento no treino)."""
+    base, st = stats; out = []
+    for i, sname in enumerate(src):
+        p, n = st.get(sname, (0.0, 0))
+        if y is not None: p -= y[i]; n -= 1
+        out.append(np.log(((p + a * base) / (n + a)) / base))
+    return np.array(out)
 
 
 def fit(X, y, l2=0.05, iters=3000, lr=0.3):
@@ -210,17 +229,23 @@ def pick_threshold(rows):
 
 
 def cmd_eval():
-    X, y, grp, idx = dataset()
+    X, y, grp, idx = dataset(); src = dataset.src; use = os.environ.get("PRIOR") == "1"
     g = {k: gg for k, gg, _, _ in pairs()}
     grp = np.array(grp); idx = np.array(idx); keys = sorted(set(grp))
+
+    def split(te, tr):
+        if not use: return X[tr], X[te]
+        st = src_stats(src[tr], y[tr])
+        return np.c_[X[tr], src_feat(st, src[tr], y[tr])], np.c_[X[te], src_feat(st, src[te])]
     print("amostras:", len(y), "| positivos:", int(y.sum()), "| pares:", len(keys))
     res = {"baseline": [0, 0, 0, 0], "fit": [0, 0, 0, 0]}; fails = []
     for k in keys:
         te, tr = grp == k, grp != k
-        model = fit(X[tr], y[tr])
-        T = pick_threshold(best_of(model, X[tr], y[tr], grp[tr], g))
+        Xtr, Xte = split(te, tr)
+        model = fit(Xtr, y[tr])
+        T = pick_threshold(best_of(model, Xtr, y[tr], grp[tr], g))
         for mode in ("baseline", "fit"):
-            s = X[te][:, 0] if mode == "baseline" else score(model, X[te])
+            s = X[te][:, 0] if mode == "baseline" else score(model, Xte)
             i = int(np.argmax(s)); passed = True if mode == "baseline" else bool(s[i] >= T)
             r = res[mode]
             if g[k]["status"] == "ok":
@@ -232,7 +257,8 @@ def cmd_eval():
     held = []  # (nota, acertou se escolhido, status) de cada par deixado de fora
     for k in keys:
         te, tr = grp == k, grp != k
-        sc = score(fit(X[tr], y[tr]), X[te]); i = int(np.argmax(sc))
+        Xtr, Xte = split(te, tr)
+        sc = score(fit(Xtr, y[tr]), Xte); i = int(np.argmax(sc))
         held.append((float(sc[i]), bool(y[te][i]), g[k]["status"]))
     print("\nlimiar -> escolhe sozinho / erra entre os que escolhe sozinho / vai para revisão:")
     for T in sorted({round(h[0], 2) for h in held})[::4] + [9.0]:
@@ -243,7 +269,8 @@ def cmd_eval():
         r = res[mode]
         print(f"{label}: certo acertado {r[0]}/{r[1]}" + (f" | 'nenhum' reconhecido {r[2]}/{r[3]}" if mode == "fit" else " | (não decide 'nenhum')"))
     for f in fails: print("  falha:", *f)
-    print("pesos finais (padronizados):", {n: round(float(v), 2) for n, v in zip(FEATS, fit(X, y)[2])})
+    Xf = np.c_[X, src_feat(src_stats(src, y), src, y)] if use else X
+    print("pesos finais (padronizados):", {n: round(float(v), 2) for n, v in zip(FEATS + (["fonte"] if use else []), fit(Xf, y)[2])})
 
 
 if __name__ == "__main__":
