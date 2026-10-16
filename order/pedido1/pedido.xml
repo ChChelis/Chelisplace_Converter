@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+  <details>
+    <quantity>69</quantity>
+    <bracket>72</bracket>
+    <stock>(S30) Standard Smooth</stock>
+    <foil>false</foil>
+  </details>
+  <fronts>
+    <card>
+      <id>1dOgPk3mqj5sBp16FhuW71GZfUKho69Kl</id>
+      <slots>0</slots>
+      <name>Dack Fayden, Helping Hand.png</name>
+      <query>dack fayden, helping hand</query>
+    </card>
+    <card>
+      <id>1Gn2Fs02D19Hz3b1Rm5jpqCvi97IMdiQE</id>
+      <slots>1</slots>
+      <name>All-Fates Stalker.jpg</name>
+      <query>all-fates stalker</query>
+    </card>
+    <card>
+      <id>1M1e4Z_woGfiJ70vNnFfpx-6hKv2vkI1R</id>
+      <slots>2</slots>
+      <name>Ancient Den (Normal) [C21] {276}.jpg</name>
+      <query>ancient den</query>
+    </card>
+    <card>
+      <id>1zfc4BxA7Zjo8yfgknM24EEt3tMgUq7j6</id>
+      <slots>3</slots>
+      <name>Basalt Monolith (Normal) [LTC] {274}.jpg</name>
+      <query>basalt monolith</query>
+    </card>
+    <card>
+      <id>1L_VgRw1V9QJOLYxPh3KfhOqSb8X_ELXZ</id>
+      <slots>4</slots>
+      <name>Bilbo's Gambit.jpg</name>
+      <query>bilbo's gambit</query>
+    </card>
+    <card>
+      <id>189059U8XYrfuQQ0zpdJHt8VAUDsxgVgl</id>
+      <slots>5</slots>
+      <name>Blind Obedience.jpg</name>
+      <query>blind obedience</query>
+    </card>
+    <card>
+      <id>1tHlu9ONv5Cs3vH-YFTh5O8klLBOgIlSq</id>
+      <slots>6</slots>
+      <name>Brainstone.png</name>
+      <query>brainstone</query>
+    </card>
+    <card>
+      <id>19CdfHZdYy1yIPVLU93AaSTilQyoYu7SA</id>
+      <slots>7</slots>
+      <name>Bucknard_s Everfull Purse.png</name>
+      <query>bucknard's everfull purse</query>
+    </card>
+    <card>
+      <id>18LX_JQ2mv-tgs1jOwaMFktzhnJ3JMdDe</id>
+      <slots>8</slots>
+      <name>Calamity's Wake (Slawomir Maniak).png</name>
+      <query>calamity's wake</query>
+    </card>
+    <card>
+      <id>1-93Dz-Sg_YGBIIKr5cWmHZYjxK0O2Vt1</id>
+      <slots>9</slots>
+      <name>Charitable Levy.jpg</name>
+      <query>charitable levy</query>
+    </card>
+    <card>
+      <id>1WWFyltMnfBiu-P0LwlJKbG0Z68t3lCXB</id>
+      <slots>10</slots>
+      <name>Coalition Relic (Donato Giancola).jpg</name>
+      <query>coalition relic</query>
+    </card>
+    <card>
+      <id>1Ojap7Jsd-G6KAkdCxL62aHdrfCKQg9xf</id>
+      <slots>11</slots>
+      <name>Command Beacon (Borderless Jonas De Ro).jpg</name>
+      <query>command beacon</query>
+    </card>
+    <card>
+      <id>19jCd9PVW7gyrns0uTBIp7QUHythLBj5V</id>
+      <slots>12</slots>
+      <name>Component Pouch.png</name>
+      <query>component pouch</query>
+    </card>
+    <card>
+      <id>1yUVKvHcgshx_8-Ott75ycqyll6rybrjz</id>
+      <slots>13</slots>
+      <name>Cursed Totem (Aaron Miller).png</name>
+      <query>cursed totem</query>
+    </card>
+    <card>
+      <id>1I7ab03oc_tajQN9AKqUl91IulLAuUa7S</id>
+      <slots>14</slots>
+      <name>Defense Grid (Retro Schematic).png</name>
+      <query>defense grid</query>
+    </card>
+    <card>
+      <id>1-IBc8tk-hMf9c7Ei6ZSEGguJclu_tReM</id>
+      <slots>15</slots>
+      <name>Eldrazi Confluence (Normal) [M3C] {32}.jpg</name>
+      <query>eldrazi confluence</query>
+    </card>
+    <card>
+      <id>1P_BY07bQRgvvSyYlDdbOGia6k8hAMFOw</id>
+      <slots>16</slots>
+      <name>Emergence Zone.png</name>
+      <query>emergence zone</query>
+    </card>
+    <card>
+      <id>1ErbSem1U4GqyUSmUNybgyx1hM9IialJk</id>
+      <slots>17</slots>
+      <name>Emeria's Call (Normal) [ZNR] {12}.jpg</name>
+      <query>emeria's call</query>
+    </card>
+    <card>
+      <id>192TSvuqdOu6e4alR-iHCSNiB3TAaxiNh</id>
+      <slots>18</slots>
+      <name>Expedition Map (LCC Borderless).png</name>
+      <query>expedition map</query>
+    </card>
+    <card>
+      <id>1lUnLSLtwCtPKLssBMMCY3u8Tkd0mB8_J</id>
+      <slots>19</slots>
+      <name>Felidar Guardian (Borderless Jakub Kasper).jpg</name>
+      <query>felidar guardian</query>
+    </card>
+    <card>
+      <id>15ecbr3FZyxYTbmkTE4GSK5BpTcId71cp</id>
+      <slots>20</slots>
+      <name>Fiend Hunter.jpg</name>
+      <query>fiend hunter</query>
+    </card>
+    <card>
+      <id>1-1Ojjd8kyWTxi9wliwogR3a56jMmkYtU</id>
+      <slots>21</slots>
+      <name>Flicker of Fate.png</name>
+      <query>flicker of fate</query>
+    </card>
+    <card>
+      <id>1YXgsIDQs9jQUSaA3eijUJ3nivrKSGw26</id>
+      <slots>22</slots>
+      <name>Flickerwisp (Borderless Thomas M. Baxa).jpg</name>
+      <query>flickerwisp</query>
+    </card>
+    <card>
+      <id>1SWGHcAOMJ_j_Ih8S4jw4dBYu6JPfkSqG</id>
+      <slots>23</slots>
+      <name>Gleaming Splendor [HOB] {275}.jpg</name>
+      <query>gleaming splendor</query>
+    </card>
+    <card>
+      <id>16ALndG21Cn6tPY2wG3XfA47D6xSqj1pd</id>
+      <slots>24</slots>
+      <name>Icewind Stalwart (Normal) [CLB] {27}.jpg</name>
+      <query>icewind stalwart</query>
+    </card>
+    <card>
+      <id>17Yyzz14TeGh1VTiL6NMxAjVl3KF0SaB4</id>
+      <slots>25</slots>
+      <name>Jeweled Amulet (Extended Dan Frazier).jpg</name>
+      <query>jeweled amulet</query>
+    </card>
+    <card>
+      <id>1F4qMEiqwezyJ1QfpoLp665Hczi5oKqJA</id>
+      <slots>26</slots>
+      <name>Loyal Tutor (Darren Tan) [FRA] {14}.jpeg</name>
+      <query>loyal tutor</query>
+    </card>
+    <card>
+      <id>1mpask1TTAcNLNksNxruxYrAZV1SYfGk9</id>
+      <slots>27</slots>
+      <name>Mana Tithe.png</name>
+      <query>mana tithe</query>
+    </card>
+    <card>
+      <id>1rA3ceWYy6VP5ym_FhtVy1OjxupUEstkN</id>
+      <slots>28</slots>
+      <name>March of Otherworldly Light.jpeg</name>
+      <query>march of otherworldly light</query>
+    </card>
+    <card>
+      <id>19Nu9mhtLSLYRh02I0XqFjpxXRSffBZUF</id>
+      <slots>29</slots>
+      <name>Orim's Chant (Borderless Olena Richards).jpg</name>
+      <query>orim's chant</query>
+    </card>
+    <card>
+      <id>1ECtsbfPA2WQ-CGRsadicyc7WmR6h6Jg_</id>
+      <slots>30</slots>
+      <name>Paladin Class.png</name>
+      <query>paladin class</query>
+    </card>
+    <card>
+      <id>1wtHzFP_4e1RYE-k4WwVqCrvGTBfxrdwg</id>
+      <slots>31</slots>
+      <name>Pearl Medallion (Ancient Sue Ellen Brown).jpg</name>
+      <query>pearl medallion</query>
+    </card>
+    <card>
+      <id>1Ggf_1p51wSo8WbLwujc5kbEzxI1tvgXH</id>
+      <slots>32</slots>
+      <name>Petrified Hamlet.jpg</name>
+      <query>petrified hamlet</query>
+    </card>
+    <card>
+      <id>1ie0JVseS2z811d1o5WhzpozeDAzTmWez</id>
+      <slots>33</slots>
+      <name>Portable Hole (Golden Age 2 John Stanko).jpg</name>
+      <query>portable hole</query>
+    </card>
+    <card>
+      <id>1m0KskefO55etUttPSeeWUFpkeY1k4wLa</id>
+      <slots>34</slots>
+      <name>Preston, the Vanisher (Christina Kraus).png</name>
+      <query>preston, the vanisher</query>
+    </card>
+    <card>
+      <id>19vOAdA1M70teJ66qLdD21Did0etEA8pd</id>
+      <slots>35</slots>
+      <name>Radiant Solar (Normal) [AFC] {9}.jpg</name>
+      <query>radiant solar</query>
+    </card>
+    <card>
+      <id>1aYg7vfXdf5izYH2sU9SPIWo0QV5xK9l9</id>
+      <slots>36</slots>
+      <name>Remote Farm.png</name>
+      <query>remote farm</query>
+    </card>
+    <card>
+      <id>1zsPlIBep1fncKETz-0VRubyN-FWnfqr0</id>
+      <slots>37</slots>
+      <name>Reprieve (Mystical Archive).jpg</name>
+      <query>reprieve</query>
+    </card>
+    <card>
+      <id>1t0gS7kVzFof9iFoPwTAv6d222hlnjxzv</id>
+      <slots>38</slots>
+      <name>Reverent Mantra.png</name>
+      <query>reverent mantra</query>
+    </card>
+    <card>
+      <id>1iMqNku3jYS7R-g-2rDSzyLGiI75PVa5v</id>
+      <slots>39</slots>
+      <name>Ruins of Trokair.png</name>
+      <query>ruins of trokair</query>
+    </card>
+    <card>
+      <id>1zfh7M6QMG3YFXAZQlsZSsOORjsPIqeUe</id>
+      <slots>40</slots>
+      <name>Rule of Law.png</name>
+      <query>rule of law</query>
+    </card>
+    <card>
+      <id>17J5Ddgc_Ojg7cX_hPfeJDQj-CL1RWFR2</id>
+      <slots>41</slots>
+      <name>Scorched Ruins.png</name>
+      <query>scorched ruins</query>
+    </card>
+    <card>
+      <id>1ABnZub1yKmKldyLB7IIfZFuedtxfHSIh</id>
+      <slots>42</slots>
+      <name>Serum Powder.png</name>
+      <query>serum powder</query>
+    </card>
+    <card>
+      <id>1ZkGtX05mR2IdxczV2urv4xzf4JQpoYxV</id>
+      <slots>43</slots>
+      <name>Slip On the Ring.jpg</name>
+      <query>slip on the ring</query>
+    </card>
+    <card>
+      <id>16Y-cU7kJSYjmKdYji9WkBNKBtk9WTlh4</id>
+      <slots>44,45,46,47,48,49,50,51,52,53,54,55</slots>
+      <name>Snow-Covered Plains (SLD 1473).jpg</name>
+      <query>snow-covered plains</query>
+    </card>
+    <card>
+      <id>1WP2pAfeHAgEQpC72zwcLJOI6Z4Rx1Mrl</id>
+      <slots>56</slots>
+      <name>Soul Partition (Kekai Kotaki).png</name>
+      <query>soul partition</query>
+    </card>
+    <card>
+      <id>149PJHn2smJH0txSZdf0a4Mj7o3bhKeRR</id>
+      <slots>57</slots>
+      <name>Sunscour.png</name>
+      <query>sunscour</query>
+    </card>
+    <card>
+      <id>17Kroez-VJ9au94YbcHpABwEk0ZHd_UN7</id>
+      <slots>58</slots>
+      <name>Tezzeret, Cruel Captain.jpg</name>
+      <query>tezzeret, cruel captain</query>
+    </card>
+    <card>
+      <id>1atEfSzj7c_UUJxj0HmafFIxR2IgLDMWJ</id>
+      <slots>59</slots>
+      <name>The Mind Stone (21).jpg</name>
+      <query>the mind stone</query>
+    </card>
+    <card>
+      <id>1_VchFY4olM_InpzzI6GYy-3bbIKzYfdg</id>
+      <slots>60</slots>
+      <name>The Mycosynth Gardens.jpg</name>
+      <query>the mycosynth gardens</query>
+    </card>
+    <card>
+      <id>1YSzY1SvEi0KUZp_YtyX8HDfqzFw5VEd6</id>
+      <slots>61</slots>
+      <name>Thorn of Amethyst (Classic Chuck Lukacs).jpg</name>
+      <query>thorn of amethyst</query>
+    </card>
+    <card>
+      <id>1n_D_jUkts05co9aBfM4p81I1SvAplHey</id>
+      <slots>62</slots>
+      <name>Thran Dynamo.png</name>
+      <query>thran dynamo</query>
+    </card>
+    <card>
+      <id>10ClPbKpHSB4Nvf3Ui6mbsQfm-rpMdIX_</id>
+      <slots>63</slots>
+      <name>Tooth of Ramos (Ancient David Martin).jpg</name>
+      <query>tooth of ramos</query>
+    </card>
+    <card>
+      <id>1taUEKY5p32TBACNs4hUJ6736Cy3xAVag</id>
+      <slots>64</slots>
+      <name>Trinisphere.png</name>
+      <query>trinisphere</query>
+    </card>
+    <card>
+      <id>1sX_IrQmjtD1NLPOHeBRcb1Nuc4MqrvbK</id>
+      <slots>65</slots>
+      <name>Untaidake, the Cloud Keeper.jpg</name>
+      <query>untaidake, the cloud keeper</query>
+    </card>
+    <card>
+      <id>12A2JZA5bttLE-4cIHMJk_nj8Ljh1GZMs</id>
+      <slots>66</slots>
+      <name>Vanquish the Horde.jpg</name>
+      <query>vanquish the horde</query>
+    </card>
+    <card>
+      <id>1nnbNkArhJlQcfYc_IDGIT1rPWYwRF8EX</id>
+      <slots>67</slots>
+      <name>Void Mirror [MH2] {473}.png</name>
+      <query>void mirror</query>
+    </card>
+    <card>
+      <id>1Ysu0pAnsmuGXJGwOu7Dg0qLUsSObCedn</id>
+      <slots>68</slots>
+      <name>Worn Powerstone [LCC] {120}.jpg</name>
+      <query>worn powerstone</query>
+    </card>
+  </fronts>
+  <backs>
+    <card>
+      <id>1XDeG-JenAy0LeIXXOVUclzhZNwos9jMJ</id>
+      <slots>17</slots>
+      <name>Emeria, Shattered Skyclave (Normal) [ZNR] {12}.jpg</name>
+      <query>emeria, shattered skyclave</query>
+    </card>
+  </backs>
+  <cardback>16g2UamJ2jzwNHovLesvsinvd6_qPkZfy</cardback>
+</order>

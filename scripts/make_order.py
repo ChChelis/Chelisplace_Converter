@@ -109,10 +109,10 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log):
     rows.sort(key=lambda r: -r[0])
     best = rows[0][0]
     conf = "alta" if best >= HI else "media" if best >= MID else "baixa" if best >= LO else "nenhum"
-    accept = [1] if conf != "nenhum" else []
-    if is_sld and best < HI:  # regra do usuário: arte de Secret Lair tem que ser exata; senão, alerta
-        accept, conf = [], "nenhum"
-    note = ("ALERTA: Secret Lair com arte específica sem match seguro. Falar com o cliente: não tem, serve outra? " if is_sld and best < HI else "") + \
+    accept = [1]  # regra do usuário (pedido 1): nunca deixar a carta de fora, pré-seleciona a mais próxima e avisa
+    if is_sld and best < HI:  # arte de Secret Lair tem que ser exata; senão, alerta para falar com o cliente
+        conf = "nenhum"
+    note = ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if conf == "nenhum" else "") + \
         f"melhor nota {best:.2f}: " + explain(rows[0][2])
     return {"id": uid, "name": name, "refp": refp,
             "cands": [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "sc": round(s, 2), "why": explain(f)} for i, (s, c, f) in enumerate(rows)],

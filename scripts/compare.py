@@ -106,6 +106,15 @@ def pairs():
     for k in sorted(g):
         meta = json.load(open(os.path.join(TS, k, "candidates.json")))
         yield k, g[k], meta["candidates"], os.path.join(TS, k, "ref.jpg")
+    od = os.path.join(ROOT, "order")  # pedidos conferidos: cada carta vira um par rotulado por id
+    for name in sorted(os.listdir(od)) if os.path.isdir(od) else []:
+        gp = os.path.join(od, name, "gabarito.json")
+        if not os.path.exists(gp):
+            continue
+        og = json.load(open(gp))
+        for k in sorted(og):
+            u = json.load(open(os.path.join(od, name, "units", k + ".json")))
+            yield k, {**og[k], "accept": []}, u["cands"], os.path.join(CACHE, f"sf_{k}.jpg")
 
 
 _ocr = None
@@ -140,14 +149,14 @@ def dataset():
     X, y, grp, idx = [], [], [], []
     for k, g, cands, refp in pairs():
         ref, rtok = load(refp), tokens(footer_text("ref_" + k))
-        acc = set(g["accept"])
+        acc, ids = set(g["accept"]), set(g.get("accept_ids", []))
         for c in cands:
             try:
                 im = load(os.path.join(CACHE, f"mpc_{c['id']}.jpg"))
             except Exception:
                 continue
             X.append(features(ref, rtok, im, tokens(footer_text(c["id"]))))
-            y.append(1.0 if c["n"] in acc else 0.0)
+            y.append(1.0 if (c["n"] in acc or c["id"] in ids) else 0.0)
             grp.append(k); idx.append(c["n"])
     return np.array(X), np.array(y), grp, idx
 
@@ -193,7 +202,7 @@ def pick_threshold(rows):
 
 def cmd_eval():
     X, y, grp, idx = dataset()
-    g = json.load(open(os.path.join(TS, "gabarito.json")))
+    g = {k: gg for k, gg, _, _ in pairs()}
     grp = np.array(grp); idx = np.array(idx); keys = sorted(set(grp))
     print("amostras:", len(y), "| positivos:", int(y.sum()), "| pares:", len(keys))
     res = {"baseline": [0, 0, 0, 0], "fit": [0, 0, 0, 0]}; fails = []
@@ -207,7 +216,7 @@ def cmd_eval():
             r = res[mode]
             if g[k]["status"] == "ok":
                 r[1] += 1; good = bool(y[te][i]) and passed; r[0] += good
-                if mode == "fit" and not good: fails.append((k, "esperava %s" % g[k]["accept"], "escolheu #%d%s" % (idx[te][i], "" if passed else " (abaixo do limiar: alerta)")))
+                if mode == "fit" and not good: fails.append((k, "esperava %s" % (g[k]["accept"] or "ids " + ",".join(i[:6] for i in g[k].get("accept_ids", []))), "escolheu #%d%s" % (idx[te][i], "" if passed else " (abaixo do limiar: alerta)")))
             else:
                 r[3] += 1; good = (not passed) and mode == "fit"; r[2] += good
                 if mode == "fit" and not good: fails.append((k, "esperava nenhum", "escolheu #%d (nota %.2f >= %.2f)" % (idx[te][i], s[i], T)))

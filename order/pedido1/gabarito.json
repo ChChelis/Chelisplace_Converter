@@ -1,0 +1,533 @@
+{
+ "000_frc_4_dack-fayden-helping-hand": {
+  "status": "ok",
+  "accept_ids": [
+   "1dOgPk3mqj5sBp16FhuW71GZfUKho69Kl"
+  ],
+  "note": "Questão de gosto apenas, não leve isso em consideração",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:15.046Z"
+ },
+ "001_eoe_3_all-fates-stalker": {
+  "status": "ok",
+  "accept_ids": [
+   "1Gn2Fs02D19Hz3b1Rm5jpqCvi97IMdiQE"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:15.132Z"
+ },
+ "002_c21_276_ancient-den": {
+  "status": "ok",
+  "accept_ids": [
+   "1M1e4Z_woGfiJ70vNnFfpx-6hKv2vkI1R"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:17.646Z"
+ },
+ "003_ltc_274_basalt-monolith": {
+  "status": "ok",
+  "accept_ids": [
+   "1zfc4BxA7Zjo8yfgknM24EEt3tMgUq7j6"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:19.132Z"
+ },
+ "004_hob_5_bilbo-s-gambit": {
+  "status": "ok",
+  "accept_ids": [
+   "1L_VgRw1V9QJOLYxPh3KfhOqSb8X_ELXZ"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:20.612Z"
+ },
+ "005_wot_1_blind-obedience": {
+  "status": "ok",
+  "accept_ids": [
+   "189059U8XYrfuQQ0zpdJHt8VAUDsxgVgl"
+  ],
+  "note": "Simplesmente não tem a versão, escolhi a melhor",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:50:51.856Z"
+ },
+ "006_mh2_223_brainstone": {
+  "status": "ok",
+  "accept_ids": [
+   "1tHlu9ONv5Cs3vH-YFTh5O8klLBOgIlSq"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:22.300Z"
+ },
+ "007_afc_57_bucknard-s-everfull-purse": {
+  "status": "ok",
+  "accept_ids": [
+   "19CdfHZdYy1yIPVLU93AaSTilQyoYu7SA"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:25.188Z"
+ },
+ "008_bro_4_calamity-s-wake": {
+  "status": "ok",
+  "accept_ids": [
+   "18LX_JQ2mv-tgs1jOwaMFktzhnJ3JMdDe"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:27.364Z"
+ },
+ "009_mh3_21_charitable-levy": {
+  "status": "ok",
+  "accept_ids": [
+   "1-93Dz-Sg_YGBIIKr5cWmHZYjxK0O2Vt1"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:28.884Z"
+ },
+ "010_m3c_286_coalition-relic": {
+  "status": "ok",
+  "accept_ids": [
+   "1WWFyltMnfBiu-P0LwlJKbG0Z68t3lCXB"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:46:39.421Z"
+ },
+ "011_sld_1533_command-beacon": {
+  "status": "ok",
+  "accept_ids": [
+   "1Ojap7Jsd-G6KAkdCxL62aHdrfCKQg9xf"
+  ],
+  "note": "Simplesmente não tem a versão, escolhi a melhor",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:51:05.759Z"
+ },
+ "012_afc_59_component-pouch": {
+  "status": "ok",
+  "accept_ids": [
+   "19jCd9PVW7gyrns0uTBIp7QUHythLBj5V"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:30.306Z"
+ },
+ "013_mh2_295_cursed-totem": {
+  "status": "ok",
+  "accept_ids": [
+   "1yUVKvHcgshx_8-Ott75ycqyll6rybrjz"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:32.272Z"
+ },
+ "014_brr_76_defense-grid": {
+  "status": "ok",
+  "accept_ids": [
+   "1I7ab03oc_tajQN9AKqUl91IulLAuUa7S"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-16T13:49:23.766Z"
+ },
+ "015_m3c_32_eldrazi-confluence": {
+  "status": "ok",
+  "accept_ids": [
+   "1-IBc8tk-hMf9c7Ei6ZSEGguJclu_tReM"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:33.408Z"
+ },
+ "016_war_245_emergence-zone": {
+  "status": "ok",
+  "accept_ids": [
+   "1P_BY07bQRgvvSyYlDdbOGia6k8hAMFOw"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:35.428Z"
+ },
+ "017_znr_12_emeria-s-call": {
+  "status": "ok",
+  "accept_ids": [
+   "1ErbSem1U4GqyUSmUNybgyx1hM9IialJk"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:37.056Z"
+ },
+ "017_znr_12_emeria-shattered-skyclave": {
+  "status": "ok",
+  "accept_ids": [
+   "1XDeG-JenAy0LeIXXOVUclzhZNwos9jMJ"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:39.554Z"
+ },
+ "018_lcc_112_expedition-map": {
+  "status": "ok",
+  "accept_ids": [
+   "192TSvuqdOu6e4alR-iHCSNiB3TAaxiNh"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:46:40.622Z"
+ },
+ "019_sld_1487_felidar-guardian": {
+  "status": "ok",
+  "accept_ids": [
+   "1lUnLSLtwCtPKLssBMMCY3u8Tkd0mB8_J"
+  ],
+  "note": "Simplesmente não tem a versão, escolhi a melhor",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:51:14.206Z"
+ },
+ "020_sld_7137_fiend-hunter": {
+  "status": "ok",
+  "accept_ids": [
+   "15ecbr3FZyxYTbmkTE4GSK5BpTcId71cp"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:51:14.316Z"
+ },
+ "021_thb_16_flicker-of-fate": {
+  "status": "ok",
+  "accept_ids": [
+   "1-1Ojjd8kyWTxi9wliwogR3a56jMmkYtU"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:41.394Z"
+ },
+ "022_2x2_339_flickerwisp": {
+  "status": "ok",
+  "accept_ids": [
+   "1YXgsIDQs9jQUSaA3eijUJ3nivrKSGw26"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-16T13:49:29.362Z"
+ },
+ "023_hob_239_gleaming-splendor": {
+  "status": "ok",
+  "accept_ids": [
+   "1SWGHcAOMJ_j_Ih8S4jw4dBYu6JPfkSqG"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:48.478Z"
+ },
+ "024_clb_27_icewind-stalwart": {
+  "status": "ok",
+  "accept_ids": [
+   "16ALndG21Cn6tPY2wG3XfA47D6xSqj1pd"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:50.415Z"
+ },
+ "025_mbc_75_jeweled-amulet": {
+  "status": "ok",
+  "accept_ids": [
+   "17Yyzz14TeGh1VTiL6NMxAjVl3KF0SaB4"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:51:29.434Z"
+ },
+ "026_fra_14_loyal-tutor": {
+  "status": "ok",
+  "accept_ids": [
+   "1F4qMEiqwezyJ1QfpoLp665Hczi5oKqJA"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:51.868Z"
+ },
+ "027_plst_PLC-25_mana-tithe": {
+  "status": "ok",
+  "accept_ids": [
+   "1mpask1TTAcNLNksNxruxYrAZV1SYfGk9"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-16T13:49:34.564Z"
+ },
+ "028_neo_369_march-of-otherworldly-light": {
+  "status": "ok",
+  "accept_ids": [
+   "1rA3ceWYy6VP5ym_FhtVy1OjxupUEstkN"
+  ],
+  "note": "Escolhi a original na falta da escolhida",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:51:57.749Z"
+ },
+ "029_mh3_323_orim-s-chant": {
+  "status": "ok",
+  "accept_ids": [
+   "19Nu9mhtLSLYRh02I0XqFjpxXRSffBZUF"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:53.357Z"
+ },
+ "030_afr_29_paladin-class": {
+  "status": "ok",
+  "accept_ids": [
+   "1ECtsbfPA2WQ-CGRsadicyc7WmR6h6Jg_"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:54.692Z"
+ },
+ "031_plst_TMP-300_pearl-medallion": {
+  "status": "ok",
+  "accept_ids": [
+   "1wtHzFP_4e1RYE-k4WwVqCrvGTBfxrdwg"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:55.879Z"
+ },
+ "032_sos_259_petrified-hamlet": {
+  "status": "ok",
+  "accept_ids": [
+   "1Ggf_1p51wSo8WbLwujc5kbEzxI1tvgXH"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:45:57.085Z"
+ },
+ "033_afr_398_portable-hole": {
+  "status": "ok",
+  "accept_ids": [
+   "1ie0JVseS2z811d1o5WhzpozeDAzTmWez"
+  ],
+  "note": "A imagem como você sabe é diferente, vou aceitar por necessidade e porque de fato é a mais parecida com o escolhido pelo cliente",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:47:13.372Z"
+ },
+ "034_j22_8_preston-the-vanisher": {
+  "status": "ok",
+  "accept_ids": [
+   "1m0KskefO55etUttPSeeWUFpkeY1k4wLa"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:00.037Z"
+ },
+ "035_afc_9_radiant-solar": {
+  "status": "ok",
+  "accept_ids": [
+   "19vOAdA1M70teJ66qLdD21Did0etEA8pd"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:08.821Z"
+ },
+ "036_mmq_323_remote-farm": {
+  "status": "ok",
+  "accept_ids": [
+   "1aYg7vfXdf5izYH2sU9SPIWo0QV5xK9l9"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:47:14.783Z"
+ },
+ "037_soa_9_reprieve": {
+  "status": "ok",
+  "accept_ids": [
+   "1zsPlIBep1fncKETz-0VRubyN-FWnfqr0"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:09.938Z"
+ },
+ "038_mmq_44_reverent-mantra": {
+  "status": "ok",
+  "accept_ids": [
+   "1t0gS7kVzFof9iFoPwTAv6d222hlnjxzv"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:47:16.077Z"
+ },
+ "039_6ed_327_ruins-of-trokair": {
+  "status": "ok",
+  "accept_ids": [
+   "1iMqNku3jYS7R-g-2rDSzyLGiI75PVa5v"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:47:17.944Z"
+ },
+ "040_m20_35_rule-of-law": {
+  "status": "ok",
+  "accept_ids": [
+   "1zfh7M6QMG3YFXAZQlsZSsOORjsPIqeUe"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:11.474Z"
+ },
+ "041_wth_166_scorched-ruins": {
+  "status": "ok",
+  "accept_ids": [
+   "17J5Ddgc_Ojg7cX_hPfeJDQj-CL1RWFR2"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:13.050Z"
+ },
+ "042_mb2_142_serum-powder": {
+  "status": "ok",
+  "accept_ids": [
+   "1ABnZub1yKmKldyLB7IIfZFuedtxfHSIh"
+  ],
+  "note": "Troquei a sugestão porque, apesar de não ter mesmo o frame do cliente e já ter que ser outro, o que eu escolhi tem um set symbol que existe",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-16T13:50:14.284Z"
+ },
+ "043_ltr_31_slip-on-the-ring": {
+  "status": "ok",
+  "accept_ids": [
+   "1ZkGtX05mR2IdxczV2urv4xzf4JQpoYxV"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:15.615Z"
+ },
+ "044_sld_1473_snow-covered-plains": {
+  "status": "ok",
+  "accept_ids": [
+   "16Y-cU7kJSYjmKdYji9WkBNKBtk9WTlh4"
+  ],
+  "note": "Aqui em exceção à minha regra escolhi o mais igual sem ser o set symbol, não escolha fazer isso com frequencia",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-16T13:52:24.646Z"
+ },
+ "045_pbro_26p_soul-partition": {
+  "status": "ok",
+  "accept_ids": [
+   "1WP2pAfeHAgEQpC72zwcLJOI6Z4Rx1Mrl"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:17.263Z"
+ },
+ "046_csp_19_sunscour": {
+  "status": "ok",
+  "accept_ids": [
+   "149PJHn2smJH0txSZdf0a4Mj7o3bhKeRR"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:18.762Z"
+ },
+ "047_eoe_287_tezzeret-cruel-captain": {
+  "status": "ok",
+  "accept_ids": [
+   "17Kroez-VJ9au94YbcHpABwEk0ZHd_UN7"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:21.373Z"
+ },
+ "048_msh_21_the-mind-stone": {
+  "status": "ok",
+  "accept_ids": [
+   "1atEfSzj7c_UUJxj0HmafFIxR2IgLDMWJ"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:23.077Z"
+ },
+ "049_eoc_168_the-mycosynth-gardens": {
+  "status": "ok",
+  "accept_ids": [
+   "1_VchFY4olM_InpzzI6GYy-3bbIKzYfdg"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:25.245Z"
+ },
+ "050_brr_60_thorn-of-amethyst": {
+  "status": "ok",
+  "accept_ids": [
+   "1YSzY1SvEi0KUZp_YtyX8HDfqzFw5VEd6"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-16T13:50:14.361Z"
+ },
+ "051_cmm_658_thran-dynamo": {
+  "status": "ok",
+  "accept_ids": [
+   "1n_D_jUkts05co9aBfM4p81I1SvAplHey"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:26.841Z"
+ },
+ "052_mmq_313_tooth-of-ramos": {
+  "status": "ok",
+  "accept_ids": [
+   "10ClPbKpHSB4Nvf3Ui6mbsQfm-rpMdIX_"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:47:19.044Z"
+ },
+ "053_mps_52_trinisphere": {
+  "status": "ok",
+  "accept_ids": [
+   "1taUEKY5p32TBACNs4hUJ6736Cy3xAVag"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:28.308Z"
+ },
+ "054_chk_285_untaidake-the-cloud-keeper": {
+  "status": "ok",
+  "accept_ids": [
+   "1sX_IrQmjtD1NLPOHeBRcb1Nuc4MqrvbK"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-16T13:47:20.442Z"
+ },
+ "055_tdc_91_vanquish-the-horde": {
+  "status": "ok",
+  "accept_ids": [
+   "12A2JZA5bttLE-4cIHMJk_nj8Ljh1GZMs"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:30.448Z"
+ },
+ "056_mh2_435_void-mirror": {
+  "status": "ok",
+  "accept_ids": [
+   "1nnbNkArhJlQcfYc_IDGIT1rPWYwRF8EX"
+  ],
+  "note": "As cores do que escolhi estão melhores, só isso",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-16T13:50:36.786Z"
+ },
+ "057_lcc_120_worn-powerstone": {
+  "status": "ok",
+  "accept_ids": [
+   "1Ysu0pAnsmuGXJGwOu7Dg0qLUsSObCedn"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-16T13:46:32.237Z"
+ }
+}
