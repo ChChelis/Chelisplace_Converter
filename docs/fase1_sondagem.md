@@ -42,3 +42,17 @@ O `<id>` é o ID do Google Drive, que aparece igual ao do `id=` da thumbnail. **
 - **Corte de 100 candidatos** no gerador de folhas perde artes em cartas populares (Sol Ring tem 719). Para o bot real, baixar todos.
 - Marcador de Universes Beyond (triângulo) diferencia impressões que têm o mesmo rodapé.
 - `testset/pairs.json`: propostas do Claude, **ainda não conferidas pelo usuário**. Não usar para ajustar pesos antes da conferência.
+
+## Comparador v0 (2026-10-16)
+`scripts/compare.py` (precisa do venv com rapidocr): oito sinais por candidato (carta inteira, arte, moldura por perfil vertical, borda, rodapé por OCR, rodapé ausente, idioma, símbolo do set por correlação). Pesos por regressão logística no `testset/gabarito.json`, avaliado deixando um par de fora por vez.
+
+| | pré-filtro grosso | v0 |
+|---|---|---|
+| pares com certo acertados (26) | 12 | 15 |
+| "nenhum" reconhecido (9) | n/a | 7 |
+
+Sinais que mais separam certo de errado (pares onde o certo pontua mais): carta inteira 25/26, arte 24/26, símbolo do set 23/26, moldura 20/26, idioma 19/26. A borda branca/preta ficou perto do acaso (13/26) e precisa ser refeita.
+
+Trade-off de confiança (leave-one-out): com limiar alto o bot escolhe sozinho 13 de 35 com 1 erro; com limiar baixo escolhe 26 com 11 erros. Ainda não serve para decidir calado.
+
+Limites: só 35 pares; só os 16 candidatos mais parecidos por par (pré-filtro grosso); nenhuma regra de preferência do usuário aplicada (`docs/regras_de_decisao.md`).
