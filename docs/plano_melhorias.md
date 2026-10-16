@@ -21,3 +21,7 @@ No pedido real, com o modelo treinado só no teste: alta confiança 36/38, médi
 ## Resultado do item 1 (corte da sangria)
 Leave-one-out em 94 pares (85 com certo): pré-filtro grosso (só carta inteira) 39 -> 58; comparador completo 58 -> 59.
 A maior parte do ganho dos sinais extras era compensar imagens desalinhadas. O que sobra nos erros é preferência (uploader, moldura entre variantes parecidas), não medida de imagem.
+
+## Resultado do item 2 (uploader aprendido): NÃO ajudou
+Leave-one-out: 59/85 sem a feature de fonte, 54/85 com ela. Poucos pares por uploader: vira ruído. Removido.
+A lista de uploaders do PC de casa entra como configuração fixa (preferência/exclusão), não como algo aprendido, quando o usuário subir.
