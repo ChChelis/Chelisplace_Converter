@@ -89,7 +89,16 @@ def footer_text(key):
     return open(p, encoding="utf-8").read() if os.path.exists(p) else ""
 
 
+def unbleed(im):
+    """Candidatas com proporção ~0,735 trazem sangria (3 mm): corta para a proporção da carta (~0,718) antes de medir."""
+    w, h = im.size
+    if w / h >= 0.728:
+        return im.crop((int(w * .0441), int(h * .0324), w - int(w * .0441), h - int(h * .0324)))
+    return im
+
+
 def features(ref, rtok, cand, ctok):
+    cand = unbleed(cand)
     a, b = small(ref), small(cand)
     inteira = 1 - float(np.abs(a - b).mean())
     arte = 1 - float(np.abs(a[9:48, 5:59] - b[9:48, 5:59]).mean())
