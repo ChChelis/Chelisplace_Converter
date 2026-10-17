@@ -18,6 +18,7 @@ CACHE = os.path.join(ROOT, "cache")
 MPC = "https://mpcfill.com"
 UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)"}
 TOP = 12            # finalistas por carta (recebem OCR e aparecem na página)
+TOP2 = 30           # finalistas das cartas de nota baixa (segunda passada)
 CAP = 400           # máximo de candidatos lidos por busca
 HI, MID, LO = 1.7, 0.9, 0.1   # limiares de nota (tabela leave-one-out em docs/fase1_sondagem.md)
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
@@ -80,7 +81,27 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:30]
 
 
-def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log):
+def memory():
+    """Escolhas já confirmadas pelo usuário: (set, número, face) -> ids aceitos, em ordem de preferência."""
+    mem = {}
+    tg = os.path.join(ROOT, "testset", "gabarito.json")
+    for k, v in (json.load(open(tg)) if os.path.exists(tg) else {}).items():
+        if v["status"] == "ok" and v.get("accept_ids"):
+            r = json.load(open(os.path.join(ROOT, "testset", k, "candidates.json")))["ref"]
+            mem[(r["set"].lower(), str(r["cn"]).lower(), 0)] = v["accept_ids"]
+    od = os.path.join(ROOT, "order")
+    for name in sorted(os.listdir(od)) if os.path.isdir(od) else []:
+        gp = os.path.join(od, name, "gabarito.json")
+        if not os.path.exists(gp):
+            continue
+        for uid, v in json.load(open(gp)).items():
+            if v["status"] == "ok" and v.get("accept_ids"):
+                u = json.load(open(os.path.join(od, name, "units", uid + ".json")))
+                mem[(u["set"].lower(), str(u["cn"]).lower(), u["face"])] = v["accept_ids"]  # pedido mais recente vence
+    return mem
+
+
+def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=()):
     refp = os.path.join(CACHE, f"sf_{uid}.jpg")
     if not fetch_img(ref_url, refp):
         raise RuntimeError("sem imagem de referência")
@@ -94,28 +115,39 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log):
     xs = np.array([C.features(ref, set(), C.load(sp(c)), set())[0:8] for c in cands]) if cands else np.zeros((0, 8))
     if not len(cands):
         return {"id": uid, "name": name, "cands": [], "prop": {"accept": [], "near": [], "conf": "baixa", "note": "ALERTA: nenhum candidato no MPCFill"}}
-    order = np.argsort(-C.score(cheap, xs[:, CHEAP]))[:TOP]
-    top = [cands[i] for i in order]
+    order = np.argsort(-C.score(cheap, xs[:, CHEAP]))
     C.ocr_footer(refp, "ref_" + uid)
     rtok = C.tokens(C.footer_text("ref_" + uid))
-    for c in top:
-        mp = os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")
-        fetch_img(c["mediumThumbnailUrl"], mp); C.ocr_footer(mp, c["identifier"])
-    rows = []
-    for c in top:
-        im = C.load(os.path.join(CACHE, f"mpc_{c['identifier']}.jpg"))
-        f = C.features(ref, rtok, im, C.tokens(C.footer_text(c["identifier"])))
-        rows.append((float(C.score(full, np.array([f]))[0]), c, f))
-    rows.sort(key=lambda r: -r[0])
+
+    def rank(n):
+        top = [cands[i] for i in order[:n]]
+        top += [c for c in cands if c["identifier"] in mem_ids and c not in top]  # as já escolhidas por você sempre concorrem
+        for c in top:
+            mp = os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")
+            fetch_img(c["mediumThumbnailUrl"], mp); C.ocr_footer(mp, c["identifier"])
+        out = []
+        for c in top:
+            f = C.features(ref, rtok, C.load(os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")), C.tokens(C.footer_text(c["identifier"])))
+            out.append((float(C.score(full, np.array([f]))[0]), c, f))
+        return sorted(out, key=lambda r: -r[0])
+
+    rows = rank(TOP)
+    if rows[0][0] < MID and len(cands) > TOP:  # carta duvidosa: amplia os finalistas
+        log(f"  nota {rows[0][0]:.2f}: ampliando para {TOP2} finalistas")
+        rows = rank(TOP2)
+    seen = [r for r in rows if r[1]["identifier"] in mem_ids]
+    if seen:  # escolha que você já confirmou antes vence a nota
+        first = min(seen, key=lambda r: list(mem_ids).index(r[1]["identifier"]))
+        rows.remove(first); rows.insert(0, first)
     best = rows[0][0]
-    conf = "alta" if best >= HI else "media" if best >= MID else "baixa" if best >= LO else "nenhum"
+    conf = "alta" if (best >= HI or seen) else "media" if best >= MID else "baixa" if best >= LO else "nenhum"
     accept = [1]  # regra do usuário (pedido 1): nunca deixar a carta de fora, pré-seleciona a mais próxima e avisa
-    if is_sld and best < HI:  # arte de Secret Lair tem que ser exata; senão, alerta para falar com o cliente
+    if is_sld and best < HI and not seen:  # arte de Secret Lair tem que ser exata; senão, alerta para falar com o cliente
         conf = "nenhum"
-    note = ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if conf == "nenhum" else "") + \
+    note = ("Escolhida por você em pedido anterior. " if seen else "") + ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if conf == "nenhum" else "") + \
         f"melhor nota {best:.2f}: " + explain(rows[0][2])
     return {"id": uid, "name": name, "refp": refp,
-            "cands": [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "sc": round(s, 2), "why": explain(f)} for i, (s, c, f) in enumerate(rows)],
+            "cands": [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "sc": round(s, 2), "why": explain(f), **({"mem": True} if i == 0 and seen else {})} for i, (s, c, f) in enumerate(rows)],
             "prop": {"accept": accept, "near": [n for n in (2, 3, 4)], "conf": conf, "note": note}}
 
 
@@ -125,7 +157,7 @@ def main(lista, out):
     def log(m):
         print(m, flush=True); logf.write(m + "\n"); logf.flush()
     entries = [r for r in (D.resolve(D.parse_line(l)) for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l))]
-    src = sources(); cheap, full = models()
+    src = sources(); cheap, full = models(); mem = memory()
     units = []
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
     for i, e in enumerate(entries):
@@ -140,7 +172,7 @@ def main(lista, out):
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
-                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", e["card"]["set"] == "sld", src, cheap, full, log)
+                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", e["card"]["set"] == "sld", src, cheap, full, log, mem.get((e["card"]["set"].lower(), str(e["card"]["collector_number"]).lower(), fi), []))
                 u.update({"qty": e["qty"], "entry": i, "face": fi, "set": e["card"]["set"].upper(), "cn": e["card"]["collector_number"], "fixes": e["fixes"]})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
             units.append(up)
@@ -153,7 +185,7 @@ def build_catalog(unit_files, out):
     total_qty = 0
     for up in unit_files:
         u = json.load(open(up, encoding="utf-8"))
-        if u["cands"]:  # empate técnico (até 0,25 da melhor nota): vence a maior resolução
+        if u["cands"] and not any(c.get("mem") for c in u["cands"]):  # empate técnico (até 0,25 da melhor nota): vence a maior resolução
             best = max(c["sc"] for c in u["cands"])
             tie = sorted([c for c in u["cands"] if c["sc"] >= best - .25], key=lambda c: (-c["dpi"], -c["sc"]))
             u["cands"] = tie + [c for c in u["cands"] if c["sc"] < best - .25]

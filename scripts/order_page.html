@@ -65,6 +65,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
 .xmlgrid label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 13px; }
 .xmlgrid input[type=text] { width: 100%; }
 #xmlmsg { margin-top: 8px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+#cmsg { width: 100%; margin-top: 8px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
 .sum { font-family: var(--mono); font-size: 12px; color: var(--ok); }
 .pair.col { grid-template-columns: 1fr; padding-block: 8px; }
 .pair.col .ref, .pair.col .note, .pair.col [data-grid], .pair.col .more, .pair.col .actions { display: none; }
@@ -125,7 +126,8 @@ details.xml summary { cursor: pointer; font-weight: 600; }
       <div class="xmlgrid">
         <label for="incl">Cartas ainda não conferidas<select id="incl"><option value="0">Ficam de fora</option><option value="1">Entram com a sugestão</option></select></label>
       </div>
-      <div class="actions"><button class="primary" id="mkxml">Gerar XML</button></div>
+      <div class="actions"><button class="primary" id="mkxml">Gerar XML</button><button id="mkmsg">Mensagem para o cliente (alertas)</button></div>
+      <textarea id="cmsg" readonly rows="8" hidden aria-label="Mensagem para o cliente"></textarea>
       <div id="xmlmsg" aria-live="polite"></div>
     </details>
     <div class="banner" id="banner" hidden></div>
@@ -391,6 +393,19 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     claude.use("downloads").then(function (dl) { return dl.save({ filename: "pedido.xml", data: r.xml }); })
       .catch(function (e) { if (!e || e.code !== "declined") banner("Não consegui baixar o XML (" + ((e && e.code) || "erro") + ")."); });
   });
+  function clientMsg() {
+    var items = cards.filter(function (c) { return c.prop.conf === "nenhum" && !c.face; }), box = $("#cmsg");
+    if (!items.length) { box.value = "Nenhum alerta neste pedido: todas as versões pedidas têm candidato próximo."; }
+    else {
+      box.value = "Oi! Não encontrei estas versões exatas no catálogo:\n\n" + items.map(function (c) {
+        var k = chosen(c, true) || c.cands[0];
+        return "• " + c.name + " (" + c.set + " " + c.cn + ")" + (c.qty > 1 ? " ×" + c.qty : "") + " → mais parecida: " + (k ? k.name + " (" + k.source + ")" : "nenhuma encontrada");
+      }).join("\n") + "\n\nServe a mais parecida ou prefere outra?";
+    }
+    box.hidden = false; box.focus(); box.select();
+    try { navigator.clipboard.writeText(box.value).catch(function () {}); } catch (e) {}
+  }
+  $("#mkmsg").addEventListener("click", clientMsg);
   ["#incl"].forEach(function (s) { $(s).addEventListener("change", xmlPreview); });
 
   /* ---------- início ---------- */
