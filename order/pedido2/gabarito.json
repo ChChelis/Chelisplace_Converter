@@ -7,7 +7,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:27:57.032Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "001_fic_76_aerith-last-ancient": {
   "status": "ok",
@@ -17,7 +17,7 @@
   "note": "",
   "bot_conf": "baixa",
   "confirmed_at": "2026-10-17T03:28:25.603Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "002_tdc_279_anguished-unmaking": {
   "status": "ok",
@@ -27,7 +27,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:27:58.698Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "003_soc_296_beledros-witherbloom": {
   "status": "ok",
@@ -37,7 +37,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:20.575Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "004_stx_166_blood-researcher": {
   "status": "ok",
@@ -47,7 +47,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:22.295Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "005_tdc_341_bojuka-bog": {
   "status": "ok",
@@ -57,7 +57,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:27:59.773Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "006_tdc_45_canopy-gargantuan": {
   "status": "ok",
@@ -67,7 +67,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:00.794Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "007_soc_302_culling-ritual": {
   "status": "ok",
@@ -77,7 +77,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:01.840Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "008_psos_253p_deathcap-glade": {
   "status": "ok",
@@ -87,7 +87,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:04.464Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "009_soc_25_defiling-daemogoth": {
   "status": "ok",
@@ -97,7 +97,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:23.818Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "010_tdc_286_dragonlord-dromoka": {
   "status": "ok",
@@ -107,7 +107,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:05.498Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "011_sos_15_erode": {
   "status": "ok",
@@ -117,7 +117,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:25.018Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "012_fic_306_gyre-sage": {
   "status": "ok",
@@ -127,7 +127,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:06.417Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "013_tdm_193_host-of-the-hereafter": {
   "status": "ok",
@@ -137,7 +137,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:07.999Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "014_fin_228_jenova-ancient-calamity": {
   "status": "ok",
@@ -147,7 +147,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:25.953Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "015_sos_91_moseo-vein-s-new-dean": {
   "status": "ok",
@@ -157,7 +157,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:27.624Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "016_dsc_290_necroblossom-snarl": {
   "status": "ok",
@@ -167,7 +167,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:29.958Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "017_otc_199_ohran-frostfang": {
   "status": "ok",
@@ -177,7 +177,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:30.912Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "018_tdc_385_radiant-grove": {
   "status": "ok",
@@ -187,7 +187,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:32.060Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "019_tdc_302_shadrix-silverquill": {
   "status": "ok",
@@ -197,7 +197,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:08.595Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "020_tdc_397_sungrass-prairie": {
   "status": "ok",
@@ -207,7 +207,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:09.821Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "021_frc_37_swords-to-plowshares": {
   "status": "ok",
@@ -217,7 +217,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:10.695Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "022_tdc_403_temple-of-malady": {
   "status": "ok",
@@ -227,7 +227,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:11.967Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "023_tdc_406_temple-of-silence": {
   "status": "ok",
@@ -237,7 +237,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:12.753Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "024_soc_120_toxic-deluge": {
   "status": "ok",
@@ -247,7 +247,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:13.611Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "025_tdc_409_twilight-mire": {
   "status": "ok",
@@ -257,7 +257,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:14.369Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "026_sos_241_vicious-rivalry": {
   "status": "ok",
@@ -267,7 +267,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:16.621Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "027_tdc_31_will-of-the-abzan": {
   "status": "ok",
@@ -277,7 +277,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:17.563Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "028_tdc_412_woodland-cemetery": {
   "status": "ok",
@@ -287,7 +287,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:32.859Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "029_clb_215_avenging-hunter": {
   "status": "ok",
@@ -297,7 +297,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:37.149Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "030_totc_4_bird-illusion": {
   "status": "ok",
@@ -307,7 +307,7 @@
   "note": "",
   "bot_conf": "baixa",
   "confirmed_at": "2026-10-17T03:28:27.783Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "031_tinr_21_blood": {
   "status": "ok",
@@ -317,7 +317,7 @@
   "note": "",
   "bot_conf": "baixa",
   "confirmed_at": "2026-10-17T03:28:28.835Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "032_tsoc_1_eldrazi-spawn": {
   "status": "ok",
@@ -327,7 +327,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:39.826Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "033_ltr_169_generous-ent": {
   "status": "ok",
@@ -337,7 +337,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:41.248Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "034_eoc_161_great-furnace": {
   "status": "ok",
@@ -347,7 +347,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:42.332Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "035_mrd_98_krark-clan-shaman": {
   "status": "ok",
@@ -357,7 +357,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:44.330Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "036_hoc_179_l-rien-revealed": {
   "status": "ok",
@@ -367,7 +367,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:45.192Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "037_tfrc_14_map": {
   "status": "ok",
@@ -377,7 +377,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:46.554Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "038_mh3_164_nyxborn-hydra": {
   "status": "ok",
@@ -387,7 +387,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:48.178Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "039_c19_69_prismatic-strands": {
   "status": "ok",
@@ -397,7 +397,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:49.490Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "040_mh3_105_refurbished-familiar": {
   "status": "ok",
@@ -407,7 +407,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:50.550Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "041_mh3_205_sneaky-snacker": {
   "status": "ok",
@@ -417,7 +417,7 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:51.864Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "042_gvl_53_snuff-out": {
   "status": "ok",
@@ -427,7 +427,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:18.353Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "043_tfrc_17_the-monarch": {
   "status": "ok",
@@ -437,7 +437,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:20.077Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "044_tclb_20_the-initiative": {
   "status": "ok",
@@ -447,7 +447,7 @@
   "note": "",
   "bot_conf": "nenhum",
   "confirmed_at": "2026-10-17T03:28:33.967Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "044_tclb_20_undercity": {
   "status": "ok",
@@ -457,7 +457,7 @@
   "note": "",
   "bot_conf": "baixa",
   "confirmed_at": "2026-10-17T03:28:30.075Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "045_dsc_322_vault-of-whispers": {
   "status": "ok",
@@ -467,7 +467,7 @@
   "note": "",
   "bot_conf": "media",
   "confirmed_at": "2026-10-17T03:28:22.019Z",
-  "weak": true
+  "reviewed_one_by_one": true
  },
  "046_mh3_208_writhing-chrysalis": {
   "status": "ok",
@@ -477,6 +477,6 @@
   "note": "",
   "bot_conf": "alta",
   "confirmed_at": "2026-10-17T03:27:53.136Z",
-  "weak": true
+  "reviewed_one_by_one": true
  }
 }

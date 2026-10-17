@@ -122,8 +122,6 @@ def pairs():
             continue
         og = json.load(open(gp))
         for k in sorted(og):
-            if og[k].get("weak"):  # aceite em lote não verificado: fora do treino
-                continue
             u = json.load(open(os.path.join(od, name, "units", k + ".json")))
             yield k, {**og[k], "accept": []}, u["cands"], os.path.join(CACHE, f"sf_{k}.jpg")
 
