@@ -20,7 +20,7 @@ UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)"}
 TOP = 12            # finalistas por carta (recebem OCR e aparecem na página)
 TOP2 = 30           # finalistas das cartas de nota baixa (segunda passada)
 CAP = 400           # máximo de candidatos lidos por busca
-HI, MID, LO = 1.7, 0.9, 0.1   # limiares de nota (tabela leave-one-out em docs/fase1_sondagem.md)
+HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (tabela leave-one-out de `compare.py eval`, depois do corte de sangria)
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
 BRACKETS = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612]
 
@@ -65,8 +65,27 @@ def search(name, ctype, src):
 
 
 def models():
+    """Treina (ou lê do cache) os dois modelos; o cache vale enquanto gabaritos e compare.py não mudam."""
+    import glob, hashlib
+    h = hashlib.md5()
+    for fp in sorted(glob.glob(os.path.join(ROOT, "order", "*", "gabarito.json")) + [os.path.join(ROOT, "testset", "gabarito.json"), os.path.join(ROOT, "scripts", "compare.py")]):
+        h.update(open(fp, "rb").read())
+    path = os.path.join(CACHE, f"model_{h.hexdigest()[:10]}.json")
+    if os.path.exists(path):
+        d = json.load(open(path))
+        return tuple((np.array(m[0]), np.array(m[1]), np.array(m[2]), float(m[3])) for m in d)
     X, y, grp, _ = C.dataset()
-    return C.fit(X[:, CHEAP], y), C.fit(X, y)
+    ms = (C.fit(X[:, CHEAP], y), C.fit(X, y))
+    json.dump([[list(map(float, m[0])), list(map(float, m[1])), list(map(float, m[2])), float(m[3])] for m in ms], open(path, "w"))
+    return ms
+
+
+def conf_of(best, is_sld, seen):
+    """Faixa de confiança; recalculada ao montar o catálogo, então mudar os limiares vale para unidades já processadas."""
+    if seen:
+        return "alta"
+    c = "alta" if best >= HI else "media" if best >= MID else "baixa" if best >= LO else "nenhum"
+    return "nenhum" if is_sld and best < HI else c
 
 
 def explain(f):
@@ -108,6 +127,13 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
     ref = C.load(refp)
     cands = search(name, ctype, src) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)
     log(f"  {len(cands)} candidatos")
+    fast = [c for mid in mem_ids for c in cands if c["identifier"] == mid]
+    if fast:  # você já escolheu esta impressão antes: só confirma que ainda existe e pula o carregamento pesado
+        log("  escolha lembrada: sem busca pesada")
+        fetch_img(fast[0]["mediumThumbnailUrl"], os.path.join(CACHE, f"mpc_{fast[0]['identifier']}.jpg"))
+        c = fast[0]
+        return {"id": uid, "name": name, "refp": refp, "cands": [{"n": 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "sc": None, "why": "escolhida por você antes", "mem": True}],
+                "prop": {"accept": [1], "near": [], "conf": "alta", "note": "Escolhida por você em pedido anterior (sem alternativas carregadas)."}}
     sp = lambda c: os.path.join(CACHE, f"mpcs_{c['identifier']}.jpg")
     with cf.ThreadPoolExecutor(4) as ex:
         ok = list(ex.map(lambda c: fetch_img(c["smallThumbnailUrl"], sp(c)), cands))
@@ -140,10 +166,8 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         first = min(seen, key=lambda r: list(mem_ids).index(r[1]["identifier"]))
         rows.remove(first); rows.insert(0, first)
     best = rows[0][0]
-    conf = "alta" if (best >= HI or seen) else "media" if best >= MID else "baixa" if best >= LO else "nenhum"
+    conf = conf_of(best, is_sld, bool(seen))
     accept = [1]  # regra do usuário (pedido 1): nunca deixar a carta de fora, pré-seleciona a mais próxima e avisa
-    if is_sld and best < HI and not seen:  # arte de Secret Lair tem que ser exata; senão, alerta para falar com o cliente
-        conf = "nenhum"
     note = ("Escolhida por você em pedido anterior. " if seen else "") + ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if conf == "nenhum" else "") + \
         f"melhor nota {best:.2f}: " + explain(rows[0][2])
     return {"id": uid, "name": name, "refp": refp,
@@ -185,6 +209,9 @@ def build_catalog(unit_files, out):
     total_qty = 0
     for up in unit_files:
         u = json.load(open(up, encoding="utf-8"))
+        if u["cands"]:  # confiança com os limiares atuais (as unidades guardam só a nota)
+            seen = any(c.get("mem") for c in u["cands"]); best0 = max((c["sc"] for c in u["cands"] if c["sc"] is not None), default=-9.0)
+            u["prop"]["conf"] = conf_of(best0, u["set"] == "SLD", seen)
         if u["cands"] and not any(c.get("mem") for c in u["cands"]):  # empate técnico (até 0,25 da melhor nota): vence a maior resolução
             best = max(c["sc"] for c in u["cands"])
             tie = sorted([c for c in u["cands"] if c["sc"] >= best - .25], key=lambda c: (-c["dpi"], -c["sc"]))
