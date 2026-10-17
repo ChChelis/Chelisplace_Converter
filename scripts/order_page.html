@@ -367,7 +367,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   }
   function cardXml(k, slots, q) {
     var nm = /\.(png|jpe?g|webp)$/i.test(k.name) ? k.name : k.name + "." + (k.ext || "png");
-    return "    <card>\n      <id>" + x(k.id) + "</id>\n      <slots>" + slots.join(",") + "</slots>\n      <name>" + x(nm) + "</name>\n      <query>" + x(q.toLowerCase()) + "</query>\n    </card>\n";
+    return "    <card>\n      <id>" + x(k.id) + "</id>\n      <slots>" + slots.join(",") + "</slots>\n      <name>" + x(nm) + "</name>\n      <query>" + x((k.t === "TOKEN" ? "t:" : k.t === "CARDBACK" ? "b:" : "") + (k.q || q.toLowerCase())) + "</query>\n    </card>\n";
   }
   function buildXml() {
     var incl = $("#incl").value === "1", byE = {}, slot = 0, fr = "", bk = "", skipped = [], used = 0;

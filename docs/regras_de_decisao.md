@@ -22,3 +22,7 @@ Moldura antiga (4ª edição, MB2 futura, Alpha) sem candidato com a moldura cer
 - Escolheu candidato exato quando o usuário preferia "nenhum": 4ed_52, mb2_153 (moldura antiga só parecida).
 - Marcou "nenhum" onde o usuário aceita o parecido (13 pares): a tolerância dele é maior que a minha.
 - Pesou a arte acima da moldura e a borda branca acima da preta.
+
+## Regra técnica do XML (aprendida no pedido 2)
+O editor do MPC Autofill usa o `<query>` para decidir o **tipo** da carta e só respeita o `<id>` se ele aparecer na busca desse tipo. Token precisa de `t:` no `<query>`; sem isso o editor busca entre cartas comuns e mostra outra carta ou "Card Not Found". O `<query>` deve ser o `searchq` que o MPCFill guarda na imagem (com prefixo de tipo).
+Antes de entregar qualquer XML: `python3 -I scripts/verify_xml.py order/<pedido>/pedido.xml` (precisa ficar em 0 fora da busca).

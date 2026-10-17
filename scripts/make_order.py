@@ -132,7 +132,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         log("  escolha lembrada: sem busca pesada")
         fetch_img(fast[0]["mediumThumbnailUrl"], os.path.join(CACHE, f"mpc_{fast[0]['identifier']}.jpg"))
         c = fast[0]
-        return {"id": uid, "name": name, "refp": refp, "cands": [{"n": 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "sc": None, "why": "escolhida por você antes", "mem": True}],
+        return {"id": uid, "name": name, "refp": refp, "cands": [{"n": 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "t": c.get("cardType"), "q": c.get("searchq"), "sc": None, "why": "escolhida por você antes", "mem": True}],
                 "prop": {"accept": [1], "near": [], "conf": "alta", "note": "Escolhida por você em pedido anterior (sem alternativas carregadas)."}}
     sp = lambda c: os.path.join(CACHE, f"mpcs_{c['identifier']}.jpg")
     with cf.ThreadPoolExecutor(4) as ex:
@@ -171,7 +171,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
     note = ("Escolhida por você em pedido anterior. " if seen else "") + ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if conf == "nenhum" else "") + \
         f"melhor nota {best:.2f}: " + explain(rows[0][2])
     return {"id": uid, "name": name, "refp": refp,
-            "cands": [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "sc": round(s, 2), "why": explain(f), **({"mem": True} if i == 0 and seen else {})} for i, (s, c, f) in enumerate(rows)],
+            "cands": [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "t": c.get("cardType"), "q": c.get("searchq"), "sc": round(s, 2), "why": explain(f), **({"mem": True} if i == 0 and seen else {})} for i, (s, c, f) in enumerate(rows)],
             "prop": {"accept": accept, "near": [n for n in (2, 3, 4)], "conf": conf, "note": note}}
 
 
@@ -204,7 +204,28 @@ def main(lista, out):
         build_catalog(units, out)
 
 
+def fill_meta(unit_files):
+    """Unidades antigas não guardam tipo (CARD/TOKEN) e searchq do candidato: busca no MPCFill e grava."""
+    need = {}
+    units = {}
+    for up in unit_files:
+        u = json.load(open(up, encoding="utf-8")); units[up] = u
+        for c in u["cands"]:
+            if "t" not in c: need[c["id"]] = None
+    ids = list(need)
+    for i in range(0, len(ids), 200):
+        for k, v in json.loads(http(MPC + "/2/cards/", {"cardIdentifiers": ids[i:i + 200]}))["results"].items():
+            need[k] = (v.get("cardType"), v.get("searchq"))
+    for up, u in units.items():
+        ch = False
+        for c in u["cands"]:
+            if "t" not in c and need.get(c["id"]):
+                c["t"], c["q"] = need[c["id"]]; ch = True
+        if ch: json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
+
+
 def build_catalog(unit_files, out):
+    fill_meta(unit_files)
     cards, chunks, cur, size = [], [], [], 0
     total_qty = 0
     for up in unit_files:
