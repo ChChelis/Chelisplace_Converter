@@ -99,3 +99,13 @@
   43 candidatos
 032_tsoc_1_eldrazi-spawn  (2x)
   33 candidatos
+036_hoc_179_l-rien-revealed  (4x)
+  28 candidatos
+  escolha lembrada: sem busca pesada
+040_mh3_105_refurbished-familiar  (4x)
+  5 candidatos
+  escolha lembrada: sem busca pesada
+044_tclb_20_undercity  (1x)
+  4 candidatos
+044_tclb_20_the-initiative  (1x)
+  4 candidatos
