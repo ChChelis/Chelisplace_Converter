@@ -22,6 +22,8 @@ TOP2 = 30           # finalistas das cartas de nota baixa (segunda passada)
 CAP = 800           # máximo de candidatos lidos por busca (Sol Ring tem 719)
 HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (tabela leave-one-out de `compare.py eval`, depois do corte de sangria)
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
+LIGA_SHIFT = 1.4  # imagens da LigaMagic pontuam ~1,4 abaixo das do Scryfall (menores, às vezes em português); faixas NÃO calibradas com decisões do usuário
+BASICS = {"Island", "Plains", "Swamp", "Mountain", "Forest", "Wastes"}
 LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT", "PH", "TW", "CN"}
 BRACKETS = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612]
 
@@ -241,7 +243,13 @@ def build_catalog(unit_files, out):
         u = json.load(open(up, encoding="utf-8"))
         if u["cands"]:  # confiança com os limiares atuais (as unidades guardam só a nota)
             seen = any(c.get("mem") for c in u["cands"]); best0 = max((c["sc"] for c in u["cands"] if c["sc"] is not None), default=-9.0)
-            u["prop"]["conf"] = conf_of(best0, u["set"] == "SLD", seen)
+            liga = u["set"] == "LIGA"
+            u["prop"]["conf"] = conf_of(best0 + (LIGA_SHIFT if liga else 0), u["set"] == "SLD", seen)
+            note = u["prop"]["note"]; k = note.find("melhor nota")
+            if k >= 0:  # refaz os avisos com a confiança atual (o texto antigo veio das faixas do Scryfall)
+                u["prop"]["note"] = ("Escolhida por você em pedido anterior. " if seen else "") + \
+                    ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if u["prop"]["conf"] == "nenhum" else "") + note[k:] + \
+                    (" Terreno básico: o MPCFill tem milhares de artes; pode haver uma melhor além das 800 primeiras." if liga and u["name"] in BASICS else "")
         if u["cands"] and not any(c.get("mem") for c in u["cands"]):  # empate técnico (até 0,25 da melhor nota): vence a maior resolução
             best = max(c["sc"] for c in u["cands"])
             tie = sorted([c for c in u["cands"] if c["sc"] >= best - .25], key=lambda c: (-c["dpi"], -c["sc"]))
@@ -266,7 +274,9 @@ def build_catalog(unit_files, out):
         n = f"catalog_{i}.json"; names.append(n)
         json.dump({"cards": ch}, open(os.path.join(out, n), "w", encoding="utf-8"), separators=(",", ":"), ensure_ascii=False)
     bracket = next((b for b in BRACKETS if b >= total_qty), BRACKETS[-1])
-    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
+    liga_any = any(json.load(open(up, encoding="utf-8")).get("set") == "LIGA" for up in unit_files)
+    onote = "A referência de cada carta é a imagem da LigaMagic. As faixas de confiança ainda não foram calibradas para essas imagens (as notas saem mais baixas que com o Scryfall): confira todas." if liga_any else ""
+    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
     print("catálogo:", len(unit_files), "unidades,", len(names), "arquivos; quantidade", total_qty, "bracket", bracket)
 
 

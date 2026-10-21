@@ -1,0 +1,235 @@
+001_liga_esper-sentinel  (1x)
+002_liga_weathered-wayfarer  (1x)
+000_liga_lavinia-azorius-renegade  (1x)
+  45 candidatos
+  41 candidatos
+003_liga_spider-woman-stunning-savior  (1x)
+  7 candidatos
+  162 candidatos
+007_liga_teferi-time-raveler  (1x)
+  59 candidatos
+  nota 1.38: ampliando para 30 finalistas
+  nota 0.41: ampliando para 30 finalistas
+  nota 0.73: ampliando para 30 finalistas
+  nota 1.37: ampliando para 30 finalistas
+006_liga_hokori-dust-drinker  (1x)
+  10 candidatos
+004_liga_silent-arbiter  (1x)
+  31 candidatos
+011_liga_swords-to-plowshares  (1x)
+  370 candidatos
+  nota 1.86: ampliando para 30 finalistas
+015_liga_mystical-tutor  (1x)
+  148 candidatos
+005_liga_grand-arbiter-augustin-iv  (1x)
+  41 candidatos
+010_liga_swan-song  (1x)
+  118 candidatos
+  nota 0.68: ampliando para 30 finalistas
+  nota 0.29: ampliando para 30 finalistas
+  nota 1.87: ampliando para 30 finalistas
+014_liga_enlightened-tutor  (1x)
+  145 candidatos
+008_liga_tezzeret-cruel-captain  (1x)
+  31 candidatos
+009_liga_tezzeret-the-seeker  (1x)
+  62 candidatos
+019_liga_mana-drain  (1x)
+  nota 1.79: ampliando para 30 finalistas
+  177 candidatos
+  nota 1.98: ampliando para 30 finalistas
+012_liga_pongify  (1x)
+  52 candidatos
+  nota 0.02: ampliando para 30 finalistas
+018_liga_brought-back  (1x)
+  nota 0.61: ampliando para 30 finalistas
+  9 candidatos
+  nota 0.58: ampliando para 30 finalistas
+013_liga_flusterstorm  (1x)
+  80 candidatos
+022_liga_fabricate  (1x)
+  72 candidatos
+016_liga_arcane-denial  (1x)
+  124 candidatos
+023_liga_generous-gift  (1x)
+  89 candidatos
+  nota 0.35: ampliando para 30 finalistas
+  nota -0.18: ampliando para 30 finalistas
+  nota 1.61: ampliando para 30 finalistas
+017_liga_counterspell  (1x)
+  327 candidatos
+026_liga_fierce-guardianship  (1x)
+  165 candidatos
+027_liga_armageddon  (1x)
+  85 candidatos
+  nota 1.67: ampliando para 30 finalistas
+  nota 1.36: ampliando para 30 finalistas
+  nota 1.10: ampliando para 30 finalistas
+  nota 0.06: ampliando para 30 finalistas
+020_liga_cyclonic-rift  (1x)
+  192 candidatos
+030_liga_day-of-judgment  (1x)
+  72 candidatos
+021_liga_fade-away  (1x)
+  6 candidatos
+031_liga_ravages-of-war  (1x)
+  27 candidatos
+025_liga_sevinne-s-reclamation  (1x)
+  51 candidatos
+  nota 1.06: ampliando para 30 finalistas
+  nota -0.46: ampliando para 30 finalistas
+  nota 1.02: ampliando para 30 finalistas
+034_liga_global-ruin  (1x)
+  2 candidatos
+038_liga_chrome-mox  (1x)
+  178 candidatos
+029_liga_cataclysm  (1x)
+  18 candidatos
+  nota 1.10: ampliando para 30 finalistas
+035_liga_catastrophe  (1x)
+  12 candidatos
+  nota 1.27: ampliando para 30 finalistas
+039_liga_mox-opal  (1x)
+  137 candidatos
+024_liga_teferi-s-protection  (1x)
+  135 candidatos
+033_liga_sunder  (1x)
+  11 candidatos
+037_liga_mox-amber  (1x)
+  86 candidatos
+  nota 0.06: ampliando para 30 finalistas
+041_liga_springleaf-drum  (1x)
+  42 candidatos
+  nota 0.33: ampliando para 30 finalistas
+  nota 0.00: ampliando para 30 finalistas
+  nota 1.14: ampliando para 30 finalistas
+043_liga_sphere-of-resistance  (1x)
+  26 candidatos
+042_liga_fellwar-stone  (1x)
+  181 candidatos
+  nota 0.20: ampliando para 30 finalistas
+045_liga_prismatic-lens  (1x)
+  40 candidatos
+  nota -0.35: ampliando para 30 finalistas
+028_liga_wrath-of-god  (1x)
+  190 candidatos
+  nota 1.35: ampliando para 30 finalistas
+047_liga_mind-stone  (1x)
+  171 candidatos
+  nota 1.21: ampliando para 30 finalistas
+  nota 0.61: ampliando para 30 finalistas
+046_liga_winter-orb  (1x)
+  60 candidatos
+049_liga_arcane-signet  (1x)
+  499 candidatos
+  nota 0.78: ampliando para 30 finalistas
+051_liga_talisman-of-progress  (1x)
+  99 candidatos
+032_liga_supreme-verdict  (1x)
+  87 candidatos
+  nota 0.62: ampliando para 30 finalistas
+  nota 0.03: ampliando para 30 finalistas
+  nota 1.13: ampliando para 30 finalistas
+055_liga_coalition-relic  (1x)
+  34 candidatos
+  nota 1.59: ampliando para 30 finalistas
+  nota 1.18: ampliando para 30 finalistas
+050_liga_azorius-signet  (1x)
+  95 candidatos
+036_liga_vanquish-the-horde  (1x)
+  48 candidatos
+  nota 0.85: ampliando para 30 finalistas
+059_liga_mystic-remora  (1x)
+  143 candidatos
+053_liga_cursed-totem  (1x)
+  43 candidatos
+  nota 1.19: ampliando para 30 finalistas
+  nota 1.09: ampliando para 30 finalistas
+040_liga_sol-ring  (1x)
+  724 candidatos
+057_liga_omen-machine  (1x)
+  4 candidatos
+054_liga_crucible-of-worlds  (1x)
+  115 candidatos
+  nota 1.37: ampliando para 30 finalistas
+061_liga_mana-breach  (1x)
+  11 candidatos
+065_liga_land-equilibrium  (1x)
+  9 candidatos
+063_liga_back-to-basics  (1x)
+  28 candidatos
+  nota 0.41: ampliando para 30 finalistas
+069_liga_gleaming-bastion  (1x)
+  2 candidatos
+073_liga_plains  (9x)
+  800 candidatos
+  nota 0.80: ampliando para 30 finalistas
+  nota 0.33: ampliando para 30 finalistas
+058_liga_ward-of-bones  (1x)
+  16 candidatos
+044_liga_liquimetal-torque  (1x)
+  46 candidatos
+067_liga_darksteel-citadel  (1x)
+  56 candidatos
+  nota -0.42: ampliando para 30 finalistas
+062_liga_rhystic-study  (1x)
+  nota 1.50: ampliando para 30 finalistas
+  242 candidatos
+  nota 1.60: ampliando para 30 finalistas
+048_liga_thought-vessel  (1x)
+  140 candidatos
+071_liga_strip-mine  (1x)
+  123 candidatos
+  nota 1.57: ampliando para 30 finalistas
+  nota 1.03: ampliando para 30 finalistas
+066_liga_ghost-town  (1x)
+  7 candidatos
+  nota 1.92: ampliando para 30 finalistas
+070_liga_island  (9x)
+  800 candidatos
+075_liga_mystic-gate  (1x)
+  62 candidatos
+  nota -0.31: ampliando para 30 finalistas
+052_liga_tsabo-s-web  (1x)
+  7 candidatos
+  nota 1.02: ampliando para 30 finalistas
+077_liga_academy-ruins  (1x)
+056_liga_knowledge-pool  (1x)
+  67 candidatos
+  6 candidatos
+060_liga_overburden  (1x)
+  12 candidatos
+079_liga_tolaria-west  (1x)
+  18 candidatos
+064_liga_smothering-tithe  (1x)
+  nota 1.51: ampliando para 30 finalistas
+  182 candidatos
+  nota 1.36: ampliando para 30 finalistas
+083_liga_prismatic-vista  (1x)
+  124 candidatos
+081_liga_command-tower  (1x)
+  581 candidatos
+  nota 0.45: ampliando para 30 finalistas
+  nota 0.29: ampliando para 30 finalistas
+  nota -0.67: ampliando para 30 finalistas
+074_liga_razortide-bridge  (1x)
+  26 candidatos
+078_liga_wasteland  (1x)
+  141 candidatos
+  nota 1.09: ampliando para 30 finalistas
+068_liga_cascading-cataracts  (1x)
+  38 candidatos
+  nota -0.40: ampliando para 30 finalistas
+  nota -2.99: ampliando para 30 finalistas
+082_liga_skycloud-expanse  (1x)
+  50 candidatos
+072_liga_fabled-passage  (1x)
+  139 candidatos
+  nota 1.14: ampliando para 30 finalistas
+  nota 0.57: ampliando para 30 finalistas
+076_liga_adarkar-wastes  (1x)
+  91 candidatos
+  nota 1.12: ampliando para 30 finalistas
+080_liga_spire-of-industry  (1x)
+  48 candidatos
+  nota 1.11: ampliando para 30 finalistas

@@ -131,6 +131,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
       <div id="xmlmsg" aria-live="polite"></div>
     </details>
     <div class="banner" id="banner" hidden></div>
+    <div class="banner" id="onote" hidden></div>
   </header>
   <main id="main"><p class="empty">Carregando os pares…</p></main>
 </div>
@@ -411,6 +412,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   /* ---------- início ---------- */
   fetch("catalog.json").then(function (r) { return r.json(); }).then(function (idx) {
     order = idx.order || {};
+    if (order.note) { var on = $("#onote"); on.textContent = order.note; on.hidden = false; }
     return Promise.all((idx.chunks || []).map(function (n) { return fetch(n).then(function (r) { return r.json(); }); }));
   }).then(function (parts) {
     cards = [].concat.apply([], parts.map(function (p) { return p.cards; })); cards.forEach(function (c) { byId[c.id] = c; });
