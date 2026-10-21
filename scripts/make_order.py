@@ -4,7 +4,7 @@ Uso (venv com rapidocr): venv/bin/python scripts/make_order.py lista.txt order/<
 Retomável: cada carta resolvida fica em order/<nome>/units/<id>.json.
 Nada é decidido calado: o bot só PRÉ-SELECIONA; a conferência e o XML saem do artefato.
 """
-import concurrent.futures as cf, io, json, os, re, sys, time, urllib.request
+import concurrent.futures as cf, io, json, os, re, shutil, sys, time, urllib.request
 import numpy as np
 from PIL import Image
 
@@ -19,9 +19,10 @@ MPC = "https://mpcfill.com"
 UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)"}
 TOP = 12            # finalistas por carta (recebem OCR e aparecem na página)
 TOP2 = 30           # finalistas das cartas de nota baixa (segunda passada)
-CAP = 400           # máximo de candidatos lidos por busca
+CAP = 800           # máximo de candidatos lidos por busca (Sol Ring tem 719)
 HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (tabela leave-one-out de `compare.py eval`, depois do corte de sangria)
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
+LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT", "PH", "TW", "CN"}
 BRACKETS = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612]
 
 
@@ -122,7 +123,9 @@ def memory():
 
 def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=()):
     refp = os.path.join(CACHE, f"sf_{uid}.jpg")
-    if not fetch_img(ref_url, refp):
+    if os.path.exists(ref_url):  # referência local (ex.: imagem da página da LigaMagic)
+        shutil.copy(ref_url, refp)
+    elif not fetch_img(ref_url, refp):
         raise RuntimeError("sem imagem de referência")
     ref = C.load(refp)
     cands = search(name, ctype, src) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)
@@ -143,7 +146,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         return {"id": uid, "name": name, "cands": [], "prop": {"accept": [], "near": [], "conf": "baixa", "note": "ALERTA: nenhum candidato no MPCFill"}}
     order = np.argsort(-C.score(cheap, xs[:, CHEAP]))
     C.ocr_footer(refp, "ref_" + uid)
-    rtok = C.tokens(C.footer_text("ref_" + uid))
+    rtok = {"EN" if t in LANGS else t for t in C.tokens(C.footer_text("ref_" + uid))}
 
     def rank(n):
         top = [cands[i] for i in order[:n]]
@@ -182,9 +185,12 @@ def main(lista, out):
         print(m, flush=True); logf.write(m + "\n"); logf.flush()
     entries = [r for r in (D.resolve(D.parse_line(l)) for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l))]
     src = sources(); cheap, full = models(); mem = memory()
+    refs = json.load(open(os.environ["REFS"], encoding="utf-8")) if os.environ.get("REFS") else {}
     units = []
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
     for i, e in enumerate(entries):
+        if not e["card"] and e["name"] in refs:  # nome que o Scryfall não resolve, mas tenho a imagem da LigaMagic
+            e = {**e, "card": {"name": e["name"], "set": "liga", "collector_number": "", "layout": "normal"}, "images": [refs[e["name"]]], "fixes": e["fixes"] + ["sem Scryfall: só a imagem da LigaMagic"]}
         if shard and i % int(shard.split("/")[1]) != int(shard.split("/")[0]):
             continue
         if not e["card"]:
@@ -192,12 +198,15 @@ def main(lista, out):
         names = e["name"].split(" // ")
         tokenish = e["card"]["layout"] in ("token", "double_faced_token", "emblem")
         for fi, url in enumerate(e["images"]):
-            uid = f"{i:03d}_{e['card']['set']}_{e['card']['collector_number']}_{slug(names[min(fi, len(names) - 1)])}"
+            liga = fi == 0 and e["name"] in refs  # imagem de referência vinda da LigaMagic: set/número do Scryfall seriam palpite
+            if liga:
+                url = refs[e["name"]]
+            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{e['card']['set']}_{e['card']['collector_number']}_{slug(names[min(fi, len(names) - 1)])}")
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
-                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", e["card"]["set"] == "sld", src, cheap, full, log, mem.get((e["card"]["set"].lower(), str(e["card"]["collector_number"]).lower(), fi), []))
-                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": e["card"]["set"].upper(), "cn": e["card"]["collector_number"], "fixes": e["fixes"]})
+                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and e["card"]["set"] == "sld", src, cheap, full, log, [] if liga else mem.get((e["card"]["set"].lower(), str(e["card"]["collector_number"]).lower(), fi), []))
+                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else e["card"]["set"].upper(), "cn": "" if liga else e["card"]["collector_number"], "fixes": e["fixes"]})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
             units.append(up)
     if not shard:
