@@ -3,7 +3,7 @@
 Uso: python3 -I scripts/verify_xml.py order/<pedido>/pedido.xml
 O editor ignora o id quando ele não está nos resultados da busca e mostra outra carta ou 'Card Not Found'.
 """
-import json, re, sys, time, urllib.request
+import json, re, sys, time, urllib.error, urllib.request
 import xml.etree.ElementTree as ET
 
 H = {"User-Agent": "chelisplace-bot/0.1", "Content-Type": "application/json"}
@@ -18,15 +18,26 @@ src = json.loads(urllib.request.urlopen(urllib.request.Request("https://mpcfill.
 st = {"filterSettings": {"excludesTags": [], "includesTags": [], "languages": [], "maximumDPI": 1500, "maximumSize": 30, "minimumDPI": 0},
       "searchTypeSettings": {"filterCardbacks": False, "fuzzySearch": False}, "sourceSettings": {"sources": [[int(k), True] for k in src]}}
 root = ET.parse(sys.argv[1]).getroot()
-bad = n = 0
+items = []  # (seção, tipo, query, id, nome)
 for sec in ("fronts", "backs"):
     for c in root.find(sec) if root.find(sec) is not None else []:
-        n += 1
         m = re.match(r"^(?:(t|b):)?(.*)$", c.find("query").text or "")
-        t, q = TYPES[m.group(1) or ""], m.group(2)
-        r = post("/2/editorSearch/", {"queries": [{"query": q, "cardType": t}], "searchSettings": st})["results"]
-        if c.find("id").text not in next(iter(r.values()), {}).get(t, []):
-            bad += 1; print("FORA DA BUSCA:", sec, t, repr(q), c.find("name").text)
-        time.sleep(0.2)
-print(f"{n} cartas verificadas, {bad} fora da busca do editor")
+        items.append((sec, TYPES[m.group(1) or ""], m.group(2), c.find("id").text, c.find("name").text))
+uniq = sorted({(t, q) for _, t, q, _, _ in items})
+res = {}
+for i in range(0, len(uniq), 250):  # uma chamada para até 250 consultas (limite do servidor: 300)
+    for attempt in range(4):
+        try:
+            r = post("/2/editorSearch/", {"queries": [{"query": q, "cardType": t} for t, q in uniq[i:i + 250]], "searchSettings": st})["results"]
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 429 or attempt == 3: raise
+            time.sleep(5 * (attempt + 1))
+    for q, by_type in r.items():
+        for t, ids in by_type.items(): res[(t, q)] = set(ids)
+bad = 0
+for sec, t, q, cid, name in items:
+    if cid not in res.get((t, q), set()):
+        bad += 1; print("FORA DA BUSCA:", sec, t, repr(q), name)
+print(f"{len(items)} cartas verificadas, {bad} fora da busca do editor")
 sys.exit(1 if bad else 0)

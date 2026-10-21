@@ -117,7 +117,7 @@ def memory():
         if not os.path.exists(gp):
             continue
         for uid, v in json.load(open(gp)).items():
-            if v["status"] == "ok" and v.get("accept_ids"):
+            if v["status"] == "ok" and v.get("accept_ids") and not v.get("excluded"):
                 u = json.load(open(os.path.join(od, name, "units", uid + ".json")))
                 mem[(u["set"].lower(), str(u["cn"]).lower(), u["face"])] = v["accept_ids"]  # pedido mais recente vence
     return mem

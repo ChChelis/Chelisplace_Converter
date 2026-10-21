@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+  <details>
+    <quantity>82</quantity>
+    <bracket>90</bracket>
+    <stock>(S30) Standard Smooth</stock>
+    <foil>false</foil>
+  </details>
+  <fronts>
+    <card>
+      <id>1JbOrrgir8o8gW2CCgEtLQDuU7_OrJKg9</id>
+      <slots>0</slots>
+      <name>Lavinia, Azorius Renegade.png</name>
+      <query>lavinia azorius renegade</query>
+    </card>
+    <card>
+      <id>1XLWhKyqxYP0fO3OrLSjstaAeJr7fZp-L</id>
+      <slots>1</slots>
+      <name>Esper Sentinel-1.jpeg</name>
+      <query>esper sentinel</query>
+    </card>
+    <card>
+      <id>1AAr0PIyge_9tRWx1sKPhZogyaLRCl5nr</id>
+      <slots>2</slots>
+      <name>Weathered Wayfarer (Universes Beyond Javier Charro).jpg</name>
+      <query>weathered wayfarer</query>
+    </card>
+    <card>
+      <id>12WOV1OXGYuXxF1XWeJA9uih6eyaHCfzq</id>
+      <slots>3</slots>
+      <name>Spider-Woman, Stunning Savior.png</name>
+      <query>spider woman stunning savior</query>
+    </card>
+    <card>
+      <id>10BaAcv2fvWTDvIeggy7d61gtwbVJd_7g</id>
+      <slots>4</slots>
+      <name>Silent Arbiter.jpg</name>
+      <query>silent arbiter</query>
+    </card>
+    <card>
+      <id>1sxajBDwTlohFF1ZKiC9ovveQxXzR9nZw</id>
+      <slots>5</slots>
+      <name>Grand Arbiter Augustin IV (Zoltan Boros &amp; Gabor Szikszai).jpg</name>
+      <query>grand arbiter augustin iv</query>
+    </card>
+    <card>
+      <id>1LWsIl8bXWUX_jUG-CmTDsfbE7veXoKfp</id>
+      <slots>6</slots>
+      <name>Hokori, Dust Drinker.png</name>
+      <query>hokori dust drinker</query>
+    </card>
+    <card>
+      <id>1k43SZ2sVWciH831QqmUgWl0MGrH2cPdU</id>
+      <slots>7</slots>
+      <name>Teferi, Time Raveler.jpg</name>
+      <query>teferi time raveler</query>
+    </card>
+    <card>
+      <id>1qBmfW470vsjEZDfqBOD3UNajfC_Hhqqp</id>
+      <slots>8</slots>
+      <name>Tezzeret, Cruel Captain.jpg</name>
+      <query>tezzeret cruel captain</query>
+    </card>
+    <card>
+      <id>1OX6sFCNzUkXFgyV6idM2vm0rMyG5u40n</id>
+      <slots>9</slots>
+      <name>Tezzeret the Seeker.png</name>
+      <query>tezzeret seeker</query>
+    </card>
+    <card>
+      <id>1qwFh5eNL1vIdt3ltih1Rv29yJcE5RW5-</id>
+      <slots>10</slots>
+      <name>Swan Song.jpg</name>
+      <query>swan song</query>
+    </card>
+    <card>
+      <id>12K9-1vxS8Jc1YtuREkDPlPeJS5dQr3UI</id>
+      <slots>11</slots>
+      <name>Swords to Plowshares (FRC 37).jpg</name>
+      <query>swords to plowshares</query>
+    </card>
+    <card>
+      <id>1tghwpx6kLtkkwtLgP2dfKTNg4xoZA_Hx</id>
+      <slots>12</slots>
+      <name>Pongify.jpg</name>
+      <query>pongify</query>
+    </card>
+    <card>
+      <id>192_co9BSpZhbUbdZPhgSQPTp10Zz-P9N</id>
+      <slots>13</slots>
+      <name>Flusterstorm (Chris Rallis).png</name>
+      <query>flusterstorm</query>
+    </card>
+    <card>
+      <id>17RgIbPV78WOegi23uaixaCJzwPLVmWSV</id>
+      <slots>14</slots>
+      <name>Enlightened Tutor (Normal) [DMR] {6}.jpg</name>
+      <query>enlightened tutor</query>
+    </card>
+    <card>
+      <id>1gG8vdJ8B-9wIOFYf5a-WJ--LeOc12Pri</id>
+      <slots>15</slots>
+      <name>Mystical Tutor (Lindsey Look).jpg</name>
+      <query>mystical tutor</query>
+    </card>
+    <card>
+      <id>1Q7JIpZMwYm2yypCHMEkxP0Lhu_20gbKD</id>
+      <slots>16</slots>
+      <name>Arcane Denial (MSC 147).jpg</name>
+      <query>arcane denial</query>
+    </card>
+    <card>
+      <id>1tM44nWHnvmSwAIkBaWSsj0RBSGklljYq</id>
+      <slots>17</slots>
+      <name>Counterspell.jpg</name>
+      <query>counterspell</query>
+    </card>
+    <card>
+      <id>17mQvGIVHlLzqBCNysnv81S7FG7VTXdqi</id>
+      <slots>18</slots>
+      <name>Brought Back.png</name>
+      <query>brought back</query>
+    </card>
+    <card>
+      <id>1SR9cgvr67f_ato1VCgVo1ZJdjOhmm37q</id>
+      <slots>19</slots>
+      <name>Mana Drain [OTP] {11} (scan).jpg</name>
+      <query>mana drain</query>
+    </card>
+    <card>
+      <id>1JaW6QD-kBF6cHUCbT0iCCdGngkvK0aOS</id>
+      <slots>20</slots>
+      <name>Cyclonic Rift (Normal) [RVR].jpg</name>
+      <query>cyclonic rift</query>
+    </card>
+    <card>
+      <id>1gCR4sKg-XeIzjnWpBdCnDqfWkPdwz6b7</id>
+      <slots>21</slots>
+      <name>Fade Away.png</name>
+      <query>fade away</query>
+    </card>
+    <card>
+      <id>1OwuvczZfVZof4fRWa9hFEvbWizjas0O8</id>
+      <slots>22</slots>
+      <name>Fabricate.png</name>
+      <query>fabricate</query>
+    </card>
+    <card>
+      <id>17VO8lLEwOk__4NtwS3SBjgCLxpP0hN9w</id>
+      <slots>23</slots>
+      <name>Generous Gift (MSC 133).jpg</name>
+      <query>generous gift</query>
+    </card>
+    <card>
+      <id>1AUxOWLWtTRsUrMMrnXV8kl-1eOfsQFcc</id>
+      <slots>24</slots>
+      <name>Teferi's Protection (NormalPlus Chase Stone).png</name>
+      <query>teferis protection</query>
+    </card>
+    <card>
+      <id>1e1bjPBXu2VIATEP2zug2iNWq4xxzWoZp</id>
+      <slots>25</slots>
+      <name>Sevinne's Reclamation.jpg</name>
+      <query>sevinnes reclamation</query>
+    </card>
+    <card>
+      <id>1ksChkEmlq4J9VBXTy9CZLEW4vOvOVJbI</id>
+      <slots>26</slots>
+      <name>Fierce Guardianship.jpeg</name>
+      <query>fierce guardianship</query>
+    </card>
+    <card>
+      <id>1WXHdUPd9j3j1yKYMOD9fIXhXuv_d1ky7</id>
+      <slots>27</slots>
+      <name>Armageddon (Chris Rahn).jpg</name>
+      <query>armageddon</query>
+    </card>
+    <card>
+      <id>1LR4bvSUrcAQGz5BeMWF7odJzCV6TBA2h</id>
+      <slots>28</slots>
+      <name>Wrath of God.jpg</name>
+      <query>wrath of god</query>
+    </card>
+    <card>
+      <id>1U6S4de7YKWP1N0dU9hnRjNW8jrR0473K</id>
+      <slots>29</slots>
+      <name>Cataclysm (Normal, Eric Deschamps).jpg</name>
+      <query>cataclysm</query>
+    </card>
+    <card>
+      <id>1CnG-ZCXe_iYmHR48z-0nYXnswRyIReN0</id>
+      <slots>30</slots>
+      <name>Day of Judgment.jpg</name>
+      <query>day of judgment</query>
+    </card>
+    <card>
+      <id>1kWooAtiKXJgGtjgPZO2NxN2-FYSdI4eV</id>
+      <slots>31</slots>
+      <name>Ravages of War.png</name>
+      <query>ravages of war</query>
+    </card>
+    <card>
+      <id>1J-2CjU4QzWPdzctMVnUyilZSArTU6C6A</id>
+      <slots>32</slots>
+      <name>Supreme Verdict.jpg</name>
+      <query>supreme verdict</query>
+    </card>
+    <card>
+      <id>1U6te-K7KD39XhiWuqjKUxb_ZUZTOSRLp</id>
+      <slots>33</slots>
+      <name>Sunder.png</name>
+      <query>sunder</query>
+    </card>
+    <card>
+      <id>1EFfs8425q2Rcpg2UKnNSiUMZBx-pSuCG</id>
+      <slots>34</slots>
+      <name>Global Ruin.png</name>
+      <query>global ruin</query>
+    </card>
+    <card>
+      <id>1On8FFBjTXC60rq0C_eSLqIf2hSSazetO</id>
+      <slots>35</slots>
+      <name>Catastrophe (Ancient Andrew Robinson).jpg</name>
+      <query>catastrophe</query>
+    </card>
+    <card>
+      <id>1i4_dfNR5m5jTqX63LhebWdZBMc3vyi0F</id>
+      <slots>36</slots>
+      <name>Vanquish the Horde (MSC 146).jpg</name>
+      <query>vanquish horde</query>
+    </card>
+    <card>
+      <id>19nH3KioDPDAKdsD9tnfv3A648deA_-bb</id>
+      <slots>37</slots>
+      <name>Mox Amber (Steven Belledin).png</name>
+      <query>mox amber</query>
+    </card>
+    <card>
+      <id>1P0IbVqa8CN2eMxYpGvO82l1y8XFRYDU5</id>
+      <slots>38</slots>
+      <name>Chrome Mox (Normal) [2XM].jpg</name>
+      <query>chrome mox</query>
+    </card>
+    <card>
+      <id>17_17ONAv-k0exw-WfpL2JV8xUmX4uLLX</id>
+      <slots>39</slots>
+      <name>Mox Opal.jpg</name>
+      <query>mox opal</query>
+    </card>
+    <card>
+      <id>1HlBhVcrvCuEWh-7WP1hayogztf3tkw38</id>
+      <slots>40</slots>
+      <name>Sol Ring (FRC 21).jpg</name>
+      <query>sol ring</query>
+    </card>
+    <card>
+      <id>1bUnGdWlG5BO2JNMRip8HvC-gpeIsGe-3</id>
+      <slots>41</slots>
+      <name>Springleaf Drum.jpg</name>
+      <query>springleaf drum</query>
+    </card>
+    <card>
+      <id>1Cifddk3djULmjaMgjUrYPwJTJJK_IwnQ</id>
+      <slots>42</slots>
+      <name>Fellwar Stone.jpg</name>
+      <query>fellwar stone</query>
+    </card>
+    <card>
+      <id>1cP2EL-HU38qxc2-w_8O0O-1NZsc-4Glm</id>
+      <slots>43</slots>
+      <name>Sphere of Resistance (Ancient Doug Chaffee).jpg</name>
+      <query>sphere of resistance</query>
+    </card>
+    <card>
+      <id>11r2b2JaPOHW5KqEjUF5W11uzpB4Lv_Ab</id>
+      <slots>44</slots>
+      <name>Liquimetal Torque.png</name>
+      <query>liquimetal torque</query>
+    </card>
+    <card>
+      <id>1i9IJxsrZwQpk8rUeW6B6GDi-acXZlZ4k</id>
+      <slots>45</slots>
+      <name>Prismatic Lens.png</name>
+      <query>prismatic lens</query>
+    </card>
+    <card>
+      <id>1lTohzIrrxIZT457SoNMzUvQRRE3cgGFd</id>
+      <slots>46</slots>
+      <name>Winter Orb (NormalPlus Brian Snoddy).jpg</name>
+      <query>winter orb</query>
+    </card>
+    <card>
+      <id>1sz_kFwC4jEI30luM4pUA4rom_ze2mNaF</id>
+      <slots>47</slots>
+      <name>Mind Stone.jpg</name>
+      <query>mind stone</query>
+    </card>
+    <card>
+      <id>1m4PFc5n8KZWSxu9isILOf4kSAZZa3RQO</id>
+      <slots>48</slots>
+      <name>Thought Vessel (MSC 222).jpg</name>
+      <query>thought vessel</query>
+    </card>
+    <card>
+      <id>12LCIywrzFml3PeEPjxQbl_A7BOXGLsJp</id>
+      <slots>49</slots>
+      <name>Arcane Signet (FRC 20).jpg</name>
+      <query>arcane signet</query>
+    </card>
+    <card>
+      <id>1Aw3w6BRYDIaTPdabS23JsCaxjJ3vGmJh</id>
+      <slots>50</slots>
+      <name>Azorius Signet.jpg</name>
+      <query>azorius signet</query>
+    </card>
+    <card>
+      <id>1ilF1rDbdkn3k6FUd8QNBL-aHUW5FCIfj</id>
+      <slots>51</slots>
+      <name>Talisman of Progress.png</name>
+      <query>talisman of progress</query>
+    </card>
+    <card>
+      <id>1vQa7K27ZQCasqeMDkrL0utFOSBGrzssl</id>
+      <slots>52</slots>
+      <name>Tsabo_s Web.png</name>
+      <query>tsabos web</query>
+    </card>
+    <card>
+      <id>1ghlT4__VX0qBpKWYd1blL4WGj3pmOt10</id>
+      <slots>53</slots>
+      <name>Cursed Totem (NormalPlus Aaron Miller).jpg</name>
+      <query>cursed totem</query>
+    </card>
+    <card>
+      <id>1gBnIfbF8LliXDcqvWJCRJKMXN-bFLVTu</id>
+      <slots>54</slots>
+      <name>Crucible of Worlds (Ron Spencer).jpg</name>
+      <query>crucible of worlds</query>
+    </card>
+    <card>
+      <id>1hGHkD2azJSrSF6H847AIXaoW1tHr0kd2</id>
+      <slots>55</slots>
+      <name>Coalition Relic.png</name>
+      <query>coalition relic</query>
+    </card>
+    <card>
+      <id>1iYMS9ttD-QsuuZwr-Z6yrVTeDqGlHB8W</id>
+      <slots>56</slots>
+      <name>Knowledge Pool.png</name>
+      <query>knowledge pool</query>
+    </card>
+    <card>
+      <id>1aJTzJV7cQFDMUxUH95r2rT4TceaVWWnT</id>
+      <slots>57</slots>
+      <name>Omen Machine.png</name>
+      <query>omen machine</query>
+    </card>
+    <card>
+      <id>10eGj2G2Szyf4xeFi9LrYXqQDt5N96_Vd</id>
+      <slots>58</slots>
+      <name>Ward of Bones (Modern David Martin).jpg</name>
+      <query>ward of bones</query>
+    </card>
+    <card>
+      <id>1HfOMJyvfQkJqcVmAv_Acn42r_gudUXhn</id>
+      <slots>59</slots>
+      <name>Mystic Remora (Normal) [DMR] {59}.jpg</name>
+      <query>mystic remora</query>
+    </card>
+    <card>
+      <id>1TqP6vvJsl2f0BxLTSvYrAH1rRaPLkUWW</id>
+      <slots>60</slots>
+      <name>Overburden (Ancient John Matson).jpg</name>
+      <query>overburden</query>
+    </card>
+    <card>
+      <id>1U4iE1vWMv6dr2xKNBbbqyBU3nhBkoyMI</id>
+      <slots>61</slots>
+      <name>Mana Breach.png</name>
+      <query>mana breach</query>
+    </card>
+    <card>
+      <id>1UOGMQtVvZEocmh5uGKJu55ysWybuZ-GE</id>
+      <slots>62</slots>
+      <name>Rhystic Study (Tatiana Kirgetova).png</name>
+      <query>rhystic study</query>
+    </card>
+    <card>
+      <id>17g3AbwxN9UPjty4Z4WcBGb_b99-4NQlu</id>
+      <slots>63</slots>
+      <name>Back to Basics.png</name>
+      <query>back to basics</query>
+    </card>
+    <card>
+      <id>1C9vsEd0eLOJTksafegWUbhJdxHMsz4Rv</id>
+      <slots>64</slots>
+      <name>Smothering Tithe.jpg</name>
+      <query>smothering tithe</query>
+    </card>
+    <card>
+      <id>1Lo0Q2m5iyked2IlYts7pmY2Er2VEaIne</id>
+      <slots>65</slots>
+      <name>Land Equilibrium.png</name>
+      <query>land equilibrium</query>
+    </card>
+    <card>
+      <id>14gpXWuj74XyUCzBAL5X-zMsRE8hDm6rE</id>
+      <slots>66</slots>
+      <name>Ghost Town.png</name>
+      <query>ghost town</query>
+    </card>
+    <card>
+      <id>1HHktuFvvkEX_YwzChQOSGKg5knhpwKOE</id>
+      <slots>67</slots>
+      <name>Darksteel Citadel.jpg</name>
+      <query>darksteel citadel</query>
+    </card>
+    <card>
+      <id>1mTLpQSErCB9apOd0xib2LI8t-vVljouP</id>
+      <slots>68</slots>
+      <name>Cascading Cataracts.png</name>
+      <query>cascading cataracts</query>
+    </card>
+    <card>
+      <id>1MC71VioRVRtrFOJhh_3sBszMC-fJHIDL</id>
+      <slots>69</slots>
+      <name>Gleaming Bastion.jpg</name>
+      <query>gleaming bastion</query>
+    </card>
+    <card>
+      <id>1vdIfvSagV9G6N22KjPURvrI0-HyKJwL8</id>
+      <slots>70</slots>
+      <name>Strip Mine [EOS] {85} (Matteo Bassini) (Poster Stellar Sights) (Replica).png</name>
+      <query>strip mine</query>
+    </card>
+    <card>
+      <id>1t0iaKRn6a0upKvMZ4FW43PUf60d3tlkf</id>
+      <slots>71</slots>
+      <name>Fabled Passage.jpg</name>
+      <query>fabled passage</query>
+    </card>
+    <card>
+      <id>1nODw1woya-934thDz0xqPDCvbm1qtsZf</id>
+      <slots>72</slots>
+      <name>Razortide Bridge.jpg</name>
+      <query>razortide bridge</query>
+    </card>
+    <card>
+      <id>17sdRyo93KXnCy1XBcRHEhqHcwfXXov1u</id>
+      <slots>73</slots>
+      <name>Mystic Gate.jpg</name>
+      <query>mystic gate</query>
+    </card>
+    <card>
+      <id>1GDRzigjILvfJSOS6qXcS1ni8LmA0CPN9</id>
+      <slots>74</slots>
+      <name>Adarkar Wastes.jpg</name>
+      <query>adarkar wastes</query>
+    </card>
+    <card>
+      <id>1_k-u7I2jN1C6J-yo_asySRG-yZQWoLRt</id>
+      <slots>75</slots>
+      <name>Academy Ruins (Normal) [DRC] {58}.jpg</name>
+      <query>academy ruins</query>
+    </card>
+    <card>
+      <id>1PgxbsAg25L5iaSbMNHgbisVSfF-fWkxY</id>
+      <slots>76</slots>
+      <name>Wasteland.png</name>
+      <query>wasteland</query>
+    </card>
+    <card>
+      <id>1cFX2gB0mPs8UtkCVzLnCpDzG8CZojbSb</id>
+      <slots>77</slots>
+      <name>Tolaria West.png</name>
+      <query>tolaria west</query>
+    </card>
+    <card>
+      <id>1RvHklNMMwPS2CJ8rbgRuYFFcfuUEMBYE</id>
+      <slots>78</slots>
+      <name>Spire of Industry.jpg</name>
+      <query>spire of industry</query>
+    </card>
+    <card>
+      <id>1NF4dmg1iwXRy8AX2A16BzqKwhV3pR4Wt</id>
+      <slots>79</slots>
+      <name>Command Tower.jpg</name>
+      <query>command tower</query>
+    </card>
+    <card>
+      <id>1RJR9P6LnwlGcrW6q02h6fzpwLJHZYqWp</id>
+      <slots>80</slots>
+      <name>Skycloud Expanse.jpg</name>
+      <query>skycloud expanse</query>
+    </card>
+    <card>
+      <id>1rO844Z2NT5dUT2VcssaeY4z4p1d2B-Tr</id>
+      <slots>81</slots>
+      <name>Prismatic Vista (NormalPlus Sam Burley).png</name>
+      <query>prismatic vista</query>
+    </card>
+  </fronts>
+  <cardback>16g2UamJ2jzwNHovLesvsinvd6_qPkZfy</cardback>
+</order>
