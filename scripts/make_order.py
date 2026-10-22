@@ -4,11 +4,12 @@ Uso (venv com rapidocr): venv/bin/python scripts/make_order.py lista.txt order/<
 Retomável: cada carta resolvida fica em order/<nome>/units/<id>.json.
 Nada é decidido calado: o bot só PRÉ-SELECIONA; a conferência e o XML saem do artefato.
 """
-import concurrent.futures as cf, io, json, os, re, shutil, sys, time, urllib.request
+import concurrent.futures as cf, io, json, os, re, shutil, sys, time, urllib.error, urllib.request
 import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import calibrate as CAL
 import compare as C
 import deck_parse as D
 from build_review_artifact import uri, foot
@@ -22,6 +23,7 @@ TOP2 = 30           # finalistas das cartas de nota baixa (segunda passada)
 CAP = 800           # máximo de candidatos lidos por busca (Sol Ring tem 719)
 HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (tabela leave-one-out de `compare.py eval`, depois do corte de sangria)
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
+IDX_ALTA, IDX_MEDIA, IDX_BAIXA = 85, 70, 50  # faixas do índice de confiança (%)
 LIGA_SHIFT = 1.4  # imagens da LigaMagic pontuam ~1,4 abaixo das do Scryfall (menores, às vezes em português); faixas NÃO calibradas com decisões do usuário
 BASICS = {"Island", "Plains", "Swamp", "Mountain", "Forest", "Wastes"}
 LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT", "PH", "TW", "CN"}
@@ -32,7 +34,13 @@ def http(url, data=None):
     h = dict(UA)
     if data is not None:
         h["Content-Type"] = "application/json"; data = json.dumps(data).encode()
-    return urllib.request.urlopen(urllib.request.Request(url, data, h), timeout=60).read()
+    for a in range(6):  # 429/5xx: o MPCFill limita requisições; espera e tenta de novo
+        try:
+            return urllib.request.urlopen(urllib.request.Request(url, data, h), timeout=60).read()
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 502, 503, 504) or a == 5:
+                raise
+            time.sleep(float(e.headers.get("Retry-After") or 0) or 6 * (a + 1))
 
 
 def fetch_img(url, path):
@@ -187,6 +195,9 @@ def main(lista, out):
         print(m, flush=True); logf.write(m + "\n"); logf.flush()
     entries = [r for r in (D.resolve(D.parse_line(l)) for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l))]
     src = sources(); cheap, full = models(); mem = memory()
+    mt = os.path.join(out, "model.txt")
+    if not os.path.exists(mt):
+        open(mt, "w").write(C.data_key())
     refs = json.load(open(os.environ["REFS"], encoding="utf-8")) if os.environ.get("REFS") else {}
     units = []
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
@@ -237,18 +248,28 @@ def fill_meta(unit_files):
 
 def build_catalog(unit_files, out):
     fill_meta(unit_files)
+    mt = os.path.join(out, "model.txt")  # modelo com que o pedido foi processado; só pedidos com o modelo atual usam o índice
+    cal = CAL.load() if os.path.exists(mt) and open(mt).read().strip() == C.data_key() else None
     cards, chunks, cur, size = [], [], [], 0
     total_qty = 0
     for up in unit_files:
         u = json.load(open(up, encoding="utf-8"))
-        if u["cands"]:  # confiança com os limiares atuais (as unidades guardam só a nota)
+        if u["cands"]:  # confiança: índice calibrado (pedidos novos) ou limiares antigos (pedidos legados)
             seen = any(c.get("mem") for c in u["cands"]); best0 = max((c["sc"] for c in u["cands"] if c["sc"] is not None), default=-9.0)
             liga = u["set"] == "LIGA"
-            u["prop"]["conf"] = conf_of(best0 + (LIGA_SHIFT if liga else 0), u["set"] == "SLD", seen)
+            if cal:
+                idx = 99 if seen else CAL.index(cal, best0, "liga" if liga else "scry")
+                conf = "alta" if idx >= IDX_ALTA else "media" if idx >= IDX_MEDIA else "baixa" if idx >= IDX_BAIXA else "nenhum"
+                if u["set"] == "SLD" and not seen and idx < IDX_ALTA:
+                    conf = "nenhum"  # Secret Lair: arte específica, só vale a exata
+                u["prop"]["idx"] = idx
+            else:
+                conf = conf_of(best0 + (LIGA_SHIFT if liga else 0), u["set"] == "SLD", seen)
+            u["prop"]["conf"] = conf
             note = u["prop"]["note"]; k = note.find("melhor nota")
-            if k >= 0:  # refaz os avisos com a confiança atual (o texto antigo veio das faixas do Scryfall)
-                u["prop"]["note"] = ("Escolhida por você em pedido anterior. " if seen else "") + \
-                    ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if u["prop"]["conf"] == "nenhum" else "") + note[k:] + \
+            if k >= 0:  # refaz os avisos com a confiança atual
+                u["prop"]["note"] = ("Escolhida por você em pedido anterior. " if seen else "") + (f"Índice de confiança {u['prop']['idx']}%. " if cal else "") + \
+                    ("ALERTA: não achei a versão pedida; esta é a mais próxima. Falar com o cliente: não tem, serve outra? " if conf == "nenhum" else "") + note[k:] + \
                     (" Terreno básico: o MPCFill tem milhares de artes; pode haver uma melhor além das 800 primeiras." if liga and u["name"] in BASICS else "")
         if u["cands"] and not any(c.get("mem") for c in u["cands"]):  # empate técnico (até 0,25 da melhor nota): vence a maior resolução
             best = max(c["sc"] for c in u["cands"])
@@ -275,7 +296,7 @@ def build_catalog(unit_files, out):
         json.dump({"cards": ch}, open(os.path.join(out, n), "w", encoding="utf-8"), separators=(",", ":"), ensure_ascii=False)
     bracket = next((b for b in BRACKETS if b >= total_qty), BRACKETS[-1])
     liga_any = any(json.load(open(up, encoding="utf-8")).get("set") == "LIGA" for up in unit_files)
-    onote = "A referência de cada carta é a imagem da LigaMagic. As faixas de confiança ainda não foram calibradas para essas imagens (as notas saem mais baixas que com o Scryfall): confira todas." if liga_any else ""
+    onote = ("O índice de cada carta é a chance estimada de você aceitar a escolha do bot, calculada com as suas decisões anteriores (referências " + ("da Liga" if liga_any else "do Scryfall") + "). Audite só o que quiser; o painel do XML aceita um índice mínimo para entrar sem auditoria.") if cal else ("A referência de cada carta é a imagem da LigaMagic. As faixas de confiança ainda não foram calibradas para essas imagens: confira todas." if liga_any else "")
     json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
     print("catálogo:", len(unit_files), "unidades,", len(names), "arquivos; quantidade", total_qty, "bracket", bracket)
 

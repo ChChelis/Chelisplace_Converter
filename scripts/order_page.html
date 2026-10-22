@@ -57,6 +57,7 @@ details.sec[open] > summary::before { content: "▾"; }
 .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .head h2 { font-size: 15px; font-weight: 600; margin: 0; }
 .head .tog { margin-left: auto; }
+.idx { font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: var(--line); color: var(--ink); }
 .qty { font-family: var(--mono); font-weight: 600; font-size: 13px; }
 .why { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.25; }
 details.xml { margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
@@ -124,7 +125,8 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     </div>
     <details class="xml" id="xmlbox"><summary>Gerar o XML do pedido</summary>
       <div class="xmlgrid">
-        <label for="incl">Cartas ainda não conferidas<select id="incl"><option value="0">Ficam de fora</option><option value="1">Entram com a sugestão</option></select></label>
+        <label for="incl">Cartas ainda não conferidas<select id="incl"><option value="0">Ficam de fora</option><option value="2">Entram se o índice for alto o bastante</option><option value="1">Entram todas com a sugestão</option></select></label>
+        <label for="minidx">Índice mínimo para entrar sem auditoria (%)<input id="minidx" type="number" min="0" max="100" step="1" value="85"></label>
       </div>
       <div class="actions"><button class="primary" id="mkxml">Gerar XML</button><button id="mkmsg">Mensagem para o cliente (alertas)</button></div>
       <textarea id="cmsg" readonly rows="8" hidden aria-label="Mensagem para o cliente"></textarea>
@@ -141,9 +143,9 @@ details.xml summary { cursor: pointer; font-weight: 600; }
 (function () {
   "use strict";
   var SECS = [
-    { key: "alta", title: "Sugestão com confiança alta", hint: "Rodapé ou texto idêntico ao da referência. Confira rápido e aceite a seção." },
-    { key: "media", title: "Sugestão com confiança média", hint: "Parece certo, mas há dúvida de moldura ou de impressão. Vale olhar cada um." },
-    { key: "baixa", title: "Sugestão com confiança baixa", hint: "Moldura antiga ou rodapé ilegível. Decida você." },
+    { key: "alta", title: "Sugestão com confiança alta", hint: "Rodapé ou texto idêntico ao da referência. Confira rápido e aceite a seção.", hintIdx: "Índice de 85% ou mais. Audite só se quiser; dá para deixar entrar no XML sem olhar." },
+    { key: "media", title: "Sugestão com confiança média", hint: "Parece certo, mas há dúvida de moldura ou de impressão. Vale olhar cada um.", hintIdx: "Índice de 70 a 84%. Em geral certo, mas vale olhar." },
+    { key: "baixa", title: "Sugestão com confiança baixa", hint: "Moldura antiga ou rodapé ilegível. Decida você.", hintIdx: "Índice de 50 a 69%. Audite." },
     { key: "nenhum", title: "Sem candidato exato", hint: "Nada bateu com segurança. Em Secret Lair o alerta pede para falar com o cliente. Os tracejados são os mais parecidos." }
   ];
   var LS = {
@@ -205,7 +207,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     return '<article class="pair" id="p-' + c.id + '" data-id="' + c.id + '">' +
       '<figure class="ref"><img loading="lazy" src="' + c.ref + '" alt="Referência do Scryfall"><div><figcaption>REF · ' + esc(c.set) + " " + esc(c.cn) + '</figcaption><img class="foot-img" loading="lazy" src="' + c.refFoot + '" alt="Rodapé da referência"></div></figure>' +
       '<div><div class="head"><button class="ok primary" data-act="accept">' + ((c.prop.accept || []).length ? "Aceitar sugestão" : "Confirmar: nenhum serve") + '</button><h2>' + esc(c.name) + '</h2><span class="code">' + esc(c.set) + " " + esc(c.cn) + (c.face ? " · verso" : "") + '</span><span class="qty">×' + c.qty + '</span><span class="pill" data-pill></span>' +
-      '<span class="conf">' + (sec === "nenhum" ? "sem candidato exato" : "confiança " + esc(c.prop.conf)) + '</span><span class="sum" data-sum></span><button class="tog" data-tog></button></div>' +
+      '<span class="conf">' + (sec === "nenhum" ? "sem candidato exato" : "confiança " + esc(c.prop.conf)) + '</span>' + (c.prop.idx != null ? '<span class="idx" title="Chance estimada de você aceitar a escolha do bot, calculada com as suas decisões anteriores">índice ' + c.prop.idx + '%</span>' : '') + '<span class="sum" data-sum></span><button class="tog" data-tog></button></div>' +
       '<p class="note"><b>Meu motivo:</b> ' + esc(c.prop.note) + "</p>" +
       '<div class="grid" data-grid>' + first.map(function (k) { return candHtml(c, k); }).join("") + "</div>" +
       (rest.length ? '<div class="more"><button data-more>Mostrar mais (' + rest.length + ")</button></div>" : "") +
@@ -216,9 +218,11 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     var html = "";
     SECS.forEach(function (s) {
       var list = cards.filter(function (c) { return secOf(c) === s.key; });
+      if (list.some(function (c) { return c.prop.idx != null; })) list.sort(function (a, b) { return (a.prop.idx || 0) - (b.prop.idx || 0); });  // as mais duvidosas primeiro
+      var hs = list.some(function (c) { return c.prop.idx != null; }) && s.hintIdx ? s.hintIdx : s.hint;
       if (!list.length) return;
       html += '<details class="sec" data-sec="' + s.key + '"' + (LS.get("sec-" + s.key, "1") === "1" ? " open" : "") + "><summary><span>" + s.title + '</span><span class="sec-count" data-count></span>' +
-        '<button class="primary" data-bulk="' + s.key + '" hidden></button><span class="sec-hint">' + s.hint + '</span></summary><div data-confirm></div><div data-list>' +
+        '<button class="primary" data-bulk="' + s.key + '" hidden></button><span class="sec-hint">' + hs + '</span></summary><div data-confirm></div><div data-list>' +
         list.map(pairHtml).join("") + "</div></details>";
     });
     $("#main").innerHTML = html || '<p class="empty">Nenhum par no catálogo.</p>';
@@ -361,9 +365,9 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   var CARDBACK = "16g2UamJ2jzwNHovLesvsinvd6_qPkZfy"; // verso qualquer: o usuário ignora o verso no fluxo dele
   var BR = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612];
   function x(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[ch]; }); }
-  function chosen(c, incl) {
-    var a = acc(c.id), st = stOf(c.id);
-    var n = st === "ok" && a.length ? a[0] : (st === "pendente" && incl && (c.prop.accept || []).length ? c.prop.accept[0] : null);
+  function chosen(c, mode, minI) {  // mode: "0" só conferidas, "1" também todas as sugestões, "2" também as sugestões com índice >= minI
+    var a = acc(c.id), st = stOf(c.id), pr = (c.prop.accept || []).length ? c.prop.accept[0] : null;
+    var n = st === "ok" && a.length ? a[0] : (st === "pendente" && pr != null && (mode === "1" || (mode === "2" && (c.prop.idx || 0) >= minI)) ? pr : null);
     return n == null ? null : c.cands.filter(function (k) { return k.n === n; })[0] || null;
   }
   function cardXml(k, slots, q) {
@@ -371,22 +375,22 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     return "    <card>\n      <id>" + x(k.id) + "</id>\n      <slots>" + slots.join(",") + "</slots>\n      <name>" + x(nm) + "</name>\n      <query>" + x((k.t === "TOKEN" ? "t:" : k.t === "CARDBACK" ? "b:" : "") + (k.q || q.toLowerCase())) + "</query>\n    </card>\n";
   }
   function buildXml() {
-    var incl = $("#incl").value === "1", byE = {}, slot = 0, fr = "", bk = "", skipped = [], used = 0;
+    var mode = $("#incl").value, minI = +$("#minidx").value || 0, byE = {}, slot = 0, fr = "", bk = "", skipped = [], used = 0, auto = 0;
     cards.forEach(function (c) { (byE[c.entry] = byE[c.entry] || {})[c.face] = c; });
     Object.keys(byE).map(Number).sort(function (a, b) { return a - b; }).forEach(function (e) {
-      var f = byE[e][0], b = byE[e][1], kf = f && chosen(f, incl);
+      var f = byE[e][0], b = byE[e][1], kf = f && chosen(f, mode, minI);
       if (!kf) { if (f) skipped.push(f.name + " ×" + f.qty); return; }
       var slots = []; for (var i = 0; i < f.qty; i++) slots.push(slot++);
-      used += f.qty; fr += cardXml(kf, slots, f.name);
-      var kb = b && chosen(b, incl); if (kb) bk += cardXml(kb, slots, b.name); else if (b) skipped.push(b.name + " (verso) ×" + b.qty);
+      used += f.qty; fr += cardXml(kf, slots, f.name); if (stOf(f.id) === "pendente") auto++;
+      var kb = b && chosen(b, mode, minI); if (kb) bk += cardXml(kb, slots, b.name); else if (b) skipped.push(b.name + " (verso) ×" + b.qty);
     });
     var bracket = BR.filter(function (v) { return v >= used; })[0] || BR[BR.length - 1];
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<order>\n  <details>\n    <quantity>' + used + "</quantity>\n    <bracket>" + bracket + "</bracket>\n    <stock>(S30) Standard Smooth</stock>\n    <foil>false</foil>\n  </details>\n  <fronts>\n" + fr + "  </fronts>\n" + (bk ? "  <backs>\n" + bk + "  </backs>\n" : "") + "  <cardback>" + CARDBACK + "</cardback>\n</order>\n";
-    return { xml: xml, used: used, bracket: bracket, skipped: skipped };
+    return { xml: xml, used: used, bracket: bracket, skipped: skipped, auto: auto };
   }
   function xmlPreview() {
     var r = buildXml(), m = $("#xmlmsg");
-    m.textContent = r.used + " cartas entram (moldura de " + r.bracket + ")." + (r.skipped.length ? " Ficam de fora, para você resolver à mão: " + r.skipped.join("; ") + "." : " Nenhuma carta fica de fora.");
+    m.textContent = r.used + " cartas entram (moldura de " + r.bracket + ")" + (r.auto ? ", " + r.auto + " delas sem auditoria, só pela sugestão do bot" : "") + "." + (r.skipped.length ? " Ficam de fora, para você resolver à mão: " + r.skipped.join("; ") + "." : " Nenhuma carta fica de fora.");
     return r;
   }
   $("#mkxml").addEventListener("click", function () {
@@ -399,7 +403,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     if (!items.length) { box.value = "Nenhum alerta neste pedido: todas as versões pedidas têm candidato próximo."; }
     else {
       box.value = "Oi! Não encontrei estas versões exatas no catálogo:\n\n" + items.map(function (c) {
-        var k = chosen(c, true) || c.cands[0];
+        var k = chosen(c, "1", 0) || c.cands[0];
         return "• " + c.name + " (" + c.set + " " + c.cn + ")" + (c.qty > 1 ? " ×" + c.qty : "") + " → mais parecida: " + (k ? k.name + " (" + k.source + ")" : "nenhuma encontrada");
       }).join("\n") + "\n\nServe a mais parecida ou prefere outra?";
     }
@@ -407,7 +411,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     try { navigator.clipboard.writeText(box.value).catch(function () {}); } catch (e) {}
   }
   $("#mkmsg").addEventListener("click", clientMsg);
-  ["#incl"].forEach(function (s) { $(s).addEventListener("change", xmlPreview); });
+  ["#incl", "#minidx"].forEach(function (s) { $(s).addEventListener("change", xmlPreview); });
 
   /* ---------- início ---------- */
   fetch("catalog.json").then(function (r) { return r.json(); }).then(function (idx) {

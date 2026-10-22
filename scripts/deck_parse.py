@@ -12,13 +12,16 @@ LINE = re.compile(r"^(\d+)x?\s+(.+?)(?:\s+\((\w+)\)\s+(\S+?))?(?:\s+\*[A-Za-z]\*
 
 
 def scry(path):
-    time.sleep(0.1)  # shortcut: sleep fixo (limite do Scryfall é ~10/s), trocar por limitador se paralelizar
-    try:
-        return json.load(urllib.request.urlopen(urllib.request.Request("https://api.scryfall.com" + path, headers=UA), timeout=20))
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return None
-        raise
+    time.sleep(0.15)  # limite do Scryfall é ~10/s por IP; com várias fatias juntas passa, então 429 espera e repete
+    for a in range(8):
+        try:
+            return json.load(urllib.request.urlopen(urllib.request.Request("https://api.scryfall.com" + path, headers=UA), timeout=20))
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            if e.code != 429 or a == 7:
+                raise
+            time.sleep(float(e.headers.get("Retry-After") or 0) or 5 * (a + 1))
 
 
 def norm(name):

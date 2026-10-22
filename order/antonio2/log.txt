@@ -1,0 +1,30 @@
+000_liga_avacyn-angel-of-horror  (1x)
+  4 candidatos
+004_liga_dauthi-voidwalker  (1x)
+  104 candidatos
+002_liga_viscera-seer  (1x)
+  51 candidatos
+003_liga_blood-artist  (1x)
+  107 candidatos
+  nota 0.85: ampliando para 30 finalistas
+  nota 1.90: ampliando para 30 finalistas
+001_liga_carrion-feeder  (1x)
+  65 candidatos
+007_liga_accursed-marauder  (1x)
+  16 candidatos
+008_liga_troop-of-ponies  (1x)
+  2 candidatos
+012_liga_braids-arisen-nightmare  (1x)
+  72 candidatos
+006_liga_priest-of-forgotten-gods  (1x)
+  30 candidatos
+  nota 1.47: ampliando para 30 finalistas
+011_liga_ayara-first-of-locthwain  (1x)
+  34 candidatos
+  nota 1.37: ampliando para 30 finalistas
+  nota 0.79: ampliando para 30 finalistas
+  nota 1.40: ampliando para 30 finalistas
+005_liga_zulaport-cutthroat  (1x)
+  67 candidatos
+016_liga_morbid-opportunist  (1x)
+  46 candidatos

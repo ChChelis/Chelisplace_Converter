@@ -156,7 +156,27 @@ def cmd_ocr():
     print("ocr ok:", n, "candidatos")
 
 
+def data_key():
+    """Identifica o conjunto de decisões + o código das medidas: muda quando um gabarito ou este arquivo muda."""
+    import glob, hashlib
+    h = hashlib.md5()
+    for fp in sorted(glob.glob(os.path.join(ROOT, "order", "*", "gabarito.json")) + [os.path.join(TS, "gabarito.json"), os.path.abspath(__file__)]):
+        h.update(open(fp, "rb").read())
+    return h.hexdigest()[:10]
+
+
 def dataset():
+    """Medidas de todos os candidatos dos pares conferidos (cache em disco: é a parte lenta do treino)."""
+    path = os.path.join(CACHE, f"dataset_{data_key()}.npz")
+    if os.path.exists(path):
+        d = np.load(path)
+        return d["X"], d["y"], [str(x) for x in d["grp"]], [int(x) for x in d["idx"]]
+    X, y, grp, idx = _dataset_compute()
+    np.savez(path, X=X, y=y, grp=np.array(grp), idx=np.array(idx))
+    return X, y, grp, idx
+
+
+def _dataset_compute():
     X, y, grp, idx = [], [], [], []
     for k, g, cands, refp in pairs():
         ref, rtok = load(refp), tokens(footer_text("ref_" + k))
