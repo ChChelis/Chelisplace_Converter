@@ -25,6 +25,7 @@ HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (t
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
 IDX_ALTA, IDX_MEDIA, IDX_BAIXA = 85, 70, 50  # faixas do índice de confiança (%)
 LIGA_SHIFT = 1.4  # imagens da LigaMagic pontuam ~1,4 abaixo das do Scryfall (menores, às vezes em português); faixas NÃO calibradas com decisões do usuário
+PAIR_BONUS = 1.0  # verso da mesma fonte que a frente escolhida ganha esta nota extra (frente e verso devem combinar)
 BASICS = {"Island", "Plains", "Swamp", "Mountain", "Forest", "Wastes"}
 LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT", "PH", "TW", "CN"}
 BRACKETS = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612]
@@ -131,7 +132,20 @@ def memory():
     return mem
 
 
-def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=()):
+def exact_print(front_uid, front_name):
+    """Set e número lidos (OCR) no rodapé da imagem da Liga -> impressão exata no Scryfall, para trazer o verso da MESMA impressão."""
+    txt = C.footer_text("ref_" + front_uid)
+    sets = [t.lower() for t in re.findall(r"[A-Z][A-Z0-9]{1,3}", txt.upper()) if t not in LANGS and t != "EN"][:4]
+    nums = [n.lstrip("0") or "0" for n in re.findall(r"\d{1,4}[A-Za-z]?", txt)][:4]
+    for st_ in sets:
+        for n in nums:
+            d = D.scry(f"/cards/{st_}/{n}")
+            if d and d["name"].split(" // ")[0].lower() == front_name.lower() and len(d.get("card_faces", [])) > 1:
+                return d
+    return None
+
+
+def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None):
     refp = os.path.join(CACHE, f"sf_{uid}.jpg")
     if os.path.exists(ref_url):  # referência local (ex.: imagem da página da LigaMagic)
         shutil.copy(ref_url, refp)
@@ -167,7 +181,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         out = []
         for c in top:
             f = C.features(ref, rtok, C.load(os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")), C.tokens(C.footer_text(c["identifier"])))
-            out.append((float(C.score(full, np.array([f]))[0]), c, f))
+            out.append((float(C.score(full, np.array([f]))[0]) + (PAIR_BONUS if prefer_src and c["sourceName"] == prefer_src else 0.0), c, f))
         return sorted(out, key=lambda r: -r[0])
 
     rows = rank(TOP)
@@ -185,7 +199,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         f"melhor nota {best:.2f}: " + explain(rows[0][2])
     return {"id": uid, "name": name, "refp": refp,
             "cands": [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "t": c.get("cardType"), "q": c.get("searchq"), "sc": round(s, 2), "why": explain(f), **({"mem": True} if i == 0 and seen else {})} for i, (s, c, f) in enumerate(rows)],
-            "prop": {"accept": accept, "near": [n for n in (2, 3, 4)], "conf": conf, "note": note}}
+            "pair_src": prefer_src, "prop": {"accept": accept, "near": [n for n in (2, 3, 4)], "conf": conf, "note": note}}
 
 
 def main(lista, out):
@@ -208,19 +222,28 @@ def main(lista, out):
             continue
         if not e["card"]:
             log(f"{i:03d} NÃO RESOLVIDA: {e['name']} {e['fixes']}"); continue
-        names = e["name"].split(" // ")
+        names = e["card"]["name"].split(" // ") if len(e["images"]) > 1 else e["name"].split(" // ")  # a lista da Liga traz só o nome da frente
+        last_front = None
         tokenish = e["card"]["layout"] in ("token", "double_faced_token", "emblem")
         for fi, url in enumerate(e["images"]):
             liga = fi == 0 and e["name"] in refs  # imagem de referência vinda da LigaMagic: set/número do Scryfall seriam palpite
             if liga:
                 url = refs[e["name"]]
-            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{e['card']['set']}_{e['card']['collector_number']}_{slug(names[min(fi, len(names) - 1)])}")
+            cset, ccn = e["card"]["set"], e["card"]["collector_number"]
+            if fi == 1 and e["name"] in refs and last_front:  # verso de carta dupla-face: tenta a mesma impressão da frente da Liga
+                ex = exact_print(last_front["uid"], names[0])
+                if ex:
+                    url = ex["card_faces"][1]["image_uris"]["large"]; cset, ccn = ex["set"], ex["collector_number"]
+                    log(f"  verso: impressão da Liga identificada pelo rodapé: {cset} {ccn}")
+            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{cset}_{ccn}_{slug(names[min(fi, len(names) - 1)])}")
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
-                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and e["card"]["set"] == "sld", src, cheap, full, log, [] if liga else mem.get((e["card"]["set"].lower(), str(e["card"]["collector_number"]).lower(), fi), []))
-                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else e["card"]["set"].upper(), "cn": "" if liga else e["card"]["collector_number"], "fixes": [] if liga else e["fixes"]})
+                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None)
+                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"]})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
+            if fi == 0:
+                uj = json.load(open(up, encoding="utf-8")); last_front = {"uid": uid, "src": uj["cands"][0]["source"] if uj["cands"] else None}
             units.append(up)
     if not shard:
         build_catalog(units, out)

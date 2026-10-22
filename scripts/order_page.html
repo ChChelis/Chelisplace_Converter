@@ -223,7 +223,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     var sec = secOf(c);
     return '<article class="pair" id="p-' + c.id + '" data-id="' + c.id + '">' +
       '<figure class="ref"><img loading="lazy" src="' + c.ref + '" alt="Referência do Scryfall"><div><figcaption>REF · ' + esc(c.set) + " " + esc(c.cn) + '</figcaption><img class="foot-img" loading="lazy" src="' + c.refFoot + '" alt="Rodapé da referência"></div></figure>' +
-      '<div><div class="head"><button class="ok primary" data-act="accept">' + ((c.prop.accept || []).length ? "Aceitar sugestão" : "Confirmar: nenhum serve") + '</button><h2>' + esc(c.name) + '</h2><span class="code">' + esc(c.set) + " " + esc(c.cn) + (c.face ? " · verso" : "") + '</span><span class="qty">×' + c.qty + '</span><span class="pill" data-pill></span>' +
+      '<div><div class="head"><button class="ok primary" data-act="accept">' + ((c.prop.accept || []).length ? "Aceitar sugestão" : "Confirmar: nenhum serve") + '</button><h2>' + esc(c.name) + '</h2><span class="code">' + esc(c.set) + " " + esc(c.cn) + (c.face ? " · verso" + (frontOf(c) ? " de " + esc(frontOf(c).name) : "") : "") + '</span><span class="qty">×' + c.qty + '</span><span class="pill" data-pill></span>' +
       '<span class="conf">' + (sec === "nenhum" ? "sem candidato exato" : "confiança " + esc(c.prop.conf)) + '</span>' + (c.prop.idx != null ? '<span class="idx" title="Chance estimada de você aceitar a escolha do bot, calculada com as suas decisões anteriores">índice ' + c.prop.idx + '%</span>' : '') + '<span class="sum" data-sum></span><button class="tog" data-tog></button></div>' +
       '<p class="note"><b>Meu motivo:</b> ' + esc(c.prop.note) + "</p>" +
       '<div class="grid" data-grid>' + first.map(function (k) { return candHtml(c, k); }).join("") + "</div>" +
@@ -271,8 +271,19 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   var THR_ALERT = 70;
   var view = "todas";
   function hasIdx() { return cards.some(function (c) { return c.prop.idx != null; }); }
+  function frontOf(c) { return c.face ? cards.filter(function (f) { return f.entry === c.entry && !f.face; })[0] : null; }
+  function srcOf(c) {  // fonte (uploader) da escolha atual: a conferida, senão a sugestão
+    var a = acc(c.id), n = stOf(c.id) === "ok" && a.length ? a[0] : (c.prop.accept || [])[0];
+    var k = c.cands.filter(function (x) { return x.n === n; })[0]; return k ? k.source : null;
+  }
+  function pairWarn(c) {  // frente e verso de uma dupla-face devem ser do mesmo uploader
+    var f = frontOf(c); if (!f) return null;
+    var a = srcOf(f), b = srcOf(c);
+    return a && b && a !== b ? "verso de " + f.name + ": fonte " + b + " difere da frente (" + a + ")" : null;
+  }
   function alertOf(c) {
-    var r = [], i = c.prop.idx;
+    var r = [], i = c.prop.idx, pw = pairWarn(c);
+    if (pw) r.push(pw);
     if (i != null && i < THR_ALERT) r.push("índice baixo (" + i + "%)");
     if (i == null && c.prop.conf === "baixa") r.push("confiança baixa");
     if (c.prop.conf === "nenhum") r.push("sem versão próxima: falar com o cliente");
