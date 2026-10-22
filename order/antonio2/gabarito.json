@@ -1,0 +1,771 @@
+{
+ "000_liga_avacyn-angel-of-horror": {
+  "status": "ok",
+  "accept_ids": [
+   "1m2hcQ6bDJgkyqAje-0xcacLm36q2NdjO"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:12.259Z",
+  "reviewed_one_by_one": true
+ },
+ "001_liga_carrion-feeder": {
+  "status": "ok",
+  "accept_ids": [
+   "1WhJw-Qy2tyWWW5eGoEfuO-Og-BIBTnc0"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.829Z",
+  "reviewed_one_by_one": true
+ },
+ "002_liga_viscera-seer": {
+  "status": "ok",
+  "accept_ids": [
+   "1kCh13KjPNrySlBLKWgFxPPlZHcU5w0g7"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:14.239Z",
+  "reviewed_one_by_one": true
+ },
+ "003_liga_blood-artist": {
+  "status": "ok",
+  "accept_ids": [
+   "1t06KU1zFQNJS3cTKX7eh68FlozxRUz-8"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.840Z",
+  "reviewed_one_by_one": true
+ },
+ "004_liga_dauthi-voidwalker": {
+  "status": "ok",
+  "accept_ids": [
+   "18xvFQANS4eE0MM7QZw0wPrrlbmIm1rpd"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.850Z",
+  "reviewed_one_by_one": true
+ },
+ "005_liga_zulaport-cutthroat": {
+  "status": "ok",
+  "accept_ids": [
+   "1LJIO_iQH0hneRRy_nXoP1QF22dsSet0U"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.855Z",
+  "reviewed_one_by_one": true
+ },
+ "006_liga_priest-of-forgotten-gods": {
+  "status": "ok",
+  "accept_ids": [
+   "1isb8q2Y0ign8Lr1jhSz8yQtNyG1l9TWN"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:16.279Z",
+  "reviewed_one_by_one": true
+ },
+ "007_liga_accursed-marauder": {
+  "status": "ok",
+  "accept_ids": [
+   "1lWlC23E-m7SzwLoBwLyecP5GjjicvNob"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.860Z",
+  "reviewed_one_by_one": true
+ },
+ "008_liga_troop-of-ponies": {
+  "status": "ok",
+  "accept_ids": [
+   "1Vp1gH-OTBF5vGXcp2UKX1mW3SHbL7wie"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.869Z",
+  "reviewed_one_by_one": true
+ },
+ "009_liga_umbral-collar-zealot": {
+  "status": "ok",
+  "accept_ids": [
+   "1xHy3fkWzaVZ8cHqh2mWImJgwQiieD5JU"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.873Z",
+  "reviewed_one_by_one": true
+ },
+ "010_liga_grim-haruspex": {
+  "status": "ok",
+  "accept_ids": [
+   "12asVLpQal8EkbSKwYWaofFBnXG-1WOZ1"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:34.700Z",
+  "reviewed_one_by_one": true
+ },
+ "011_liga_ayara-first-of-locthwain": {
+  "status": "ok",
+  "accept_ids": [
+   "1COijRST17cGo3xkA485djbALIavVTO0o"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.887Z",
+  "reviewed_one_by_one": true
+ },
+ "012_liga_braids-arisen-nightmare": {
+  "status": "ok",
+  "accept_ids": [
+   "1ObU1Tej9aQlRr8a3VulVLv0UYFAgpVfE"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.898Z",
+  "reviewed_one_by_one": true
+ },
+ "013_liga_demon-s-disciple": {
+  "status": "ok",
+  "accept_ids": [
+   "1-NlK7njM-tOASwSswWWm9wejd09YEGpi"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.904Z",
+  "reviewed_one_by_one": true
+ },
+ "014_liga_plaguecrafter": {
+  "status": "ok",
+  "accept_ids": [
+   "1OLV-lWtVOAoY-R7wL0KAb8-nu5X_WCXR"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.917Z",
+  "reviewed_one_by_one": true
+ },
+ "015_liga_warren-soultrader": {
+  "status": "ok",
+  "accept_ids": [
+   "1Ei8p_WxGaiINKZ2zxgxCfeITbtR0rsV3"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.931Z",
+  "reviewed_one_by_one": true
+ },
+ "016_liga_morbid-opportunist": {
+  "status": "ok",
+  "accept_ids": [
+   "1d8oeM5H6vn9jfH3RZte5us-NRH-TXYvd"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.939Z",
+  "reviewed_one_by_one": true
+ },
+ "017_liga_pawn-of-ulamog": {
+  "status": "ok",
+  "accept_ids": [
+   "1msR3mYBGonPg_Iyfu0XDMXpA4K0DPJ7x"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.951Z",
+  "reviewed_one_by_one": true
+ },
+ "018_liga_fleshbag-marauder": {
+  "status": "ok",
+  "accept_ids": [
+   "1IBjP3sOZVQJH0AyZcHS3Y5cS7CQAPACf"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.967Z",
+  "reviewed_one_by_one": true
+ },
+ "019_fin_115_sephiroth-one-winged-angel": {
+  "status": "ok",
+  "accept_ids": [
+   "1s7IQMJT8eeqwJRiRRY57KlJukM3bAxS1"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.984Z",
+  "reviewed_one_by_one": true
+ },
+ "019_liga_sephiroth-fabled-soldier": {
+  "status": "ok",
+  "accept_ids": [
+   "16BquLqKbBPUXvML61z4Ago1CQUBjPZ5O"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:24.998Z",
+  "reviewed_one_by_one": true
+ },
+ "020_liga_twilight-diviner": {
+  "status": "ok",
+  "accept_ids": [
+   "1pTTaFxc_Lia4YKCanfyl2VbzIhMwC6hO"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.006Z",
+  "reviewed_one_by_one": true
+ },
+ "021_liga_crypt-ghast": {
+  "status": "ok",
+  "accept_ids": [
+   "1IO3TbaNkRzk0Ua9MoI4rDWZRYhqQFF8v"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:47.899Z",
+  "reviewed_one_by_one": true
+ },
+ "022_liga_disciple-of-bolas": {
+  "status": "ok",
+  "accept_ids": [
+   "1QnGyygvTTahIp5sIGL8hPXy8ggUh9MYl"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:50.779Z",
+  "reviewed_one_by_one": true
+ },
+ "023_liga_pitiless-plunderer": {
+  "status": "ok",
+  "accept_ids": [
+   "1IuA3cUmCSdXEfTYlRFVwmvehJo9sh3ul"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:52.491Z",
+  "reviewed_one_by_one": true
+ },
+ "024_liga_solemn-simulacrum": {
+  "status": "ok",
+  "accept_ids": [
+   "1N3KKZdxTT3cMGAeXSfl3MpSiiDKgkJu5"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:54.324Z",
+  "reviewed_one_by_one": true
+ },
+ "025_liga_junji-the-midnight-sky": {
+  "status": "ok",
+  "accept_ids": [
+   "1SG_FAPjWwkZLJYdifYz7bG-uS_l3Y4FI"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.019Z",
+  "reviewed_one_by_one": true
+ },
+ "026_liga_gray-merchant-of-asphodel": {
+  "status": "ok",
+  "accept_ids": [
+   "1d6vYW1U5ABAFt0Q1KhvxbyKH5Xs1DFxc"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.039Z",
+  "reviewed_one_by_one": true
+ },
+ "027_liga_syr-konrad-the-grim": {
+  "status": "ok",
+  "accept_ids": [
+   "1-Yg0SkJTMRIS9gGAcg4Lz6x-nKWrQUZI"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:57.687Z",
+  "reviewed_one_by_one": true
+ },
+ "028_liga_kokusho-the-evening-star": {
+  "status": "ok",
+  "accept_ids": [
+   "1NOVSk8Q_A1hUkeSqsf4RSOMqnoxT1p3u"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.059Z",
+  "reviewed_one_by_one": true
+ },
+ "029_liga_massacre-wurm": {
+  "status": "ok",
+  "accept_ids": [
+   "1vQ4djcsjTnMjrxy8qW1yYCgXpK2LIq5B"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.072Z",
+  "reviewed_one_by_one": true
+ },
+ "030_liga_k-rrik-son-of-yawgmoth": {
+  "status": "ok",
+  "accept_ids": [
+   "1tKD1GaYT4lrdEUIHrFmKaYrtP-8i5SX4"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:27:41.651Z",
+  "reviewed_one_by_one": true
+ },
+ "031_liga_archon-of-cruelty": {
+  "status": "ok",
+  "accept_ids": [
+   "1AhpxDap2h_3nXN446CdByI3Eb6ayyk9N"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.087Z",
+  "reviewed_one_by_one": true
+ },
+ "032_liga_liliana-dreadhorde-general": {
+  "status": "ok",
+  "accept_ids": [
+   "10cEKIuB391MWIBKGSfKdN1Zqy-NlGb5O"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.102Z",
+  "reviewed_one_by_one": true
+ },
+ "033_liga_culling-the-weak": {
+  "status": "ok",
+  "accept_ids": [
+   "1KMSmfE-jye4vw92d__dcyAsXBpgw-po6"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:27:43.261Z",
+  "reviewed_one_by_one": true
+ },
+ "034_liga_bubbling-muck": {
+  "status": "ok",
+  "accept_ids": [
+   "1KVxGnixLBrw2dsdbpb0VvSGEicoFMDD0"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.117Z",
+  "reviewed_one_by_one": true
+ },
+ "035_liga_reanimate": {
+  "status": "ok",
+  "accept_ids": [
+   "1blGPeWX-pOEK5-bIDglqka4UogXKc1UB"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:01.038Z",
+  "reviewed_one_by_one": true
+ },
+ "036_liga_village-rites": {
+  "status": "ok",
+  "accept_ids": [
+   "1cEXIfDt7F6Ge2fJIZAs8Mcmw2bfJwoOq"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:02.877Z",
+  "reviewed_one_by_one": true
+ },
+ "037_liga_dark-ritual": {
+  "status": "ok",
+  "accept_ids": [
+   "182274j4aXsPGo3msSxDo9_wwpaD7TStx"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.137Z",
+  "reviewed_one_by_one": true
+ },
+ "038_liga_feed-the-swarm": {
+  "status": "ok",
+  "accept_ids": [
+   "1PVcFiAz3AysXLCO89VFXi_fEvaSbo05s"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.156Z",
+  "reviewed_one_by_one": true
+ },
+ "039_liga_deadly-dispute": {
+  "status": "ok",
+  "accept_ids": [
+   "10QJ6VgNRzxVUNx0Qh5_zhMRdzn7qr71y"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:04.085Z",
+  "reviewed_one_by_one": true
+ },
+ "040_liga_imp-s-mischief": {
+  "status": "ok",
+  "accept_ids": [
+   "12NLaQZWZiMwkIjAJKCa9HjNp6kD0Qnbk"
+  ],
+  "note": "Adicione um alerta pro cliente de que não tem a versão bigscore e escolhemos a original",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:28:16.053Z",
+  "reviewed_one_by_one": true
+ },
+ "041_liga_toxic-deluge": {
+  "status": "ok",
+  "accept_ids": [
+   "1g0rucLzcU26DXADIQnFQqLtErxfz4hjB"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.178Z",
+  "reviewed_one_by_one": true
+ },
+ "042_liga_saw-in-half": {
+  "status": "ok",
+  "accept_ids": [
+   "1scfUKnjuNnKBR1xg2umERqvh5bO2AnVm"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.196Z",
+  "reviewed_one_by_one": true
+ },
+ "043_liga_victimize": {
+  "status": "ok",
+  "accept_ids": [
+   "1GxlS96IQb9tFLVigv-hEqmQasXg1fP6N"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:05.477Z",
+  "reviewed_one_by_one": true
+ },
+ "044_liga_withering-torment": {
+  "status": "ok",
+  "accept_ids": [
+   "1SbVlEulzghvbQrdFOKM9xOhVUNRUEQ7l"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.215Z",
+  "reviewed_one_by_one": true
+ },
+ "045_liga_damnation": {
+  "status": "ok",
+  "accept_ids": [
+   "182m3o9fDWBTMNFTlSSTPtyJ0qm0kgQp1"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:28:19.652Z",
+  "reviewed_one_by_one": true
+ },
+ "046_liga_fell-the-profane": {
+  "status": "ok",
+  "accept_ids": [
+   "1Vwh5LAN6HMsWusCqnpxrKdB1j9dz8xXI"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.237Z",
+  "reviewed_one_by_one": true
+ },
+ "046_mh3_244_fell-mire": {
+  "status": "ok",
+  "accept_ids": [
+   "1s3tPYTLl9_kGcB4oC6BInI4G2IX7aFUH"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.265Z",
+  "reviewed_one_by_one": true
+ },
+ "047_liga_blasphemous-edict": {
+  "status": "ok",
+  "accept_ids": [
+   "1M-RrkZ7ePRAxN8TIppEEc-ORTtzmZLc_"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.298Z",
+  "reviewed_one_by_one": true
+ },
+ "048_liga_rise-of-the-dark-realms": {
+  "status": "ok",
+  "accept_ids": [
+   "1NfkmLjtP-qkorYk5tWPSwcU1imsLuJzX"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.320Z",
+  "reviewed_one_by_one": true
+ },
+ "049_liga_sol-ring": {
+  "status": "ok",
+  "accept_ids": [
+   "1HlBhVcrvCuEWh-7WP1hayogztf3tkw38"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:09.116Z",
+  "reviewed_one_by_one": true
+ },
+ "050_liga_skullclamp": {
+  "status": "ok",
+  "accept_ids": [
+   "1pX478Q6k3Z50GOa0Sj_pGnnYqQURA_1i"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:11.600Z",
+  "reviewed_one_by_one": true
+ },
+ "051_liga_altar-of-dementia": {
+  "status": "ok",
+  "accept_ids": [
+   "1gvTyyrIHn4NP_PEIpKJYMflb1wJ8iTn9"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:28:24.168Z",
+  "reviewed_one_by_one": true
+ },
+ "052_liga_jet-medallion": {
+  "status": "ok",
+  "accept_ids": [
+   "13e9TGrkQ75EfEKtGnFfzvm3M1omda99b"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:28:25.811Z",
+  "reviewed_one_by_one": true
+ },
+ "053_liga_arcane-signet": {
+  "status": "ok",
+  "accept_ids": [
+   "12LCIywrzFml3PeEPjxQbl_A7BOXGLsJp"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.339Z",
+  "reviewed_one_by_one": true
+ },
+ "054_liga_the-soul-stone": {
+  "status": "ok",
+  "accept_ids": [
+   "1PvS6JD6b3xBbBZ7d-FkT8XTJIPLuZveC"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:13.624Z",
+  "reviewed_one_by_one": true
+ },
+ "055_liga_phyrexian-altar": {
+  "status": "ok",
+  "accept_ids": [
+   "1I0GkotKDwRhxyF7n4DkBhGzUozxGRgxC"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:34:48.440Z",
+  "reviewed_one_by_one": true
+ },
+ "056_liga_ashnod-s-altar": {
+  "status": "ok",
+  "accept_ids": [
+   "1_AhOem9WBZO-akpxixeNMGIeI7-jgnqW"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.355Z",
+  "reviewed_one_by_one": true
+ },
+ "057_liga_bontu-s-monument": {
+  "status": "ok",
+  "accept_ids": [
+   "1aSVbQSnHaUI0NiLpVhEQwAT03-80CM7B"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.380Z",
+  "reviewed_one_by_one": true
+ },
+ "058_liga_the-darkness-crystal": {
+  "status": "ok",
+  "accept_ids": [
+   "1bsi3dWlk0GCM3YrpDD7qXEYqNc31s-xm"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:15.011Z",
+  "reviewed_one_by_one": true
+ },
+ "059_liga_the-meathook-massacre": {
+  "status": "ok",
+  "accept_ids": [
+   "1jRVGSgMXFZarhpinS8hmt5Mczuz1uRYI"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.401Z",
+  "reviewed_one_by_one": true
+ },
+ "060_liga_bastion-of-remembrance": {
+  "status": "ok",
+  "accept_ids": [
+   "1Ew5LJ9w4sl8ig_fMur1GWLj7OxnmKXTD"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.442Z",
+  "reviewed_one_by_one": true
+ },
+ "061_liga_black-market-connections": {
+  "status": "ok",
+  "accept_ids": [
+   "1dMudwKeHvC5ZrJyxgebB3BmmN4rgf6q8"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.461Z",
+  "reviewed_one_by_one": true
+ },
+ "062_liga_the-sibsig-ceremony": {
+  "status": "ok",
+  "accept_ids": [
+   "16wCLi0XCmeXRN0S43yYsxtGxVIkYBA7q"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:17.011Z",
+  "reviewed_one_by_one": true
+ },
+ "063_liga_grave-pact": {
+  "status": "ok",
+  "accept_ids": [
+   "1kv3yoRqcw1AuhythyUX3saR5MM7Y8jcM"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:18.519Z",
+  "reviewed_one_by_one": true
+ },
+ "064_liga_black-market": {
+  "status": "ok",
+  "accept_ids": [
+   "18BKoX5m7bx07rIheM9qHGfwD99We4dbf"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:19.749Z",
+  "reviewed_one_by_one": true
+ },
+ "065_liga_cabal-coffers": {
+  "status": "ok",
+  "accept_ids": [
+   "1Oht_sNZI2WRnb70S8kz8JeY4yV-QzOEK"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.493Z",
+  "reviewed_one_by_one": true
+ },
+ "066_liga_cabal-stronghold": {
+  "status": "ok",
+  "accept_ids": [
+   "1e6NOFYEdNA5YFuJqHykbqH3dcDNX9qDO"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:34:50.776Z",
+  "reviewed_one_by_one": true
+ },
+ "067_liga_high-market": {
+  "status": "ok",
+  "accept_ids": [
+   "1f_LSmEIEzKZqMEIRW3lVEGBDZy4XbtFP"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.514Z",
+  "reviewed_one_by_one": true
+ },
+ "068_liga_nykthos-shrine-to-nyx": {
+  "status": "ok",
+  "accept_ids": [
+   "1MFoxp-JyMNNnxc-P0KD19R8H6EeXzEKa"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:34:55.451Z",
+  "reviewed_one_by_one": true
+ },
+ "069_liga_swamp": {
+  "status": "nenhum",
+  "accept_ids": [],
+  "note": "Desconsidere essa entrada do pedido",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:35:09.962Z",
+  "reviewed_one_by_one": true,
+  "excluded": true
+ },
+ "070_liga_myriad-landscape": {
+  "status": "ok",
+  "accept_ids": [
+   "1kz21upZkepLm6PN1ESTOtgrs47WLQYfy"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.536Z",
+  "reviewed_one_by_one": true
+ },
+ "071_liga_susur-secundi-void-altar": {
+  "status": "ok",
+  "accept_ids": [
+   "14qOPV4vI4Aqy-a2VryO7pMqVFw2-mvlp"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.557Z",
+  "reviewed_one_by_one": true
+ },
+ "072_liga_phyrexian-tower": {
+  "status": "ok",
+  "accept_ids": [
+   "1ZULfyudgaQfzYxLhqSwywfmdv0T539L_"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.584Z",
+  "reviewed_one_by_one": true
+ },
+ "073_liga_bojuka-bog": {
+  "status": "ok",
+  "accept_ids": [
+   "1a0UPkSQhGIHcoAYNjW7LI8LfO-g9VDN5"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-22T16:36:22.900Z",
+  "reviewed_one_by_one": true
+ },
+ "074_liga_urborg-tomb-of-yawgmoth": {
+  "status": "ok",
+  "accept_ids": [
+   "1e4dIvtHOB-LusYpQbS_rxsMHRzTX9-Jq"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-22T16:27:25.606Z",
+  "reviewed_one_by_one": true
+ }
+}
