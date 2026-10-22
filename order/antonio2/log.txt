@@ -90,3 +90,115 @@
   nota 1.24: ampliando para 30 finalistas
 029_liga_massacre-wurm  (1x)
   64 candidatos
+030_liga_k-rrik-son-of-yawgmoth  (1x)
+  77 candidatos
+040_liga_imp-s-mischief  (1x)
+  48 candidatos
+033_liga_culling-the-weak  (1x)
+  44 candidatos
+  nota -2.73: ampliando para 30 finalistas
+  nota 0.73: ampliando para 30 finalistas
+  nota -0.67: ampliando para 30 finalistas
+  nota 0.86: ampliando para 30 finalistas
+044_liga_withering-torment  (1x)
+  26 candidatos
+034_liga_bubbling-muck  (1x)
+  16 candidatos
+048_liga_rise-of-the-dark-realms  (1x)
+  42 candidatos
+037_liga_dark-ritual  (1x)
+  280 candidatos
+039_liga_deadly-dispute  (1x)
+  75 candidatos
+  nota 1.37: ampliando para 30 finalistas
+  nota 1.47: ampliando para 30 finalistas
+038_liga_feed-the-swarm  (1x)
+  93 candidatos
+  nota 0.79: ampliando para 30 finalistas
+052_liga_jet-medallion  (1x)
+  59 candidatos
+  nota 1.70: ampliando para 30 finalistas
+  nota 0.62: ampliando para 30 finalistas
+043_liga_victimize  (1x)
+  73 candidatos
+  nota 1.72: ampliando para 30 finalistas
+056_liga_ashnod-s-altar  (1x)
+  114 candidatos
+042_liga_saw-in-half  (1x)
+  35 candidatos
+  nota 0.81: ampliando para 30 finalistas
+041_liga_toxic-deluge  (1x)
+  136 candidatos
+046_liga_fell-the-profane  (1x)
+  22 candidatos
+060_liga_bastion-of-remembrance  (1x)
+  45 candidatos
+  nota 1.96: ampliando para 30 finalistas
+047_liga_blasphemous-edict  (1x)
+  20 candidatos
+046_mh3_244_fell-the-profane  (1x)
+064_liga_black-market  (1x)
+  22 candidatos
+  37 candidatos
+045_liga_damnation  (1x)
+  174 candidatos
+  nota 0.54: ampliando para 30 finalistas
+051_liga_altar-of-dementia  (1x)
+  45 candidatos
+050_liga_skullclamp  (1x)
+  184 candidatos
+  nota 0.69: ampliando para 30 finalistas
+055_liga_phyrexian-altar  (1x)
+  83 candidatos
+  nota 0.84: ampliando para 30 finalistas
+  nota 0.58: ampliando para 30 finalistas
+068_liga_nykthos-shrine-to-nyx  (1x)
+  111 candidatos
+  nota 0.50: ampliando para 30 finalistas
+  nota 1.24: ampliando para 30 finalistas
+049_liga_sol-ring  (1x)
+  724 candidatos
+059_liga_the-meathook-massacre  (1x)
+  67 candidatos
+  nota 1.08: ampliando para 30 finalistas
+054_liga_the-soul-stone  (1x)
+  34 candidatos
+053_liga_arcane-signet  (1x)
+  499 candidatos
+057_liga_bontu-s-monument  (1x)
+  26 candidatos
+  nota 1.22: ampliando para 30 finalistas
+063_liga_grave-pact  (1x)
+  89 candidatos
+  nota 0.70: ampliando para 30 finalistas
+  nota 1.67: ampliando para 30 finalistas
+072_liga_phyrexian-tower  (1x)
+  121 candidatos
+  nota 0.77: ampliando para 30 finalistas
+058_liga_the-darkness-crystal  (1x)
+  8 candidatos
+061_liga_black-market-connections  (1x)
+  96 candidatos
+062_liga_the-sibsig-ceremony  (1x)
+  5 candidatos
+066_liga_cabal-stronghold  (1x)
+  24 candidatos
+067_liga_high-market  (1x)
+  46 candidatos
+065_liga_cabal-coffers  (1x)
+  99 candidatos
+  nota 0.31: ampliando para 30 finalistas
+  nota 1.49: ampliando para 30 finalistas
+070_liga_myriad-landscape  (1x)
+  82 candidatos
+  nota 1.57: ampliando para 30 finalistas
+071_liga_susur-secundi-void-altar  (1x)
+  9 candidatos
+074_liga_urborg-tomb-of-yawgmoth  (1x)
+  155 candidatos
+069_liga_swamp  (26x)
+  800 candidatos
+  nota 0.03: ampliando para 30 finalistas
+073_liga_bojuka-bog  (1x)
+  108 candidatos
+  nota 1.10: ampliando para 30 finalistas
