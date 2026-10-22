@@ -28,3 +28,63 @@
   67 candidatos
 016_liga_morbid-opportunist  (1x)
   46 candidatos
+010_liga_grim-haruspex  (1x)
+  nota 1.58: ampliando para 30 finalistas
+  27 candidatos
+015_liga_warren-soultrader  (1x)
+  26 candidatos
+009_liga_umbral-collar-zealot  (1x)
+  14 candidatos
+020_liga_twilight-diviner  (1x)
+  10 candidatos
+  nota 0.82: ampliando para 30 finalistas
+013_liga_demon-s-disciple  (1x)
+  30 candidatos
+019_liga_sephiroth-fabled-soldier  (1x)
+  16 candidatos
+024_liga_solemn-simulacrum  (1x)
+  192 candidatos
+014_liga_plaguecrafter  (1x)
+  49 candidatos
+  nota 1.95: ampliando para 30 finalistas
+  nota 1.30: ampliando para 30 finalistas
+019_fin_115_sephiroth-fabled-soldier  (1x)
+  16 candidatos
+  nota -1.08: ampliando para 30 finalistas
+023_liga_pitiless-plunderer  (1x)
+  63 candidatos
+  nota 1.26: ampliando para 30 finalistas
+  nota 1.29: ampliando para 30 finalistas
+017_liga_pawn-of-ulamog  (1x)
+  21 candidatos
+  nota 0.80: ampliando para 30 finalistas
+028_liga_kokusho-the-evening-star  (1x)
+  63 candidatos
+018_liga_fleshbag-marauder  (1x)
+  45 candidatos
+021_liga_crypt-ghast  (1x)
+  49 candidatos
+  nota 1.65: ampliando para 30 finalistas
+027_liga_syr-konrad-the-grim  (1x)
+  65 candidatos
+  nota 1.87: ampliando para 30 finalistas
+032_liga_liliana-dreadhorde-general  (1x)
+  nota 0.78: ampliando para 30 finalistas
+  57 candidatos
+  nota 1.05: ampliando para 30 finalistas
+022_liga_disciple-of-bolas  (1x)
+  28 candidatos
+  nota 1.40: ampliando para 30 finalistas
+025_liga_junji-the-midnight-sky  (1x)
+  72 candidatos
+  nota 0.83: ampliando para 30 finalistas
+031_liga_archon-of-cruelty  (1x)
+  53 candidatos
+036_liga_village-rites  (1x)
+  70 candidatos
+  nota 1.61: ampliando para 30 finalistas
+026_liga_gray-merchant-of-asphodel  (1x)
+  70 candidatos
+035_liga_reanimate  (1x)
+  160 candidatos
+  nota 1.24: ampliando para 30 finalistas

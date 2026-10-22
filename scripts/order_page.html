@@ -57,6 +57,22 @@ details.sec[open] > summary::before { content: "▾"; }
 .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .head h2 { font-size: 15px; font-weight: 600; margin: 0; }
 .head .tog { margin-left: auto; }
+.overview { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+.ov-top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; }
+.ov-big { font-size: 34px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+.ov-big.hi { color: var(--ok); } .ov-big.mid { color: var(--warn); } .ov-big.lo { color: var(--bad); }
+.ov-sub { color: var(--muted); max-width: 70ch; text-wrap: pretty; }
+.ov-bands { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.ov-bands b { color: var(--ink); }
+.ov-alerts { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.ov-alerts li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 5px 8px; border-radius: 6px; background: var(--bg); }
+.ov-alerts li.done { opacity: .55; }
+.ov-alerts a { font-weight: 600; color: var(--ink); cursor: pointer; text-decoration: underline dotted; }
+.ov-alerts .why { color: var(--muted); font-size: 13px; }
+.ov-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 6px 14px; background: var(--surface); }
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
 .idx { font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: var(--line); color: var(--ink); }
 .qty { font-family: var(--mono); font-weight: 600; font-size: 13px; }
 .why { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.25; }
@@ -135,6 +151,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     <div class="banner" id="banner" hidden></div>
     <div class="banner" id="onote" hidden></div>
   </header>
+  <section id="overview" class="overview" hidden></section>
   <main id="main"><p class="empty">Carregando os pares…</p></main>
 </div>
 <div id="viewer" hidden role="dialog" aria-modal="true" aria-label="Comparação ampliada"></div>
@@ -246,11 +263,47 @@ details.xml summary { cursor: pointer; font-weight: 600; }
         t.textContent = txt; t.hidden = !txt; t.className = "tag" + (on ? " on" : sug.indexOf(n) >= 0 ? "" : " near");
       });
       var ni = $("[data-note]", el); if (document.activeElement !== ni) ni.value = (docs[id] && docs[id].note) || "";
-      var f = $("#filter").value; el.hidden = !(f === "todos" || f === st);
+      var f = $("#filter").value; el.hidden = !((f === "todos" || f === st) && (view === "todas" || alertOf(c).length));
     }
     stats(); secCounts();
   }
+  /* ---------- resumo do pedido: índice geral, alertas e visões ---------- */
+  var THR_ALERT = 70;
+  var view = "todas";
+  function hasIdx() { return cards.some(function (c) { return c.prop.idx != null; }); }
+  function alertOf(c) {
+    var r = [], i = c.prop.idx;
+    if (i != null && i < THR_ALERT) r.push("índice baixo (" + i + "%)");
+    if (i == null && c.prop.conf === "baixa") r.push("confiança baixa");
+    if (c.prop.conf === "nenhum") r.push("sem versão próxima: falar com o cliente");
+    if (/Terreno básico/.test(c.prop.note || "")) r.push("terreno básico: a arte certa pode estar fora dos candidatos");
+    if (c.set !== "LIGA" && (c.fixes || []).some(function (f) { return /adivinhada|sem Scryfall/.test(f); })) r.push("impressão adivinhada");  // na Liga a referência é a imagem, não um palpite
+    return r;
+  }
+  function cls(i) { return i >= 85 ? "hi" : i >= 70 ? "mid" : "lo"; }
+  function renderOverview() {
+    var box = $("#overview"); if (!cards.length) { box.hidden = true; return; }
+    box.hidden = false;
+    var withIdx = hasIdx(), tot = 0, w = 0, exp = 0, band = { alta: 0, media: 0, baixa: 0, nenhum: 0 };
+    cards.forEach(function (c) { var q = c.qty || 1, i = c.prop.idx; band[c.prop.conf] = (band[c.prop.conf] || 0) + 1; if (i != null) { tot += q; w += q * i; exp += 1 - i / 100; } });
+    var overall = tot ? Math.round(w / tot) : null;
+    var al = cards.map(function (c) { return { c: c, why: alertOf(c) }; }).filter(function (a) { return a.why.length; });
+    al.sort(function (a, b) { return (a.c.prop.idx == null ? 0 : a.c.prop.idx) - (b.c.prop.idx == null ? 0 : b.c.prop.idx); });
+    var open = al.filter(function (a) { return stOf(a.c.id) === "pendente"; }).length;
+    var rest = cards.filter(function (c) { return !alertOf(c).length && stOf(c.id) === "pendente"; }).length;
+    var h = '<div class="ov-top">' + (withIdx ? '<div><div class="ov-big ' + cls(overall) + '">' + overall + '%</div><div class="ov-sub">índice do pedido</div></div>' : '') +
+      '<div class="ov-sub">' + (withIdx ? "Chance média estimada de você aceitar cada escolha do bot, calculada com as suas decisões anteriores. Dá para esperar uma troca em cerca de <b>" + Math.round(exp) + "</b> das <b>" + cards.length + "</b> imagens." : "Esta página não tem índice de confiança (pedido antigo).") + '</div></div>' +
+      '<div class="ov-bands"><span><b>' + band.alta + '</b> com confiança alta</span><span><b>' + band.media + '</b> média</span><span><b>' + band.baixa + '</b> baixa</span><span><b>' + band.nenhum + '</b> sem versão próxima</span></div>';
+    h += '<h3 style="margin:14px 0 4px;font-size:15px">Alertas (' + al.length + ')' + (al.length ? ', ' + open + ' ainda sem decisão' : '') + '</h3>';
+    h += al.length ? '<ul class="ov-alerts">' + al.map(function (a) {
+      return '<li class="' + (stOf(a.c.id) === "pendente" ? "" : "done") + '"><a data-goto="' + a.c.id + '">' + esc(a.c.name) + (a.c.qty > 1 ? " ×" + a.c.qty : "") + '</a>' + (a.c.prop.idx != null ? '<span class="idx">' + a.c.prop.idx + '%</span>' : '') + '<span class="why">' + esc(a.why.join(" · ")) + '</span></li>';
+    }).join("") + '</ul>' : '<p class="ov-sub">Nenhum alerta neste pedido.</p>';
+    h += '<div class="ov-actions"><div class="seg" role="group" aria-label="O que mostrar"><button data-view="alertas"' + (view === "alertas" ? ' class="on"' : '') + '>Ver alertas (' + al.length + ')</button><button data-view="todas"' + (view === "todas" ? ' class="on"' : '') + '>Ver todas (' + cards.length + ')</button></div>' +
+      (rest ? '<button class="primary" data-accept-rest>Aceitar as ' + rest + ' sem alerta</button>' : '') + '<span data-restmsg></span></div>';
+    box.innerHTML = h;
+  }
   function stats() {
+    renderOverview();
     var n = cards.length, c = { ok: 0, nenhum: 0, duvida: 0 };
     cards.forEach(function (x) { var s = stOf(x.id); if (c[s] != null) c[s]++; });
     var done = c.ok + c.nenhum + c.duvida;
@@ -263,6 +316,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
       var key = d.dataset.sec, list = cards.filter(function (c) { return secOf(c) === key; });
       var pend = list.filter(function (c) { return stOf(c.id) === "pendente"; });
       $("[data-count]", d).textContent = (list.length - pend.length) + " de " + list.length + " decididos";
+      d.hidden = !d.querySelector(".pair:not([hidden])");
       var b = $("[data-bulk]", d); b.hidden = !pend.length;
       b.textContent = "Aceitar sugestões desta seção (" + pend.length + ")";
     });
@@ -300,6 +354,21 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   /* ---------- eventos ---------- */
   document.addEventListener("click", function (e) {
     var t = e.target, v = t.closest("#viewer");
+    var vb = t.closest("[data-view]");
+    if (vb) { view = vb.dataset.view; LS.set("view", view); cards.forEach(function (c) { refresh(c.id); }); return; }
+    var go = t.closest("[data-goto]");
+    if (go) { var id = go.dataset.goto, el = document.getElementById("p-" + id); if (el) { if (el.hidden) { view = "todas"; $("#filter").value = "todos"; cards.forEach(function (c) { refresh(c.id); }); } setCol(id, false); refresh(id); var det = el.closest("details"); if (det) det.open = true; el.scrollIntoView({ block: "center" }); } return; }
+    if (t.closest("[data-accept-rest]")) {
+      var pend = cards.filter(function (c) { return !alertOf(c).length && stOf(c.id) === "pendente"; }), msg = $("[data-restmsg]");
+      msg.innerHTML = ' <span class="confirm" role="alert">Aceitar a sugestão de <b>' + pend.length + '</b> cartas sem alerta? <button class="primary" data-rest-yes>Sim, aceitar</button> <button data-rest-no>Cancelar</button></span>';
+      return;
+    }
+    if (t.closest("[data-rest-no]")) { $("[data-restmsg]").innerHTML = ""; return; }
+    if (t.closest("[data-rest-yes]")) {
+      var todo = cards.filter(function (c) { return !alertOf(c).length && stOf(c.id) === "pendente"; }), k = 0, m2 = $("[data-restmsg]");
+      (function next() { if (k >= todo.length) { renderOverview(); return; } m2.textContent = " " + (k + 1) + " de " + todo.length + "…"; setCol(todo[k].id, true); acceptSuggestion(todo[k++]); setTimeout(next, 0); })();
+      return;
+    }
     if (v) {
       if (t.closest("[data-vclose]") || t === v) closeViewer();
       else if (t.closest("[data-vprev]")) { vs.i = (vs.i + vs.list.length - 1) % vs.list.length; drawViewer(); }
@@ -416,10 +485,11 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   /* ---------- início ---------- */
   fetch("catalog.json").then(function (r) { return r.json(); }).then(function (idx) {
     order = idx.order || {};
-    if (order.note) { var on = $("#onote"); on.textContent = order.note; on.hidden = false; }
     return Promise.all((idx.chunks || []).map(function (n) { return fetch(n).then(function (r) { return r.json(); }); }));
   }).then(function (parts) {
     cards = [].concat.apply([], parts.map(function (p) { return p.cards; })); cards.forEach(function (c) { byId[c.id] = c; });
+    view = hasIdx() ? LS.get("view", "alertas") : "todas";
+    if (order.note && !hasIdx()) { var on = $("#onote"); on.textContent = order.note; on.hidden = false; }  // com índice, o painel de resumo já explica
     build(); stats();
   }).catch(function () { $("#main").innerHTML = '<p class="empty">Não consegui carregar o catálogo de pares.</p>'; });
 

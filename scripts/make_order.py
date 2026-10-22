@@ -219,7 +219,7 @@ def main(lista, out):
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
                 u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and e["card"]["set"] == "sld", src, cheap, full, log, [] if liga else mem.get((e["card"]["set"].lower(), str(e["card"]["collector_number"]).lower(), fi), []))
-                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else e["card"]["set"].upper(), "cn": "" if liga else e["card"]["collector_number"], "fixes": e["fixes"]})
+                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else e["card"]["set"].upper(), "cn": "" if liga else e["card"]["collector_number"], "fixes": [] if liga else e["fixes"]})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
             units.append(up)
     if not shard:
