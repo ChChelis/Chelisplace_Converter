@@ -88,3 +88,5 @@
 035_liga_reanimate  (1x)
   160 candidatos
   nota 1.24: ampliando para 30 finalistas
+029_liga_massacre-wurm  (1x)
+  64 candidatos
