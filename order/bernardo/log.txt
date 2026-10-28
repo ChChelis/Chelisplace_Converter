@@ -51,3 +51,36 @@
 020_30a_275_plateau  (1x)
   222 candidatos
   nota 0.71: ampliando para 30 finalistas
+021_fra_311_samut-hazoret-s-champion  (1x)
+  5 candidatos
+022_30a_276_savannah  (1x)
+  212 candidatos
+  nota 0.27: ampliando para 30 finalistas
+023_30a_277_scrubland  (1x)
+  213 candidatos
+  nota 0.58: ampliando para 30 finalistas
+024_wot_67_smothering-tithe  (1x)
+  182 candidatos
+025_fca_31_stay-with-me  (1x)
+  0 candidatos
+026_30a_278_taiga  (1x)
+  194 candidatos
+  nota 0.60: ampliando para 30 finalistas
+027_ltr_748_the-one-ring  (1x)
+  122 candidatos
+028_30a_279_tropical-island  (1x)
+  205 candidatos
+  nota 0.92: ampliando para 30 finalistas
+029_30a_280_tundra  (1x)
+  203 candidatos
+  nota 0.16: ampliando para 30 finalistas
+030_30a_281_underground-sea  (1x)
+  210 candidatos
+  nota 0.32: ampliando para 30 finalistas
+031_soa_100_vampiric-tutor  (1x)
+  162 candidatos
+032_30a_282_volcanic-island  (1x)
+  208 candidatos
+  nota 0.84: ampliando para 30 finalistas
+033_tle_314_worldly-tutor  (1x)
+  112 candidatos
