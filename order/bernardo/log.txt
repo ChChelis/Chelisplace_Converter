@@ -4,3 +4,50 @@
   212 candidatos
   nota -1.16: ampliando para 30 finalistas
 002_30a_274_bayou  (1x)
+002_30a_274_bayou  (1x)
+  211 candidatos
+  nota 0.95: ampliando para 30 finalistas
+003_slz_219_chrome-mox  (1x)
+  178 candidatos
+004_soa_116_crop-rotation  (1x)
+  85 candidatos
+005_soa_79_cyclonic-rift  (1x)
+  192 candidatos
+006_tle_309_deadly-rollick  (1x)
+  108 candidatos
+007_tle_311_deflecting-swat  (1x)
+  139 candidatos
+008_sta_90_demonic-tutor  (1x)
+  319 candidatos
+  nota 0.57: ampliando para 30 finalistas
+009_tle_305_enlightened-tutor  (1x)
+  146 candidatos
+  nota 1.01: ampliando para 30 finalistas
+010_tle_307_fierce-guardianship  (1x)
+  165 candidatos
+011_soa_84_force-of-will  (1x)
+  211 candidatos
+012_usg_321_gaea-s-cradle  (1x)
+  149 candidatos
+  nota 1.34: ampliando para 30 finalistas
+013_eos_61_gemstone-caverns  (1x)
+  87 candidatos
+  nota -2.13: ampliando para 30 finalistas
+014_fra_320_karn-argent-defender  (1x)
+  9 candidatos
+015_sld_796★_mana-vault  (1x)
+  167 candidatos
+  nota 1.83: ampliando para 30 finalistas
+016_tle_2_mayor-tong-of-chin-village  (1x)
+  0 candidatos
+017_sth_138_mox-diamond  (1x)
+  115 candidatos
+  nota 1.40: ampliando para 30 finalistas
+018_mar_19_opposition-agent  (1x)
+  81 candidatos
+  nota -0.02: ampliando para 30 finalistas
+019_ltr_433_orcish-bowmasters  (1x)
+  75 candidatos
+020_30a_275_plateau  (1x)
+  222 candidatos
+  nota 0.71: ampliando para 30 finalistas
