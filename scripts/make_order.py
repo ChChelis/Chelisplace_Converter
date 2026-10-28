@@ -108,6 +108,11 @@ def explain(f):
     return " · ".join(out)
 
 
+def safe_cn(cn):
+    """O id do par vira id de documento no banco do artefato: só letras, dígitos e _ - . (o ★ de 796★ fazia a gravação falhar)."""
+    return re.sub(r"[^A-Za-z0-9._-]", "x", cn.replace("★", "-star").replace("†", "-dag"))
+
+
 def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:30]
 
@@ -235,7 +240,7 @@ def main(lista, out):
                 if ex:
                     url = ex["card_faces"][1]["image_uris"]["large"]; cset, ccn = ex["set"], ex["collector_number"]
                     log(f"  verso: impressão da Liga identificada pelo rodapé: {cset} {ccn}")
-            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{cset}_{ccn}_{slug(names[min(fi, len(names) - 1)])}")
+            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{cset}_{safe_cn(ccn)}_{slug(names[min(fi, len(names) - 1)])}")
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")

@@ -179,13 +179,14 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   function acc(id) { return (docs[id] && docs[id].accept) || []; }
 
   /* ---------- gravação (uma escrita por vez por documento) ---------- */
+  var failed = {};  // pares cuja gravação falhou: o snapshot do banco não pode apagar a escolha local
   function persist(id, data) {
     if (data) docs[id] = data; else delete docs[id];
     refresh(id);
     if (!ref) return Promise.resolve();
     var d = ref.doc(id);
     chain[id] = (chain[id] || Promise.resolve()).then(function () { return data ? d.set(data) : d.delete(); })
-      .catch(function (e) { banner("Não consegui salvar (" + ((e && e.code) || "erro") + "). A escolha vale só até recarregar a página."); });
+      .catch(function (e) { failed[id] = 1; banner("Não consegui salvar (" + ((e && e.code) || "erro") + "). A escolha vale só até recarregar a página."); });
     return chain[id];
   }
   function banner(msg) { var b = $("#banner"); b.textContent = msg; b.hidden = !msg; }
@@ -510,6 +511,7 @@ details.xml summary { cursor: pointer; font-weight: 600; }
     ref.onSnapshot(function (snap) {
       var next = {};
       snap.docs.forEach(function (d) { next[d.id] = d.data(); });
+      Object.keys(failed).forEach(function (k) { if (docs[k]) next[k] = docs[k]; });
       var ids = {}; Object.keys(docs).concat(Object.keys(next)).forEach(function (k) { ids[k] = 1; });
       docs = next; Object.keys(ids).forEach(function (k) { refresh(k); });
     }, function (e) { banner("Perdi a conexão com o armazenamento (" + ((e && e.code) || "erro") + ")."); });
