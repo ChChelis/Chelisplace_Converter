@@ -39,7 +39,7 @@ def http(url, data=None):
         try:
             return urllib.request.urlopen(urllib.request.Request(url, data, h), timeout=60).read()
         except urllib.error.HTTPError as e:
-            if e.code not in (429, 502, 503, 504) or a == 5:
+            if e.code not in (429, 502, 503, 504, 520, 521, 522, 523, 524) or a == 5:
                 raise
             time.sleep(float(e.headers.get("Retry-After") or 0) or 6 * (a + 1))
 
