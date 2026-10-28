@@ -84,3 +84,11 @@
   nota 0.84: ampliando para 30 finalistas
 033_tle_314_worldly-tutor  (1x)
   112 candidatos
+000_sld_2293_cryptolith-rite  (1x)
+  42 candidatos
+  nota 1.83: ampliando para 30 finalistas
+016_tle_2_drannith-magistrate  (1x)
+  46 candidatos
+  nota -3.24: ampliando para 30 finalistas
+025_fca_31_rhystic-study  (1x)
+  242 candidatos
