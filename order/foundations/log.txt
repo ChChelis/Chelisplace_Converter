@@ -1,2 +1,350 @@
 001_fdc_59_aetherize  (1x)
   45 candidatos
+002_fdc_9_all-is-dust  (1x)
+  67 candidatos
+005_soc_133_angel-of-indemnity  (1x)
+  7 candidatos
+003_fdc_84_ambition-s-cost  (1x)
+  29 candidatos
+009_fdc_15_angelic-field-marshal  (1x)
+  14 candidatos
+  nota 1.24: ampliando para 30 finalistas
+  nota 1.98: ampliando para 30 finalistas
+013_fdc_188_arasta-of-the-endless-web  (1x)
+  42 candidatos
+006_fdc_12_angel-of-the-ruins  (1x)
+  39 candidatos
+007_fdc_13_angel-of-vitality  (1x)
+  21 candidatos
+017_fdc_18_austere-command  (1x)
+  74 candidatos
+010_fdc_16_angelic-sleuth  (1x)
+  7 candidatos
+014_fdc_17_archangel-of-tithes  (1x)
+  24 candidatos
+011_fdc_10_always-watching  (1x)
+  10 candidatos
+021_fdc_189_beast-whisperer  (1x)
+  71 candidatos
+015_fdc_245_arcane-signet  (2x)
+  503 candidatos
+018_fdc_86_ayara-first-of-locthwain  (1x)
+  34 candidatos
+022_fdc_190_beast-within  (1x)
+  153 candidatos
+025_fdc_139_bitter-reunion  (1x)
+  14 candidatos
+019_fdc_87_bad-moon  (1x)
+  36 candidatos
+029_fdc_247_bontu-s-monument  (1x)
+  26 candidatos
+033_fdc_193_carnage-tyrant  (1x)
+  16 candidatos
+026_fdc_140_blasphemous-act  (1x)
+  181 candidatos
+023_fdc_191_birds-of-paradise  (1x)
+  280 candidatos
+037_fdc_90_cemetery-recruitment  (1x)
+  7 candidatos
+041_fdc_146_chaos-warp  (1x)
+  225 candidatos
+030_fdc_142_breath-weapon  (1x)
+  3 candidatos
+034_fdc_88_carrion-feeder  (1x)
+  65 candidatos
+038_fdc_144_chain-reaction  (1x)
+  38 candidatos
+027_fdc_296_bojuka-bog  (1x)
+  108 candidatos
+031_fdc_60_broodstar  (1x)
+  9 candidatos
+042_fdc_248_charcoal-diamond  (1x)
+  46 candidatos
+045_fdc_197_colossal-majesty  (1x)
+  22 candidatos
+035_fdc_299_castle-locthwain  (1x)
+  40 candidatos
+049_fdc_61_counterspell  (1x)
+046_fdc_250_commander-s-sphere  (2x)
+  132 candidatos
+  329 candidatos
+039_fdc_91_champion-of-the-perished  (1x)
+  15 candidatos
+053_fdc_94_cryptbreaker  (1x)
+  24 candidatos
+043_fdc_20_cleansing-nova  (1x)
+  30 candidatos
+057_fdc_22_cut-a-deal  (1x)
+  24 candidatos
+050_fdc_147_count-on-luck  (1x)
+  7 candidatos
+047_fdc_92_consumed-by-greed  (1x)
+054_fdc_251_cultivator-s-caravan  (1x)
+  10 candidatos
+  19 candidatos
+061_fdc_24_dazzling-angel  (1x)
+  10 candidatos
+051_fdc_21_court-of-grace  (1x)
+  43 candidatos
+058_fdc_300_darksteel-citadel  (1x)
+065_fdc_96_diregraf-colossus  (1x)
+  56 candidatos
+  13 candidatos
+062_fdc_95_death-baron  (1x)
+  30 candidatos
+069_fdc_155_drakuseth-maw-of-flames  (1x)
+  28 candidatos
+055_fdc_149_cursed-mirror  (1x)
+  58 candidatos
+066_fdc_150_dragon-tempest  (1x)
+  36 candidatos
+073_fdc_201_elemental-bond  (1x)
+  37 candidatos
+070_fdc_255_duplicant  (1x)
+  43 candidatos
+059_fdc_252_darksteel-juggernaut  (1x)
+  11 candidatos
+077_fdc_98_eternal-taskmaster  (1x)
+  8 candidatos
+063_fdc_25_defy-death  (1x)
+  6 candidatos
+074_fdc_27_emeria-shepherd  (1x)
+  18 candidatos
+067_fdc_151_dragonhawk-fate-s-tempest  (1x)
+  26 candidatos
+081_fdc_30_fateful-absence  (1x)
+  39 candidatos
+078_fdc_29_exorcise  (1x)
+  7 candidatos
+071_fdc_199_dungrove-elder  (1x)
+  6 candidatos
+082_fdc_31_firemane-commando  (1x)
+  17 candidatos
+085_fdc_258_forsaken-monument  (1x)
+  39 candidatos
+075_fdc_256_endless-atlas  (1x)
+  18 candidatos
+086_fdc_302_foundry-of-the-consuls  (1x)
+  5 candidatos
+089_msc_133_generous-gift  (1x)
+079_fdc_28_exemplar-of-light  (1x)
+  89 candidatos
+  26 candidatos
+090_fdc_8_ghalta-primal-hunger  (1x)
+  64 candidatos
+093_fdc_101_god-eternal-bontu  (1x)
+  31 candidatos
+097_fdc_104_gravecrawler  (1x)
+  54 candidatos
+083_fdc_99_fleshbag-marauder  (1x)
+  45 candidatos
+094_fdc_100_go-for-the-throat  (1x)
+  62 candidatos
+087_fdc_206_garruk-s-uprising  (1x)
+  49 candidatos
+101_fdc_304_haven-of-the-spirit-dragon  (1x)
+  17 candidatos
+  nota 1.40: ampliando para 30 finalistas
+098_fdc_102_grave-titan  (1x)
+  80 candidatos
+105_fdc_263_heraldic-banner  (1x)
+  21 candidatos
+091_fdc_6_ghoulcaller-gisa  (1x)
+  29 candidatos
+102_fdc_106_headless-rider  (1x)
+  14 candidatos
+109_fdc_35_inspiring-overseer  (1x)
+  26 candidatos
+095_fdc_32_grasp-of-fate  (1x)
+  28 candidatos
+106_fdc_161_hit-the-mother-lode  (1x)
+  9 candidatos
+113_fdc_64_kappa-cannoneer  (1x)
+  43 candidatos
+  nota 1.45: ampliando para 30 finalistas
+110_fdc_36_invoke-the-divine  (1x)
+  14 candidatos
+117_eoe_24_lightstall-inquisitor  (1x)
+  4 candidatos
+121_fdc_37_linvala-the-preserver  (1x)
+  6 candidatos
+114_fdc_212_kenrith-s-transformation  (1x)
+099_fdc_105_gray-merchant-of-asphodel  (1x)
+  34 candidatos
+  70 candidatos
+103_fdc_33_herald-of-eternal-dawn  (1x)
+  16 candidatos
+125_fdc_112_lord-of-the-undead  (1x)
+  19 candidatos
+118_fdc_163_lightning-bolt  (1x)
+  300 candidatos
+129_fdc_113_marchesa-s-decree  (1x)
+  12 candidatos
+107_fdc_210_hulking-raptor  (1x)
+  11 candidatos
+133_fdc_306_memorial-to-folly  (1x)
+  11 candidatos
+111_fdc_107_josu-vess-lich-knight  (1x)
+  8 candidatos
+137_fdc_114_midnight-reaper  (1x)
+  39 candidatos
+115_fdc_7_lathliss-dragon-queen  (1x)
+  51 candidatos
+122_fdc_305_lonely-sandbar  (1x)
+  46 candidatos
+141_fdc_116_moan-of-the-unhallowed  (1x)
+  8 candidatos
+119_fdc_109_liliana-s-mastery  (1x)
+  8 candidatos
+145_fdc_70_negate  (1x)
+  145 candidatos
+123_fdc_215_loot-exuberant-explorer  (1x)
+  12 candidatos
+126_fdc_38_lyra-dawnbringer  (1x)
+  38 candidatos
+127_fdc_165_mana-geyser  (1x)
+  36 candidatos
+130_fdc_267_marble-diamond  (1x)
+  48 candidatos
+149_fdc_120_noxious-ghoul  (1x)
+  13 candidatos
+131_fdc_66_master-of-etherium  (1x)
+  22 candidatos
+134_fdc_39_merchant-of-truth  (1x)
+  11 candidatos
+153_fdc_122_oversold-cemetery  (1x)
+  24 candidatos
+135_fdc_269_metallic-mimic  (1x)
+  51 candidatos
+138_fdc_271_mind-stone  (2x)
+  175 candidatos
+157_fdc_123_phyrexian-arena  (1x)
+  112 candidatos
+142_fdc_217_monstrous-onslaught  (1x)
+  8 candidatos
+139_fdc_115_mire-triton  (1x)
+  10 candidatos
+146_fdc_118_necrotic-hex  (1x)
+  14 candidatos
+143_fdc_307_mosswort-bridge  (1x)
+  69 candidatos
+161_fdc_221_ram-through  (1x)
+  28 candidatos
+150_dmc_188_oketra-s-monument  (1x)
+  25 candidatos
+165_fdc_74_research-thief  (1x)
+  31 candidatos
+147_fdc_119_night-s-whisper  (1x)
+  96 candidatos
+154_fdc_218_overwhelming-stampede  (1x)
+  35 candidatos
+169_fdc_43_righteous-valkyrie  (1x)
+  28 candidatos
+151_fdc_121_open-the-graves  (1x)
+  12 candidatos
+158_fdc_220_pugnacious-hammerskull  (1x)
+  8 candidatos
+173_fdc_311_scavenger-grounds  (2x)
+  41 candidatos
+155_fdc_279_patchwork-banner  (2x)
+  25 candidatos
+162_fdc_124_razorlash-transmogrant  (1x)
+  11 candidatos
+177_fdc_312_secluded-steppe  (1x)
+  35 candidatos
+166_fdc_42_reya-dawnbringer  (1x)
+  28 candidatos
+159_fdc_73_pull-from-tomorrow  (1x)
+  36 candidatos
+181_fdc_48_seraph-of-the-sword  (1x)
+  3 candidatos
+170_fdc_226_rishkar-s-expertise  (1x)
+  40 candidatos
+185_fdc_75_shimmer-dragon  (1x)
+  25 candidatos
+163_fdc_222_regal-imperiosaur  (1x)
+  7 candidatos
+167_fdc_223_rhonas-the-indomitable  (1x)
+  36 candidatos
+189_fdc_50_speaker-of-the-heavens  (1x)
+174_fdc_282_scrawling-crawler  (1x)
+  17 candidatos
+  20 candidatos
+171_fdc_310_rogue-s-passage  (2x)
+  110 candidatos
+178_fdc_46_segovian-angel  (1x)
+  12 candidatos
+193_fdc_52_sunblast-angel  (1x)
+  16 candidatos
+182_fdc_49_serra-avenger  (1x)
+  20 candidatos
+197_fdc_233_tamiyo-s-safekeeping  (1x)
+  32 candidatos
+175_fdc_44_search-the-premises  (1x)
+  16 candidatos
+186_fdc_125_sign-in-blood  (1x)
+  61 candidatos
+179_fdc_47_sephara-sky-s-blade  (1x)
+  24 candidatos
+201_fdc_236_thickest-in-the-thicket  (1x)
+  9 candidatos
+205_fdc_80_thought-monitor  (1x)
+  44 candidatos
+  nota 0.86: ampliando para 30 finalistas
+183_soc_169_serra-paragon  (1x)
+  22 candidatos
+187_fdc_286_sol-ring  (2x)
+209_fdc_130_undead-butler  (1x)
+  734 candidatos
+  13 candidatos
+190_fdc_314_spinerock-knoll  (1x)
+  50 candidatos
+213_fdc_185_utvara-hellkite  (1x)
+  35 candidatos
+194_fdc_231_surrak-and-goreclaw  (1x)
+  22 candidatos
+  nota 1.44: ampliando para 30 finalistas
+217_fdc_294_vanquisher-s-banner  (1x)
+  48 candidatos
+198_fdc_234_tangleweave-armor  (1x)
+  3 candidatos
+191_fdc_177_spit-flame  (1x)
+  8 candidatos
+202_fdc_77_thirst-for-knowledge  (1x)
+  71 candidatos
+221_fdc_186_warstorm-surge  (1x)
+195_fdc_291_swiftfoot-boots  (1x)
+  41 candidatos
+  160 candidatos
+206_fdc_293_tome-of-legends  (1x)
+  20 candidatos
+225_fdc_319_witch-s-cottage  (1x)
+  14 candidatos
+199_fdc_315_temple-of-the-false-god  (2x)
+  85 candidatos
+210_fdc_131_undead-warchief  (1x)
+  19 candidatos
+229_fdc_135_zul-ashur-lich-lord  (1x)
+  18 candidatos
+214_khm_374_valkyrie-harbinger  (1x)
+  36 candidatos
+203_fdc_78_thopter-fabricator  (1x)
+  9 candidatos
+218_fdc_82_vedalken-archmage  (1x)
+  18 candidatos
+207_fdc_316_tranquil-thicket  (1x)
+  36 candidatos
+222_fdc_133_wight-of-precinct-six  (1x)
+  13 candidatos
+211_fdc_184_unexpected-windfall  (1x)
+  37 candidatos
+226_fdc_134_withering-torment  (1x)
+  26 candidatos
+215_fdc_55_valorous-stance  (1x)
+  24 candidatos
+219_fdc_132_vengeful-dead  (1x)
+  12 candidatos
+223_tdc_411_windbrisk-heights  (1x)
+  52 candidatos
+227_fdc_57_wojek-investigator  (1x)
+  9 candidatos
