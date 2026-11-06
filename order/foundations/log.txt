@@ -348,3 +348,120 @@
   52 candidatos
 227_fdc_57_wojek-investigator  (1x)
   9 candidatos
+000_fdc_243_adaptive-omnitool  (1x)
+  8 candidatos
+004_fdc_11_angel-of-finality  (1x)
+  16 candidatos
+008_fdc_14_angelic-destiny  (1x)
+  20 candidatos
+012_fdc_187_arachnogenesis  (1x)
+  31 candidatos
+016_fdc_138_atsushi-the-blazing-sky  (1x)
+  55 candidatos
+020_fdc_295_barren-moor  (1x)
+  39 candidatos
+024_fdc_192_bite-down  (1x)
+  11 candidatos
+028_fdc_297_bonders-enclave  (3x)
+  38 candidatos
+032_fdc_298_buried-ruin  (1x)
+  51 candidatos
+036_fdc_89_cemetery-reaper  (1x)
+  13 candidatos
+040_fdc_145_chandra-s-ignition  (1x)
+  43 candidatos
+044_fdc_196_collective-resistance  (1x)
+  11 candidatos
+048_fdc_93_consuming-corruption  (1x)
+  5 candidatos
+052_fdc_148_crucible-of-fire  (1x)
+  9 candidatos
+056_fdc_198_curious-altisaur  (1x)
+  11 candidatos
+060_fdc_23_day-of-judgment  (1x)
+  72 candidatos
+064_fdc_26_destroy-evil  (1x)
+  14 candidatos
+068_fdc_153_dragonmaster-outcast  (1x)
+  25 candidatos
+072_fdc_200_elder-gargaroth  (1x)
+  44 candidatos
+076_fdc_97_endless-ranks-of-the-dead  (1x)
+  17 candidatos
+  nota 1.91: ampliando para 30 finalistas
+080_fdc_203_ezuri-s-predation  (1x)
+  22 candidatos
+084_fdc_301_forgotten-cave  (1x)
+  35 candidatos
+088_fdc_303_geier-reach-sanitarium  (1x)
+  37 candidatos
+092_fdc_207_gigantosaurus  (1x)
+  13 candidatos
+096_fdc_103_graveborn-muse  (1x)
+  11 candidatos
+100_fdc_209_harmonize  (1x)
+  90 candidatos
+104_fdc_34_herald-of-war  (1x)
+  11 candidatos
+108_fdc_266_infernal-idol  (1x)
+  2 candidatos
+112_fdc_108_kalitas-traitor-of-ghet  (1x)
+  28 candidatos
+116_fdc_65_launch-mishap  (1x)
+  2 candidatos
+120_fdc_110_liliana-s-reaver  (1x)
+  6 candidatos
+124_fdc_111_lord-of-the-accursed  (1x)
+  16 candidatos
+128_fdc_216_managorger-hydra  (1x)
+  36 candidatos
+132_fdc_67_master-transmuter  (1x)
+  20 candidatos
+136_fdc_40_metropolis-reformer  (1x)
+  15 candidatos
+140_fdc_69_misleading-signpost  (1x)
+  10 candidatos
+144_fdc_117_mutilate  (1x)
+  41 candidatos
+148_fdc_41_norn-s-choirmaster  (1x)
+  13 candidatos
+152_fdc_169_outpost-siege  (1x)
+  26 candidatos
+156_mh3_294_pearl-medallion  (1x)
+  39 candidatos
+160_fdc_308_radiant-fountain  (1x)
+  13 candidatos
+164_fdc_309_remote-isle  (1x)
+  24 candidatos
+168_fdc_281_rhonas-s-monument  (1x)
+  14 candidatos
+172_fdc_5_sai-master-thopterist  (1x)
+  53 candidatos
+176_fdc_45_secret-rendezvous  (1x)
+  40 candidatos
+180_fdc_313_seraph-sanctuary  (1x)
+  13 candidatos
+184_fdc_229_shamanic-revelation  (1x)
+  46 candidatos
+188_fdc_126_soulless-one  (1x)
+  7 candidatos
+192_fdc_51_starnheim-aspirant  (1x)
+  21 candidatos
+196_fdc_127_syphon-flesh  (1x)
+  4 candidatos
+200_fdc_128_tendrils-of-corruption  (1x)
+  17 candidatos
+204_fdc_79_thopter-spy-network  (1x)
+  29 candidatos
+208_fdc_129_undead-augur  (1x)
+  19 candidatos
+212_fdc_238_unnatural-growth  (1x)
+  51 candidatos
+216_fdc_56_vanguard-seraph  (1x)
+  3 candidatos
+220_fdc_317_war-room  (4x)
+  64 candidatos
+224_fdc_318_witch-s-clinic  (2x)
+  33 candidatos
+228_fdc_58_youthful-valkyrie  (1x)
+  22 candidatos
