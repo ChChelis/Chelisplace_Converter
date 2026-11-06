@@ -1,23 +1,15 @@
 <title>Conferência do pedido</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* Layout: cabeçalho fixo com resumo e controles; uma seção por nível de confiança; cada par = referência à esquerda, grade de candidatos à direita. */
 :root {
-  --bg: #eef1f4; --surface: #ffffff; --ink: #18222d; --muted: #596878; --line: #d5dce4;
-  --accent: #1d6a87; --accent-ink: #ffffff; --ok: #1b7a4b; --ok-bg: #dff3e8; --warn: #946000; --warn-bg: #fbefd0;
-  --bad: #b13a31; --bad-bg: #f9e0dd; --pick: #1d6a87; --shadow: 0 1px 2px rgba(20,30,40,.08);
-  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-  --thumb: 120px;
+  --bg: #08090c; --surface: #10131a; --ink: #eef0f5; --muted: #8d95a8; --line: #262c3a;
+  --accent: #f2b84b; --accent-ink: #1b1200; --ok: #4ade80; --ok-bg: #123222; --warn: #f2b84b; --warn-bg: #3a2c0e;
+  --bad: #ff7a7a; --bad-bg: #3d1b1b; --pick: #f2b84b; --shadow: 0 14px 30px -18px #000d;
+  --font: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --thumb: 120px; color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #11171d; --surface: #19212a; --ink: #e4eaf0; --muted: #98a6b5; --line: #2a3541;
-  --accent: #5db4d3; --accent-ink: #0b1319; --ok: #55c78e; --ok-bg: #173a29; --warn: #e4ac45; --warn-bg: #3d2f12;
-  --bad: #f08379; --bad-bg: #432522; --pick: #5db4d3; --shadow: none; color-scheme: dark; } }
-:root[data-theme="dark"] {
-  --bg: #11171d; --surface: #19212a; --ink: #e4eaf0; --muted: #98a6b5; --line: #2a3541;
-  --accent: #5db4d3; --accent-ink: #0b1319; --ok: #55c78e; --ok-bg: #173a29; --warn: #e4ac45; --warn-bg: #3d2f12;
-  --bad: #f08379; --bad-bg: #432522; --pick: #5db4d3; --shadow: none; color-scheme: dark; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.45; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -123,6 +115,21 @@ details.xml summary { cursor: pointer; font-weight: 600; }
   #viewer .two { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: no-preference) { .bar i { transition: width .25s; } }
+/* aparência da Vitrine de Sets: fundo escuro, destaque dourado, cantos arredondados, títulos pesados */
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.head h2, details.sec > summary { font-weight: 800; letter-spacing: -.01em; }
+button, select, input[type=text] { border-radius: 10px; padding: 7px 12px; background: rgba(16,19,26,.7); }
+button.primary, button.ok.primary { font-weight: 600; }
+button:hover { border-color: var(--muted); } button.primary:hover { filter: brightness(1.08); }
+.seg { border-radius: 10px; background: rgba(16,19,26,.7); }
+.seg button.on { background: var(--ink); color: var(--bg); font-weight: 600; }
+.pair, .overview, details.xml { border-radius: 14px; }
+.pair.s-ok { border-left-color: var(--ok); }
+.idx, .pill { border-radius: 99px; font-family: var(--mono); }
+.cand { border-radius: 10px; } .cand img, .ref img { border-radius: 6px; box-shadow: 0 10px 24px -14px #000c, 0 0 0 1px #0008; }
+.cand.sug { box-shadow: 0 0 0 1px var(--accent) inset; }
+header.top { background: rgba(8,9,12,.92); backdrop-filter: blur(8px); }
+@media (prefers-reduced-motion: no-preference) { .cand { transition: transform .2s; } .cand:hover { transform: translateY(-3px); } }
 </style>
 
 <div class="wrap">
