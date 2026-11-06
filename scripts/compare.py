@@ -122,7 +122,7 @@ def pairs():
             continue
         og = json.load(open(gp))
         for k in sorted(og):
-            if og[k].get("excluded"):  # carta que o usuário resolve à mão: não é veredito de qualidade
+            if og[k].get("excluded") or og[k].get("bulk"):  # resolvida à mão pelo usuário ou aceita em lote sem conferência: não é veredito de qualidade
                 continue
             u = json.load(open(os.path.join(od, name, "units", k + ".json")))
             yield k, {**og[k], "accept": []}, u["cands"], os.path.join(CACHE, f"sf_{k}.jpg")

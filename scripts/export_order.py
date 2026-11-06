@@ -26,13 +26,28 @@ def pick(c):
     return next((k for k in c["cands"] if k["n"] == d["accept"][0]), None)
 
 
+def bulk_ids():
+    """Decisões gravadas em rajada (intervalo < 1 s, 10 ou mais seguidas) vêm do botão 'aceitar sem alerta', não de conferência carta a carta."""
+    from datetime import datetime
+    ts = sorted((datetime.fromisoformat(d["at"].replace("Z", "+00:00")), i) for i, d in D.items() if d.get("at"))
+    out, run = set(), [ts[0]] if ts else []
+    for a, b in zip(ts, ts[1:]):
+        if (b[0] - a[0]).total_seconds() < 1: run.append(b)
+        else:
+            if len(run) >= 10: out |= {i for _, i in run}
+            run = [b]
+    if len(run) >= 10: out |= {i for _, i in run}
+    return out
+
+
+BULK = bulk_ids()
 gab, by = {}, {}
 for c in cards:
     d = D.get(c["id"])
     if not d: continue
     k = pick(c)
     gab[c["id"]] = {"status": d["status"], "accept_ids": [k["id"]] if k else [], "note": d.get("note", ""), "bot_conf": c["prop"]["conf"],
-                    "confirmed_at": d.get("at"), "reviewed_one_by_one": True, **({"excluded": True} if d["status"] == "nenhum" else {})}
+                    "confirmed_at": d.get("at"), "reviewed_one_by_one": c["id"] not in BULK, **({"bulk": True} if c["id"] in BULK else {}), **({"excluded": True} if d["status"] == "nenhum" else {})}
     by.setdefault(c["entry"], {})[c["face"]] = c
 json.dump(gab, open(os.path.join(od, "gabarito.json"), "w"), ensure_ascii=False, indent=1)
 
@@ -52,7 +67,7 @@ bracket = next((v for v in BR if v >= used), BR[-1])
 xml = (f'<?xml version="1.0" encoding="UTF-8"?>\n<order>\n  <details>\n    <quantity>{used}</quantity>\n    <bracket>{bracket}</bracket>\n    <stock>(S30) Standard Smooth</stock>\n'
        f'    <foil>false</foil>\n  </details>\n  <fronts>\n{fr}  </fronts>\n' + (f"  <backs>\n{bk}  </backs>\n" if bk else "") + f"  <cardback>{CARDBACK}</cardback>\n</order>\n")
 open(os.path.join(od, "pedido.xml"), "w", encoding="utf-8").write(xml)
-print(f"gabarito: {len(gab)} decisões; XML: {used} cartas, moldura {bracket}; fora: {skipped}")
+print(f"gabarito: {len(gab)} decisões ({len(BULK)} em rajada, sem conferência individual); XML: {used} cartas, moldura {bracket}; fora: {skipped}")
 for c in cards:
     n = D.get(c["id"], {}).get("note")
     if n: print("nota:", c["name"], "->", n)

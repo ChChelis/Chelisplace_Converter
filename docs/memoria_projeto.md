@@ -70,3 +70,6 @@ Artefatos (privados): teste FvFRD76JuvjoWidjpVneT7, pedido1 L8T4SrtifPeGaUGykYLM
 - Liga: `LIGA_SHIFT` só vale para pedidos legados; edições da Liga vêm vazias no HTML (só nome EN e qty).
 
 - Ids de par vão para o banco do artefato: só `A-Za-z0-9_.~:@+-`. O ★ de números como 796★ virou `-star` (`safe_cn` em make_order); antes a gravação falhava e a escolha sumia da tela.
+
+- Decisões em rajada (10+ gravações com intervalo < 1 s, ex.: botão 'aceitar sem alerta') ganham `bulk: true` no gabarito (`export_order.py`) e ficam fora do treino, da calibração e da memória de escolhas: não são conferência carta a carta. Foundations Commander: 316/316 sugestões aceitas em 26 s, tratado como `bulk`; só entra no treino se o usuário confirmar que conferiu uma a uma.
+- O bot não escreve na pasta do PC do usuário (C:\\...): só com uma pasta do computador conectada à sessão (`list_computer_folders`); caso contrário, o Helium baixa pelo XML.
