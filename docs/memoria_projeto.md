@@ -73,3 +73,5 @@ Artefatos (privados): teste FvFRD76JuvjoWidjpVneT7, pedido1 L8T4SrtifPeGaUGykYLM
 
 - Decisões em rajada (10+ gravações com intervalo < 1 s, ex.: botão 'aceitar sem alerta') ganham `bulk: true` no gabarito (`export_order.py`) e ficam fora do treino, da calibração e da memória de escolhas: não são conferência carta a carta. Foundations Commander: 316/316 sugestões aceitas em 26 s, tratado como `bulk`; só entra no treino se o usuário confirmar que conferiu uma a uma.
 - O bot não escreve na pasta do PC do usuário (C:\\...): só com uma pasta do computador conectada à sessão (`list_computer_folders`); caso contrário, o Helium baixa pelo XML.
+
+- Foundations Commander foi conferido pelo usuário antes do aceite em lote: exportado com `--conferido`, entrou no treino (641 pares; comparador 559/641 = 87%; curva scry sobe a 95-97% nas notas altas, liga igual). Pedido fácil (quase só CompC), então o índice alto vale para casos parecidos, não para qualquer pedido.

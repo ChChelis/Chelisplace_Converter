@@ -1,6 +1,7 @@
 """Decisões do artefato (JSON baixados) + catálogo -> gabarito.json e pedido.xml do pedido.
 
-Uso: python3 -I scripts/export_order.py order/<pedido> <pasta_com_decisões> [--bot]
+Uso: python3 -I scripts/export_order.py order/<pedido> <pasta_com_decisões> [--conferido]
+--conferido: o usuário garante que conferiu tudo na página antes de aceitar em lote; nada vira `bulk`.
 Mesma regra do botão do artefato: só entra o que foi conferido ('ok'); 'nenhum' com nota fica de fora e vira `excluded`.
 """
 import glob, json, os, sys
@@ -40,7 +41,7 @@ def bulk_ids():
     return out
 
 
-BULK = bulk_ids()
+BULK = set() if "--conferido" in sys.argv else bulk_ids()
 gab, by = {}, {}
 for c in cards:
     d = D.get(c["id"])
