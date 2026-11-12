@@ -45,13 +45,13 @@ const acoes = {
     return r;
   },
   async iniciar_montagem() {
-    for (const d of ["/w/png", "/w/png_pares", "/w/pdf"]) { limpar(d); py.FS.mkdirTree(d); }
+    for (const d of ["/w/png", "/w/png_pares", "/w/png_extras", "/w/pdf"]) { limpar(d); py.FS.mkdirTree(d); }
     return true;
   },
   // Um lote de imagens por vez, para não estourar a memória do navegador.
   async redim({ grupo, arquivos }) {
     gravar("/w/in", arquivos);
-    const dest = grupo === "pares" ? "/w/png_pares" : "/w/png";
+    const dest = { pares: "/w/png_pares", extras: "/w/png_extras" }[grupo] || "/w/png";
     py.globals.set("a", ["/w/in", dest]);
     py.runPython("web.redimensionar_pasta(*a)");
     limpar("/w/in");
@@ -60,7 +60,7 @@ const acoes = {
   async montar_pdfs({ cliente, xml }) {
     let caminhoXml = null;
     if (xml) { gravar("/w/xml", [["pedido.xml", new Uint8Array(xml)]]); caminhoXml = "/w/xml/pedido.xml"; }
-    py.globals.set("a", ["/w/png", "/w/png_pares", "/w/pdf", cliente, caminhoXml]);
+    py.globals.set("a", ["/w/png", "/w/png_pares", "/w/pdf", cliente, caminhoXml, "/w/png_extras"]);
     const caminhos = JSON.parse(py.runPython("web.montar(*a)"));
     return caminhos.map((c) => [c.split("/").pop(), py.FS.readFile(c)]);
   },

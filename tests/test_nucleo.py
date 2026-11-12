@@ -125,6 +125,15 @@ class TestImagemMontagem(Base):
         img(self.d / "o.png", "blue", (300, 400))
         return self.d / "o.png"
 
+    def test_extras_depois_dos_pares_e_branco_antes(self):
+        pag = montagem.planejar([f"{i:02d}.png" for i in range(17)], pares=["p1", "p2"], extras=["e1"])
+        slots = pag[0] + pag[1]
+        self.assertEqual(len(pag), 2)
+        self.assertEqual(slots[-3:], ["p1", "p2", "e1"])       # pares e depois extras, no fim
+        self.assertEqual(slots[16], "16.png")
+        self.assertTrue(all(x is None for x in slots[17:33]))  # brancos ficam entre a raiz e os pares
+        self.assertEqual(montagem.progresso(pag), ["17/20", "20/20"])
+
     def test_niveis_do_psd(self):
         im = Image.new("RGB", (3, 1))
         for x, v in enumerate((0, 255, 49)):

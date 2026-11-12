@@ -28,3 +28,10 @@ Escolher a pasta (Drive ou computador) e o XML **uma vez**: a Montagem reaprovei
 - Pares completos soltos na pasta: a página propõe, sozinha e com confirmação, criar `pares/` e movê-los.
 - Par incompleto (por exemplo, não foi subido): **Ignorar este par** (ou "todos"); o par deixa de ser exigido e a escolha fica lembrada naquele navegador para aquele pedido. "Voltar a considerar" desfaz.
 - XML dos faltantes sai como `<pasta>_faltantes.xml`.
+
+## Montagem: ordem dos slots e perguntas antes de montar
+Ordem: **cartas do XML → (slots em branco) → pares → extras**. Extras são as imagens da pasta que não estão no XML (sem ID no nome ou com ID de outra carta); o verso padrão nunca entra.
+- **Extras:** a página lista as imagens e pergunta se vão para os últimos slots, depois dos pares ("Sim, colocar no fim" / "Não incluir"). Enquanto não responder, o botão Montar fica travado.
+- **Página incompleta:** se o total não é múltiplo de 18, a página diz quanto falta ("a última página tem 3 de 18 slots: faltam 15") e oferece: adicionar imagens do computador (entram depois dos pares) ou "Montar com N slot(s) em branco" (os brancos ficam antes dos pares).
+- Pares ignorados na Checagem não entram na montagem e a página avisa.
+- Mudou a lista de extras (pasta alterada): ela pergunta de novo.

@@ -54,7 +54,7 @@ def plano(n_raiz, n_pares):
     return json.dumps(dict(paginas=len(pag), progresso=montagem.progresso(pag)))
 
 
-def montar(pasta_raiz, pasta_pares, pasta_saida, cliente, xml_path=None):
+def montar(pasta_raiz, pasta_pares, pasta_saida, cliente, xml_path=None, pasta_extras=None):
     """Monta os PDFs; devolve os caminhos. Pares vão para os últimos slots, na ordem do XML se ele vier."""
     lista = lambda p: sorted(x for x in Path(p).iterdir() if x.suffix.lower() == ".png") if Path(p).exists() else []
     pares = lista(pasta_pares)
@@ -62,5 +62,6 @@ def montar(pasta_raiz, pasta_pares, pasta_saida, cliente, xml_path=None):
         por_nome = {p.name: p for p in pares}
         ordem = checagem.ordem_pares(xml_mpc.ler(xml_path), list(por_nome))
         pares = [por_nome[n] for n in ordem] + [p for p in pares if p.name not in ordem]
-    pdfs = montagem.montar_pedido(lista(pasta_raiz), pasta_saida, cliente, pares=pares)
+    extras = lista(pasta_extras) if pasta_extras else []  # a página numera os nomes para fixar a ordem
+    pdfs = montagem.montar_pedido(lista(pasta_raiz), pasta_saida, cliente, pares=pares, extras=extras)
     return json.dumps([str(p) for p in pdfs])
