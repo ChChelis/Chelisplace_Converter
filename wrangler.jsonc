@@ -1,0 +1,6 @@
+{
+  // Publica a pasta site/ como site estático na Cloudflare (Workers com arquivos estáticos).
+  "name": "chelisplace-converter",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./site" }
+}
