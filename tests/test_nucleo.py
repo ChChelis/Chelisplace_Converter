@@ -69,6 +69,14 @@ class TestChecagem(Base):
         self.assertEqual([c.id for c in novo.frentes], [C])
         self.assertEqual(xml_mpc.ler(self.d / "f.xml").frentes[0].slots, [0])
 
+    def test_ignorar_par(self):
+        pasta = self.monta()
+        r = checagem.analisar(pasta, self.ped, ignorar={C, V})
+        self.assertNotIn(C, r.faltando)            # exigência do par ignorado some
+        self.assertEqual(r.pares, [])
+        self.assertNotIn(f"Verso ({V}).png", r.fora_da_lista)  # arquivo do par ignorado não vira "sobra"
+        self.assertEqual(len(self.ped.frentes), 3)  # o pedido original não é alterado
+
     def test_xml_com_entidade_recusado(self):
         (self.d / "x.xml").write_text('<!DOCTYPE a [<!ENTITY e "x">]><order/>')
         with self.assertRaises(ValueError):

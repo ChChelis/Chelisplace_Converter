@@ -54,7 +54,20 @@ def pares(pedido):
     return [(por_slot[s], v.id) for v in pedido.versos for s in v.slots if s in por_slot]
 
 
-def analisar(pasta, pedido):
+def sem_ids(pedido, ignorar):
+    """Cópia do pedido sem as cartas com esses IDs (par ignorado de propósito pelo Chelis)."""
+    if not ignorar:
+        return pedido
+    novo = copy.copy(pedido)
+    novo.frentes = [c for c in pedido.frentes if c.id not in ignorar]
+    novo.versos = [c for c in pedido.versos if c.id not in ignorar]
+    return novo
+
+
+def analisar(pasta, pedido, ignorar=()):
+    """ignorar: IDs que não devem ser exigidos nem apontados como sobra (arquivos deles são deixados em paz)."""
+    ignorar = set(ignorar)
+    pedido = sem_ids(pedido, ignorar)
     pasta = Path(pasta)
     r = Resultado()
     r.exigido, r.nomes = exigido(pedido)
@@ -65,6 +78,8 @@ def analisar(pasta, pedido):
         i = id_do_arquivo(f)
         if i is None:
             r.sem_id.append(f.name)
+        elif i in ignorar:
+            continue
         elif i == pedido.verso_padrao:
             r.verso_padrao.append(f.name)
         else:

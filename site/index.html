@@ -39,7 +39,7 @@
   <h2>Checagem do pedido</h2>
   <p class="suave">Compara a pasta de imagens com o XML do MPC pelo ID do Drive. Nada é apagado.</p>
   <label for="c-xml">XML do pedido</label>
-  <input id="c-xml" type="file" accept=".xml">
+  <input id="c-xml" type="file" accept=".xml"> <span id="c-xml-nome" class="suave"></span>
   <div class="linha suave">
     <label><input type="radio" name="fonte-c" value="pc" checked> Computador</label>
     <label><input type="radio" name="fonte-c" value="drive"> Google Drive</label>
@@ -53,20 +53,22 @@
 
 <section id="montagem" hidden>
   <h2>Montagem das páginas</h2>
-  <p class="suave">Imagens soltas na pasta formam o pedido; a subpasta <b>pares</b> vai para os últimos slots. Cada página é um PDF A3 com 18 cartas.</p>
+  <p class="suave">Imagens soltas na pasta formam o pedido; a subpasta <b>pares</b> vai para os últimos slots (na ordem do XML). Cada página é um PDF A3 com 18 cartas.</p>
+  <p id="m-resumo"></p>
+  <details id="m-trocar"><summary>Escolher ou trocar a pasta e o XML</summary>
+    <div class="linha suave">
+      <label><input type="radio" name="fonte-m" value="pc" checked> Computador</label>
+      <label><input type="radio" name="fonte-m" value="drive"> Google Drive</label>
+    </div>
+    <div id="m-drive-lista"></div>
+    <button class="acao sec" id="m-pasta">Escolher pasta de imagens</button>
+    <span id="m-pasta-nome" class="suave"></span>
+    <label for="m-xml">XML do pedido</label>
+    <input id="m-xml" type="file" accept=".xml"> <span id="m-xml-nome" class="suave"></span>
+  </details>
   <label for="m-cliente">Nome do cliente (aparece na lateral da página)</label>
   <input id="m-cliente" type="text" placeholder="Cliente">
-  <label for="m-xml">XML do pedido (opcional: define a ordem dos pares, cada frente seguida do verso)</label>
-  <input id="m-xml" type="file" accept=".xml">
   <br>
-  <div class="linha suave">
-    <label><input type="radio" name="fonte-m" value="pc" checked> Computador</label>
-    <label><input type="radio" name="fonte-m" value="drive"> Google Drive</label>
-  </div>
-  <div id="m-drive-lista"></div>
-  <button class="acao sec" id="m-pasta">Escolher pasta de imagens</button>
-  <span id="m-pasta-nome" class="suave"></span><br>
-  <div id="m-plano" class="suave"></div>
   <button class="acao" id="m-rodar" disabled>Montar PDFs</button>
   <div class="barra" id="m-barra" hidden><div></div></div>
   <div id="m-status" class="suave"></div>
