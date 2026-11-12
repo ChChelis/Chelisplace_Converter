@@ -264,7 +264,7 @@
       '<span class="tag">' + (st === "ok" ? "conferido" : st === "nenhum" ? "nenhum serve" : st === "duvida" ? "dúvida" : "pendente") + "</span>" +
       als.map(function (a) { return '<span class="tag alert">' + esc(a) + "</span>"; }).join("") + "</div>" +
       '<p class="note"><b>Meu motivo:</b> ' + esc(c.prop.note) + "</p>" +
-      '<div class="cmp"><figure><div style="display:flex;gap:10px;align-items:flex-end"><img class="refmini" src="' + c.ref + '" alt="Referência"><div class="foot" style="flex:1;background-image:url(' + c.ref + ')"></div></div><figcaption>Referência · rodapé</figcaption></figure>' +
+      '<div class="cmp"><figure><div style="display:flex;gap:10px;align-items:flex-end"><img class="refmini" src="' + c.ref + '" alt="Referência" onerror="this.style.visibility=\'hidden\'"><div class="foot" style="flex:1;background-image:url(' + c.ref + ')"></div></div><figcaption>Referência · rodapé</figcaption></figure>' +
       (k ? '<figure><div class="foot" style="height:98px;background-image:url(' + k.img + ')"></div><figcaption>Candidato ' + k.n + " · rodapé</figcaption></figure>" : "") + "</div>" +
       '<div class="cands">' + list.slice(0, lim).map(function (x) {
         var tr = trusted(x), hide = S.onlyTrust && hasTrust && !tr;
