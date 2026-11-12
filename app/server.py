@@ -346,7 +346,18 @@ class H(BaseHTTPRequestHandler):
     def do_DELETE(self): self.tratar("DELETE")
 
 
+def selftest():
+    """Usado pela compilação: confere que o OCR, o modelo e a interface vieram dentro do aplicativo."""
+    from PIL import Image, ImageDraw
+    assert os.path.isfile(os.path.join(WEB, "index.html")), "interface não encontrada"
+    ms = M.models(); assert len(ms) == 2, "modelo inválido"
+    im = Image.new("RGB", (200, 60), "white"); ImageDraw.Draw(im).text((10, 20), "TEST 123", fill="black"); p = os.path.join(HOME, "cache", "selftest.png"); im.save(p)
+    C.ocr_footer(p, "selftest"); print("selftest ok: modelo", (lj(modelo_atual()) or {}).get("key"), flush=True)
+
+
 def main():
+    if "--selftest" in sys.argv:
+        return selftest()
     porta = int(sys.argv[sys.argv.index("--porta") + 1]) if "--porta" in sys.argv else 0
     srv = ThreadingHTTPServer(("127.0.0.1", porta), H)
     url = f"http://127.0.0.1:{srv.server_address[1]}/"

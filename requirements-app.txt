@@ -1,0 +1,6 @@
+# dependências do aplicativo (o que o bot usa em tempo de execução)
+numpy
+pillow
+onnxruntime
+opencv-python-headless
+rapidocr-onnxruntime==1.2.3

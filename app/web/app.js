@@ -94,7 +94,7 @@
   function renderTabs() {
     $("#tabs").innerHTML = S.pedidos.map(function (p) {
       return '<button class="tab" role="tab" data-p="' + esc(p.nome) + '" aria-selected="' + (S.nome === p.nome) + '"><b>' + esc(p.nome) + "</b>" +
-        (p.pronto ? "<small>" + (p.decididas || 0) + "/" + (p.cartas || "?") + "</small>" : "<small>processando…</small>") + "</button>";
+        (p.pronto ? "<small>" + (S.nome === p.nome && S.cards.length ? S.cards.filter(function (c) { return stOf(c.id) !== "pendente"; }).length + "/" + S.cards.length : (p.decididas || 0) + "/" + (p.cartas || "?")) + "</small>" : "<small>processando…</small>") + "</button>";
     }).join("") + '<button class="tab add" data-p="__novo">+ Novo pedido</button>';
   }
   function openPedido(nome) {
@@ -126,7 +126,7 @@
       "<b>" + als.length + "</b> alerta" + (als.length === 1 ? "" : "s") + ", <b>" + alPend + "</b> ainda sem decisão. " + band.alta + " alta · " + band.media + " média · " + band.baixa + " baixa · " + band.nenhum + " sem versão próxima.</div>" +
       '<div style="min-width:160px"><div class="bar"><i style="width:' + (100 * dec / tw) + '%;background:var(--ok)"></i></div><div class="ov-lbl" style="margin-top:4px">' + dec + " de " + tw + " decididas</div></div>" +
       '<div class="ov-act"><button class="btn" id="oUndo">↶ Desfazer</button>' + (rest ? '<button class="btn pri" id="oRest">Aceitar as ' + rest + " sem alerta</button>" : "") + "</div>";
-    $("#cntU").textContent = trustList().length;
+    $("#cntU").textContent = trustList().length; renderTabs();
   }
 
   /* ---------- filtros ---------- */
@@ -142,7 +142,6 @@
   function renderAll(keep) {
     F = filtered(); if (!keep || S.idx >= F.length) S.idx = Math.min(S.idx, Math.max(0, F.length - 1));
     renderOverview(); renderFilters(); renderTabs();
-    ["Car", "Grid", "Tri"].forEach(function (v) { $("#v" + v).setAttribute("aria-pressed", S.view === v.toLowerCase().replace("car", "car")); });
     $("#vCar").setAttribute("aria-pressed", S.view === "car"); $("#vGrid").setAttribute("aria-pressed", S.view === "grid"); $("#vTri").setAttribute("aria-pressed", S.view === "tri");
     S.t0 = Date.now();
     if (S.view === "car") mountCarousel(); else if (S.view === "tri") mountTri(); else mountGrid();
