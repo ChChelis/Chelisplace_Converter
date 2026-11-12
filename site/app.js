@@ -31,6 +31,7 @@ const pronto = chamar("iniciar", null, null, { base: new URLSearchParams(locatio
 document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", x === b));
   document.querySelectorAll("main > section").forEach((s) => (s.hidden = s.id !== b.dataset.aba));
+  if (b.dataset.aba === "montagem") prepararMontagem();
 }));
 
 // ---------- pasta ----------
@@ -163,49 +164,92 @@ async function orcar() {
 ORC.forEach((s) => $(s).addEventListener("input", orcar));
 orcar();
 
-// ---------- checagem ----------
-let chk = { pasta: null, xml: null };
-const chkPronto = () => ($("#c-rodar").disabled = !(chk.pasta && chk.xml));
-$("#c-xml").addEventListener("change", async (e) => { chk.xml = e.target.files[0] ? await e.target.files[0].arrayBuffer() : null; chkPronto(); });
-$("#c-pasta").addEventListener("click", async () => {
-  try { chk.pasta = await escolher("c"); $("#c-pasta-nome").textContent = `${chk.pasta.nome}: ${chk.pasta.raiz.length + chk.pasta.pares.length} imagens`; } catch (e) { return falha($("#c-pasta-nome"), e); }
-  chkPronto();
-});
-const lista = (itens, f) => (itens.length ? `<ul>${itens.map((i) => `<li>${f(i)}</li>`).join("")}</ul>` : "");
+// ---------- pedido em uso (compartilhado entre Checagem e Montagem) ----------
+const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set() };
+let clienteEditado = false;
+const chaveIgnorar = () => "ignorar:" + sessao.pasta.nome;
+function carregarIgnorados() { try { sessao.ignorar = new Set(JSON.parse(guardado.ler(chaveIgnorar()) || "[]")); } catch { sessao.ignorar = new Set(); } }
+const salvarIgnorados = () => guardado.gravar(chaveIgnorar(), JSON.stringify([...sessao.ignorar]));
 
-$("#c-rodar").addEventListener("click", async () => {
+function atualizarRotulos() {
+  const p = sessao.pasta;
+  const txt = p ? `${p.nome}: ${p.raiz.length + p.pares.length} imagens${p.pares.length ? ` (${p.pares.length} em pares/)` : ""}` : "";
+  $("#c-pasta-nome").textContent = txt; $("#m-pasta-nome").textContent = txt;
+  $("#c-xml-nome").textContent = $("#m-xml-nome").textContent = sessao.xmlNome;
+  $("#c-rodar").disabled = !(p && sessao.xml);
+  $("#m-rodar").disabled = !(p && p.raiz.length);
+}
+async function receberXml(arq) {
+  sessao.xml = arq ? await arq.arrayBuffer() : null; sessao.xmlNome = arq ? arq.name : "";
+  atualizarRotulos();
+}
+async function receberPasta(alvoErro, prefixo) {
+  try { sessao.pasta = await escolher(prefixo); } catch (e) { return falha(alvoErro, e); }
+  carregarIgnorados();
+  if (!clienteEditado) $("#m-cliente").value = sessao.pasta.nome;
+  atualizarRotulos();
+}
+$("#c-xml").addEventListener("change", (e) => receberXml(e.target.files[0]));
+$("#m-xml").addEventListener("change", (e) => receberXml(e.target.files[0]));
+$("#c-pasta").addEventListener("click", () => receberPasta($("#c-pasta-nome"), "c"));
+$("#m-pasta").addEventListener("click", () => receberPasta($("#m-pasta-nome"), "m"));
+$("#m-cliente").addEventListener("input", () => (clienteEditado = true));
+
+// ---------- checagem ----------
+const lista = (itens, f) => (itens.length ? `<ul>${itens.map((i) => `<li>${f(i)}</li>`).join("")}</ul>` : "");
+const botaoPeq = (rot, attr, ids) => `<button class="peq" ${attr}="${ids}">${rot}</button>`;
+
+async function conferir() {
   const alvo = $("#c-resultado");
   alvo.textContent = "Conferindo…";
   await pronto;
-  const nomes = [...chk.pasta.raiz, ...chk.pasta.pares].map((x) => x.nome);
+  try {
+    if (sessao.pasta.recarregar) { sessao.pasta = await sessao.pasta.recarregar(); atualizarRotulos(); }  // lê a pasta de novo, sem escolher outra vez
+  } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
+  const pasta = sessao.pasta;
+  const nomes = [...pasta.raiz, ...pasta.pares].map((x) => x.nome);
   let r;
-  try { r = await chamar("checar", { xml: chk.xml.slice(0), nomes }); } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
+  try { r = await chamar("checar", { xml: sessao.xml.slice(0), nomes, ignorar: [...sessao.ignorar] }); } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
   const secao = (t, cls, itens, f) => (itens.length ? `<h3 class="${cls}">${t} (${itens.length})</h3>${lista(itens, f)}` : "");
+  const todos = r.pares_incompletos.length > 1 ? `<p><button class="peq" data-ign-todos="1">Ignorar todos os pares incompletos</button></p>` : "";
   alvo.innerHTML =
-    `<p><b>${r.total}</b> unidades no XML. ` + (r.ok ? `<span class="ok">Tudo certo: nada falta, nada sobra.</span>` : `<span class="alerta">Há pendências.</span>`) + `</p>` +
+    `<p><b>${r.total}</b> unidades no XML` + (r.pares_ignorados.length ? ` <span class="suave">(sem ${r.pares_ignorados.length} par(es) ignorado(s))</span>` : "") + `. ` +
+    (r.ok ? `<span class="ok">Tudo certo: nada falta, nada sobra.</span>` : `<span class="alerta">Há pendências.</span>`) + `</p>` +
     secao("Faltando baixar", "alerta", r.faltando, ([n, q]) => `${esc(n)} × ${q}`) +
     secao("A duplicar (o XML pede mais cópias)", "aviso", r.a_duplicar, ([n, q]) => `${esc(n)}: faltam ${q} cópia(s)`) +
     secao("Cópias a mais", "aviso", r.excesso, ([n, q]) => `${esc(n)}: ${q} a mais`) +
     secao("Fora da lista do XML", "aviso", r.fora_da_lista, esc) +
     secao("Sem ID no nome", "aviso", r.sem_id, esc) +
     secao("Verso padrão na pasta (não entra na montagem)", "suave", r.verso_padrao, esc) +
-    secao("Pares dupla face incompletos", "alerta", r.pares_incompletos, ([f, v]) => `${esc(f)} / ${esc(v)}`) +
+    secao("Pares dupla face incompletos", "alerta", r.pares_incompletos, ([f, v, idf, idv]) => `${esc(f)} / ${esc(v)} ${botaoPeq("Ignorar este par", "data-ign", idf + "," + idv)}`) + todos +
+    secao("Pares ignorados", "suave", r.pares_ignorados, ([f, v, idf, idv]) => `${esc(f)} / ${esc(v)} ${botaoPeq("Voltar a considerar", "data-des", idf + "," + idv)}`) +
     `<div id="c-acoes"></div>`;
+  alvo.querySelectorAll("[data-ign],[data-des]").forEach((b) => (b.onclick = () => {
+    const ids = (b.dataset.ign || b.dataset.des).split(",");
+    ids.forEach((i) => (b.dataset.ign ? sessao.ignorar.add(i) : sessao.ignorar.delete(i)));
+    salvarIgnorados(); conferir();
+  }));
+  const todosBtn = alvo.querySelector("[data-ign-todos]");
+  if (todosBtn) todosBtn.onclick = () => { r.pares_incompletos.forEach(([, , f, v]) => { sessao.ignorar.add(f); sessao.ignorar.add(v); }); salvarIgnorados(); conferir(); };
+
   const acoes = $("#c-acoes");
   const botao = (texto, fn, sec) => { const b = Object.assign(document.createElement("button"), { className: "acao" + (sec ? " sec" : ""), textContent: texto }); b.onclick = fn; acoes.append(b); };
-  if (r.faltantes_xml) botao("Baixar XML dos faltantes", () => baixar(new Blob([r.faltantes_xml], { type: "application/xml" }), "faltantes.xml").click(), true);
-  if (chk.pasta.podeGravar && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async () => {
-    for (const [orig, dest] of r.duplicar) await chk.pasta.copiar(orig, dest);
-    chk.pasta = await chk.pasta.recarregar();
-    return `${r.duplicar.length} cópia(s) criada(s). Confira de novo.`;
+  if (r.faltantes_xml) botao("Baixar XML dos faltantes", () => baixar(new Blob([r.faltantes_xml], { type: "application/xml" }), `${pasta.nome}_faltantes.xml`).click(), true);
+  if (pasta.podeGravar && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async () => {
+    for (const [orig, dest] of r.duplicar) await pasta.copiar(orig, dest);
+    return `${r.duplicar.length} cópia(s) criada(s). Clique em Conferir para ver o resultado.`;
   }));
-  if (chk.pasta.podeGravar && r.pares.length) botao(`Mover ${r.pares.length} par(es) para pares/`, () => confirmar(acoes, `Mover ${r.pares.length * 2} arquivo(s) da pasta do pedido para a subpasta pares/?`, async () => {
-    await chk.pasta.moverPares(r.pares.flat());
-    chk.pasta = await chk.pasta.recarregar();
-    return "Pares movidos. Confira de novo.";
-  }), true);
-  if (!chk.pasta.podeGravar && (r.duplicar.length || r.pares.length)) acoes.insertAdjacentHTML("beforeend", `<p class="suave">Para criar cópias e mover pares, use Chrome ou Edge, ou escolha o Google Drive.</p>`);
-});
+  // pares completos que ainda estão soltos na pasta do pedido: propõe a pasta pares/ sozinho, com confirmação
+  const jaEmPares = new Set(pasta.pares.map((x) => x.nome));
+  const soltos = r.pares.filter(([f, v]) => !(jaEmPares.has(f) && jaEmPares.has(v))).flat().filter((n) => !jaEmPares.has(n));
+  const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async () => {
+    await pasta.moverPares(soltos);
+    return `${soltos.length} arquivo(s) movido(s) para pares/. Clique em Conferir para ver o resultado.`;
+  });
+  if (pasta.podeGravar && soltos.length) { botao(`Mover ${soltos.length / 2} par(es) para pares/`, moverPares, true); moverPares(); }
+  if (!pasta.podeGravar && (r.duplicar.length || soltos.length)) acoes.insertAdjacentHTML("beforeend", `<p class="suave">Para criar cópias e mover pares, use Chrome ou Edge, ou escolha o Google Drive.</p>`);
+}
+$("#c-rodar").addEventListener("click", conferir);
 
 function baixar(blob, nome) {
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: nome, className: "baixar", textContent: "Baixar " + nome });
@@ -213,22 +257,24 @@ function baixar(blob, nome) {
 }
 
 // ---------- montagem ----------
-let mon = { pasta: null };
-$("#m-pasta").addEventListener("click", async () => {
-  try { mon.pasta = await escolher("m"); } catch (e) { return falha($("#m-pasta-nome"), e); }
-  await pronto;
-  const p = mon.pasta;
-  $("#m-pasta-nome").textContent = `${p.nome}: ${p.raiz.length} imagens + ${p.pares.length} em pares`;
-  $("#m-plano").textContent = `${Math.ceil((p.raiz.length + p.pares.length) / 18)} página(s) A3 de 18 cartas.`;
-  $("#m-rodar").disabled = !p.raiz.length;
-});
+function prepararMontagem() {
+  const p = sessao.pasta;
+  $("#m-trocar").open = !p;
+  $("#m-resumo").innerHTML = p
+    ? `Pedido em uso: <b>${esc(p.nome)}</b> (${p.raiz.length} imagens${p.pares.length ? ` + ${p.pares.length} em pares/` : ""}). XML: ${sessao.xmlNome ? esc(sessao.xmlNome) : '<span class="aviso">nenhum (pares em ordem alfabética)</span>'}.`
+    : `<span class="suave">Escolha a pasta do pedido abaixo, ou na aba Checagem.</span>`;
+  if (p && !clienteEditado) $("#m-cliente").value = p.nome;
+  atualizarRotulos();
+}
 $("#m-rodar").addEventListener("click", async () => {
-  const p = mon.pasta, cliente = $("#m-cliente").value.trim() || "Pedido";
+  const cliente = $("#m-cliente").value.trim() || "Pedido";
   const barra = $("#m-barra"), prog = barra.firstElementChild, status = $("#m-status"), saida = $("#m-saida");
   $("#m-rodar").disabled = true; barra.hidden = false; saida.innerHTML = "";
-  const total = p.raiz.length + p.pares.length;
   let feitas = 0;
   try {
+    if (sessao.pasta.recarregar) sessao.pasta = await sessao.pasta.recarregar();  // pega o que mudou na pasta desde a última vez
+    const p = sessao.pasta, total = p.raiz.length + p.pares.length;
+    atualizarRotulos(); prepararMontagem();
     await chamar("iniciar_montagem");
     for (const [grupo, itens] of [["raiz", p.raiz], ["pares", p.pares]]) {
       for (let i = 0; i < itens.length; i += 4) {
@@ -241,8 +287,7 @@ $("#m-rodar").addEventListener("click", async () => {
       }
     }
     status.textContent = "Montando páginas…";
-    const xmlArq = $("#m-xml").files[0];
-    const pdfs = await chamar("montar_pdfs", { cliente, xml: xmlArq ? await xmlArq.arrayBuffer() : null });
+    const pdfs = await chamar("montar_pdfs", { cliente, xml: sessao.xml ? sessao.xml.slice(0) : null });
     prog.style.width = "100%";
     status.textContent = `${pdfs.length} PDF(s) prontos.`;
     for (const [nome, bytes] of pdfs) saida.append(baixar(new Blob([bytes], { type: "application/pdf" }), nome));
@@ -259,5 +304,5 @@ $("#m-rodar").addEventListener("click", async () => {
   } catch (e) {
     status.innerHTML = `<span class="alerta">${esc(e.message)}</span>`;
   }
-  $("#m-rodar").disabled = false;
+  atualizarRotulos();
 });

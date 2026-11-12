@@ -9,11 +9,17 @@ def orcar(frentes, versos, modo):
     return json.dumps(orcamento.calcular(int(frentes), int(versos), modo))
 
 
-def checar(pasta, xml_path, faltantes_path=None):
-    """Relatório da checagem em JSON. Só lê; as ações são decididas pela página."""
-    ped = xml_mpc.ler(xml_path)
-    r = checagem.analisar(pasta, ped)
-    nome = lambda i: r.nomes.get(i, i)
+def checar(pasta, xml_path, faltantes_path=None, ignorar=None):
+    """Relatório da checagem em JSON. Só lê; as ações são decididas pela página.
+
+    ignorar: IDs de pares que o Chelis mandou ignorar (não são exigidos nem cobrados).
+    """
+    ignorar = set(ignorar or [])
+    total = xml_mpc.ler(xml_path)
+    ped = checagem.sem_ids(total, ignorar)
+    r = checagem.analisar(pasta, ped, ignorar)
+    nomes = checagem.exigido(total)[1]
+    nome = lambda i: nomes.get(i, i)
     duplicar = [[r.existentes[i][0], checagem.nome_copia(r.existentes[i][0], n)]
                 for i, extra in r.a_duplicar.items() for n in range(1, extra + 1)]
     if faltantes_path and r.faltando:
@@ -27,8 +33,10 @@ def checar(pasta, xml_path, faltantes_path=None):
         duplicar=duplicar,
         pares=[[r.existentes[f][0], r.existentes[v][0]] for f, v in r.pares
                if f in r.existentes and v in r.existentes],
-        pares_incompletos=[[nome(f), nome(v)] for f, v in r.pares
-                           if f not in r.existentes or v not in r.existentes]))
+        pares_incompletos=[[nome(f), nome(v), f, v] for f, v in r.pares
+                           if f not in r.existentes or v not in r.existentes],
+        pares_ignorados=[[nome(f), nome(v), f, v] for f, v in checagem.pares(total)
+                         if f in ignorar or v in ignorar]))
 
 
 def redimensionar_pasta(entrada, saida):

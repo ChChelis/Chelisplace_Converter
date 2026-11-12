@@ -35,10 +35,10 @@ const acoes = {
     py.globals.set("a", [frentes, versos, modo]);
     return JSON.parse(py.runPython("web.orcar(*a)"));
   },
-  async checar({ xml, nomes }) {
+  async checar({ xml, nomes, ignorar }) {
     gravar("/w/pasta", nomes.map((n) => [n, new Uint8Array(0)]));
     gravar("/w/xml", [["pedido.xml", new Uint8Array(xml)]]);
-    py.globals.set("a", ["/w/pasta", "/w/xml/pedido.xml", "/w/xml/faltantes.xml"]);
+    py.globals.set("a", ["/w/pasta", "/w/xml/pedido.xml", "/w/xml/faltantes.xml", ignorar || []]);
     const r = JSON.parse(py.runPython("web.checar(*a)"));
     const tem = py.FS.analyzePath("/w/xml/faltantes.xml").exists;
     r.faltantes_xml = tem ? py.FS.readFile("/w/xml/faltantes.xml", { encoding: "utf8" }) : null;

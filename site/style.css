@@ -29,3 +29,5 @@ ul{margin:4px 0 12px;padding-left:20px}
 a.baixar{display:inline-block;margin:6px 12px 0 0}
 a{color:var(--acento)}
 h3{font-size:.95rem;margin:16px 0 0}
+button.peq{font:inherit;font-size:.8rem;padding:2px 8px;margin-left:8px;border:1px solid var(--linha);border-radius:6px;background:none;color:var(--texto);cursor:pointer}
+details summary{cursor:pointer}
