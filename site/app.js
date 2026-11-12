@@ -34,19 +34,10 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
 }));
 
 // ---------- pasta ----------
-// Devolve {nome, handle, raiz:[{nome, ler()}], pares:[...]}; handle só existe onde o navegador deixa gravar.
-async function escolherPasta() {
-  if (window.showDirectoryPicker) {
-    const handle = await showDirectoryPicker({ mode: "readwrite" });
-    const raiz = [], pares = [];
-    for await (const [nome, h] of handle.entries()) {
-      if (h.kind === "file" && IMG.test(nome)) raiz.push({ nome, ler: () => h.getFile() });
-      if (h.kind === "directory" && nome.toLowerCase() === "pares") {
-        for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && IMG.test(n2)) pares.push({ nome: n2, ler: () => h2.getFile() });
-      }
-    }
-    return { nome: handle.name, handle, raiz, pares };
-  }
+// Devolve {nome, podeGravar, copiar(orig,dest), moverPares(nomes), raiz:[{nome, ler()}], pares:[...]}.
+// No computador só grava onde o navegador deixa (Chrome/Edge); no Drive, sempre.
+async function pastaDoComputador() {
+  if (window.showDirectoryPicker) return lerHandle(await showDirectoryPicker({ mode: "readwrite" }));
   return new Promise((res, rej) => {
     const inp = document.createElement("input");
     inp.type = "file"; inp.webkitdirectory = true;
@@ -59,11 +50,92 @@ async function escolherPasta() {
         if (partes.length === 2) raiz.push(item);
         else if (partes.length === 3 && partes[1].toLowerCase() === "pares") pares.push(item);
       }
-      inp.files.length ? res({ nome: (inp.files[0].webkitRelativePath || "").split("/")[0], handle: null, raiz, pares }) : rej(new Error("cancelado"));
+      inp.files.length ? res({ nome: (inp.files[0].webkitRelativePath || "").split("/")[0], handle: null, raiz, pares, podeGravar: false }) : rej(new Error("cancelado"));
     };
     inp.click();
   });
 }
+
+async function lerHandle(handle) {
+  {
+    const raiz = [], pares = [];
+    for await (const [nome, h] of handle.entries()) {
+      if (h.kind === "file" && IMG.test(nome)) raiz.push({ nome, ler: () => h.getFile() });
+      if (h.kind === "directory" && nome.toLowerCase() === "pares") {
+        for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && IMG.test(n2)) pares.push({ nome: n2, ler: () => h2.getFile() });
+      }
+    }
+    return {
+      nome: handle.name, handle, raiz, pares, podeGravar: true,
+      recarregar: () => lerHandle(handle),
+      async copiar(orig, dest) {
+        const f = await (await handle.getFileHandle(orig)).getFile();
+        const w = await (await handle.getFileHandle(dest, { create: true })).createWritable();
+        await w.write(f); await w.close();
+      },
+      async moverPares(nomes) {
+        const dir = await handle.getDirectoryHandle("pares", { create: true });
+        for (const nome of nomes) {
+          let origem; try { origem = await handle.getFileHandle(nome); } catch { continue; }
+          const w = await (await dir.getFileHandle(nome, { create: true })).createWritable();
+          await w.write(await origem.getFile()); await w.close();
+          await handle.removeEntry(nome);
+        }
+      },
+    };
+  }
+}
+
+// ---------- Google Drive ----------
+const guardado = { ler: (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, gravar: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+$("#drive-id").value = guardado.ler("drive-client-id");
+const estadoDrive = (txt, conectado) => { $("#drive-estado").textContent = txt; $("#drive-sair").hidden = !conectado; };
+$("#drive-entrar").addEventListener("click", async () => {
+  const id = $("#drive-id").value.trim();
+  $("#drive-erro").textContent = "";
+  if (!id) { $("#drive-erro").textContent = "Cole o Client ID do Google antes de entrar."; return; }
+  guardado.gravar("drive-client-id", id);
+  try { await Drive.entrar(id); await Drive.raiz(); estadoDrive("conectado", true); } catch (e) { $("#drive-erro").textContent = e.message; estadoDrive("desconectado", false); }
+});
+$("#drive-sair").addEventListener("click", () => { Drive.sair(); estadoDrive("desconectado", false); });
+
+async function pastaDoDrive(listaEl) {
+  if (!Drive.conectado()) throw new Error("Entre com o Google no quadro \"Google Drive\" (no alto da página).");
+  listaEl.textContent = "Lendo a pasta de pedidos…";
+  const lista = await Drive.pedidos();
+  return new Promise((res, rej) => {
+    listaEl.innerHTML = lista.length ? `<p class="suave">Escolha o pedido:</p>` : `<p class="suave">Nenhuma pasta de pedido dentro de "${esc(Drive.NOME_RAIZ)}".</p>`;
+    for (const ped of lista) {
+      const b = Object.assign(document.createElement("button"), { className: "acao sec", textContent: ped.name });
+      b.onclick = async () => {
+        listaEl.textContent = "Lendo " + ped.name + "…";
+        try { res(await montarPastaDrive(ped)); listaEl.textContent = ""; } catch (e) { rej(e); }
+      };
+      listaEl.append(b);
+    }
+  });
+}
+
+async function montarPastaDrive(ped) {
+  const filhos = await Drive.listar(ped.id);
+  const imagem = (f) => f.mimeType.startsWith("image/") || IMG.test(f.name);
+  const item = (f) => ({ id: f.id, nome: f.name, ler: async () => new File([await Drive.baixar(f.id)], f.name) });
+  const raiz = filhos.filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map(item);
+  const dirPares = filhos.find((f) => f.mimeType === Drive.PASTA && f.name.toLowerCase() === "pares");
+  const pares = dirPares ? (await Drive.listar(dirPares.id)).filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map(item) : [];
+  return {
+    nome: ped.name, drive: { id: ped.id }, raiz, pares, podeGravar: true,
+    recarregar: () => montarPastaDrive(ped),
+    async copiar(orig, dest) { await Drive.copiar(raiz.find((x) => x.nome === orig).id, dest, ped.id); },
+    async moverPares(nomes) {
+      const dir = await Drive.criarPasta("pares", ped.id);
+      for (const nome of nomes) { const it = raiz.find((x) => x.nome === nome); if (it) await Drive.mover(it.id, dir, ped.id); }
+    },
+  };
+}
+
+const escolher = (p) => document.querySelector(`input[name=fonte-${p}]:checked`).value === "drive" ? pastaDoDrive($(`#${p}-drive-lista`)) : pastaDoComputador();
+function falha(el, e) { if (e.message !== "cancelado" && e.name !== "AbortError") el.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
 
 // confirmação dentro da página (sem pop-ups nativos)
 function confirmar(onde, texto, fazer) {
@@ -96,7 +168,7 @@ let chk = { pasta: null, xml: null };
 const chkPronto = () => ($("#c-rodar").disabled = !(chk.pasta && chk.xml));
 $("#c-xml").addEventListener("change", async (e) => { chk.xml = e.target.files[0] ? await e.target.files[0].arrayBuffer() : null; chkPronto(); });
 $("#c-pasta").addEventListener("click", async () => {
-  try { chk.pasta = await escolherPasta(); $("#c-pasta-nome").textContent = `${chk.pasta.nome}: ${chk.pasta.raiz.length + chk.pasta.pares.length} imagens`; } catch (e) { return; }
+  try { chk.pasta = await escolher("c"); $("#c-pasta-nome").textContent = `${chk.pasta.nome}: ${chk.pasta.raiz.length + chk.pasta.pares.length} imagens`; } catch (e) { return falha($("#c-pasta-nome"), e); }
   chkPronto();
 });
 const lista = (itens, f) => (itens.length ? `<ul>${itens.map((i) => `<li>${f(i)}</li>`).join("")}</ul>` : "");
@@ -122,25 +194,17 @@ $("#c-rodar").addEventListener("click", async () => {
   const acoes = $("#c-acoes");
   const botao = (texto, fn, sec) => { const b = Object.assign(document.createElement("button"), { className: "acao" + (sec ? " sec" : ""), textContent: texto }); b.onclick = fn; acoes.append(b); };
   if (r.faltantes_xml) botao("Baixar XML dos faltantes", () => baixar(new Blob([r.faltantes_xml], { type: "application/xml" }), "faltantes.xml").click(), true);
-  if (chk.pasta.handle && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async () => {
-    for (const [orig, dest] of r.duplicar) {
-      const f = await (await chk.pasta.handle.getFileHandle(orig)).getFile();
-      const w = await (await chk.pasta.handle.getFileHandle(dest, { create: true })).createWritable();
-      await w.write(f); await w.close();
-    }
+  if (chk.pasta.podeGravar && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async () => {
+    for (const [orig, dest] of r.duplicar) await chk.pasta.copiar(orig, dest);
+    chk.pasta = await chk.pasta.recarregar();
     return `${r.duplicar.length} cópia(s) criada(s). Confira de novo.`;
   }));
-  if (chk.pasta.handle && r.pares.length) botao(`Mover ${r.pares.length} par(es) para pares/`, () => confirmar(acoes, `Mover ${r.pares.length * 2} arquivo(s) da pasta do pedido para a subpasta pares/?`, async () => {
-    const dir = await chk.pasta.handle.getDirectoryHandle("pares", { create: true });
-    for (const nome of r.pares.flat()) {
-      let origem; try { origem = await chk.pasta.handle.getFileHandle(nome); } catch { continue; }
-      const w = await (await dir.getFileHandle(nome, { create: true })).createWritable();
-      await w.write(await origem.getFile()); await w.close();
-      await chk.pasta.handle.removeEntry(nome);
-    }
+  if (chk.pasta.podeGravar && r.pares.length) botao(`Mover ${r.pares.length} par(es) para pares/`, () => confirmar(acoes, `Mover ${r.pares.length * 2} arquivo(s) da pasta do pedido para a subpasta pares/?`, async () => {
+    await chk.pasta.moverPares(r.pares.flat());
+    chk.pasta = await chk.pasta.recarregar();
     return "Pares movidos. Confira de novo.";
   }), true);
-  if (!chk.pasta.handle && (r.duplicar.length || r.pares.length)) acoes.insertAdjacentHTML("beforeend", `<p class="suave">Para criar cópias e mover pares, use Chrome ou Edge (o navegador precisa deixar gravar na pasta).</p>`);
+  if (!chk.pasta.podeGravar && (r.duplicar.length || r.pares.length)) acoes.insertAdjacentHTML("beforeend", `<p class="suave">Para criar cópias e mover pares, use Chrome ou Edge, ou escolha o Google Drive.</p>`);
 });
 
 function baixar(blob, nome) {
@@ -151,7 +215,7 @@ function baixar(blob, nome) {
 // ---------- montagem ----------
 let mon = { pasta: null };
 $("#m-pasta").addEventListener("click", async () => {
-  try { mon.pasta = await escolherPasta(); } catch { return; }
+  try { mon.pasta = await escolher("m"); } catch (e) { return falha($("#m-pasta-nome"), e); }
   await pronto;
   const p = mon.pasta;
   $("#m-pasta-nome").textContent = `${p.nome}: ${p.raiz.length} imagens + ${p.pares.length} em pares`;
@@ -182,6 +246,16 @@ $("#m-rodar").addEventListener("click", async () => {
     prog.style.width = "100%";
     status.textContent = `${pdfs.length} PDF(s) prontos.`;
     for (const [nome, bytes] of pdfs) saida.append(baixar(new Blob([bytes], { type: "application/pdf" }), nome));
+    if (p.drive) {
+      const b = Object.assign(document.createElement("button"), { className: "acao", textContent: "Salvar PDFs no Drive (pasta saida)" });
+      b.onclick = () => confirmar(saida, `Criar a pasta "saida" dentro de "${p.nome}" no Drive (se não existir) e enviar ${pdfs.length} PDF(s) para lá?`, async () => {
+        const dir = await Drive.criarPasta("saida", p.drive.id);
+        let n = 0;
+        for (const [nome, bytes] of pdfs) { await Drive.enviar(nome, new Blob([bytes], { type: "application/pdf" }), dir, "application/pdf"); n++; }
+        return `${n} PDF(s) enviados para ${p.nome}/saida no Drive.`;
+      });
+      saida.append(b);
+    }
   } catch (e) {
     status.innerHTML = `<span class="alerta">${esc(e.message)}</span>`;
   }

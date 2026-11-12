@@ -4,7 +4,8 @@ Página estática que roda o núcleo Python no navegador (Pyodide + Pillow, em u
 
 Abas: **Orçamento**, **Checagem** (XML × pasta; cópias e mover pares só com confirmação dentro da página, em Chrome/Edge), **Montagem** (redimensiona e gera os PDFs A3 de 18 cartas; `pares/` vai para os últimos slots).
 
-## Rodar local
+## Rodar local (Windows: `powershell -ExecutionPolicy Bypass -File site\build.ps1` e `py -m http.server 8780 -d site`)
+## Rodar local (Linux/Mac)
 ```
 sh site/build.sh              # copia nucleo/ para site/nucleo (gitignored)
 python3 -m http.server 8780 -d site
