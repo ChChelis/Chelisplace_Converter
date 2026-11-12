@@ -127,6 +127,9 @@ class TestPixFicha(unittest.TestCase):
                             [dict(titulo="Troca", itens=[dict(texto="x", pedido_id="i1", usado_id="i2")])], "ok", "normal", None)
         self.assertIn("### Pedido: 3 slots", md)
         self.assertIn("thumbnail?id=i2", md)
+        md2, _ = ficha.gerar("Ana", "1", [dict(titulo="X", frentes=["A"])],
+                             [dict(titulo="T", itens=[dict(texto="x", pedido_img="https://api.scryfall.com/cards/c21/263?format=image")])], "", "normal", None)
+        self.assertIn("![|110](https://api.scryfall.com/cards/c21/263?format=image)", md2)
         self.assertLess(md.index("#### Conclusão"), md.index("#### Confidencial"))
         self.assertLess(md.index("### Alterações"), md.index("#### Confidencial"))
 

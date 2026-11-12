@@ -145,6 +145,9 @@ async function procurarBot() {
         } catch (e) { lista.insertAdjacentHTML("beforeend", `<p class="alerta">${esc(e.message)}</p>`); }
       };
       lista.append(b);
+      const av = Object.assign(document.createElement("button"), { className: "acao sec", textContent: `Cartas sem versão próxima de ${p.nome}` });
+      av.onclick = () => cartasParaAvisar(p.nome, lista);
+      lista.append(av);
     }
   } catch {
     alvo.innerHTML = `<span class="aviso">Bot não encontrado.</span> Abra o <b>BotChelisplace.exe</b> (ele usa a porta 8781) e clique em <button class="peq" id="b-de-novo">Procurar de novo</button>`;
@@ -152,15 +155,47 @@ async function procurarBot() {
   }
 }
 
+// Cartas em que o cliente precisa ser avisado, com miniatura do que ele pediu (Scryfall) e do que foi usado (MPCFill).
+async function cartasParaAvisar(nome, lista) {
+  let caixa = document.getElementById("b-avisar");
+  caixa?.remove();
+  caixa = Object.assign(document.createElement("div"), { id: "b-avisar", className: "conf", textContent: "Lendo o pedido no bot…" });
+  lista.append(caixa);
+  try {
+    const q = encodeURIComponent(nome);
+    const [cat, dec] = await Promise.all([fetch(`${MOTOR}/api/pedidos/${q}/catalogo`).then((r) => r.json()), fetch(`${MOTOR}/api/pedidos/${q}/decisoes`).then((r) => r.json())]);
+    const achados = [];
+    for (const c of cat.cards || []) {
+      if (c.face) continue;  // versos seguem a frente
+      const d = dec[c.id] || {};
+      const semProxima = c.prop && c.prop.conf === "nenhum";
+      if (d.status !== "nenhum" && !(semProxima && d.status === "ok")) continue;
+      const usadoId = d.status === "ok" ? (d.accept_ids && d.accept_ids[0]) || (c.cands[0] && c.cands[0].id) || "" : "";
+      const rotulo = `${c.name}${c.set && c.set !== "LIGA" ? ` (${c.set.toUpperCase()} ${c.cn})` : ""}`;
+      achados.push({ texto: d.status === "ok" ? `${rotulo}: não achei a versão pedida; usei a mais próxima` : `${rotulo}: sem versão disponível, ficou de fora`,
+        pedido_img: scryImg(c.set, c.cn), usado_img: usadoId ? miniUrl(usadoId) : "" });
+    }
+    caixa.innerHTML = achados.length ? `<b>${achados.length} carta(s) para avisar o cliente:</b>` : `<span class="ok">Nenhuma carta sem versão próxima nas decisões deste pedido.</span>`;
+    if (!achados.length) return;
+    for (const it of achados) caixa.insertAdjacentHTML("beforeend", `<div class="item">${it.pedido_img ? `<img src="${esc(it.pedido_img)}" height="64" alt="">` : ""}${it.usado_img ? `<img src="${esc(it.usado_img)}" height="64" alt="">` : ""} ${esc(it.texto)}</div>`);
+    const b = Object.assign(document.createElement("button"), { className: "acao", textContent: "Levar para a ficha como alteração" });
+    b.onclick = () => { pedido.alteracoes.push({ titulo: "Cartas sem versão próxima", itens: achados }); renderAlteracoes(); renderFicha(); b.textContent = "Levado para a etapa 5 ✓"; b.disabled = true; };
+    caixa.append(b);
+  } catch (e) { caixa.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
+}
+
 // ---------- ficha, mensagem ao cliente e Pix ----------
 const idDrive = (t) => { const m = (t || "").match(/[-\w]{25,}/); return m ? m[0] : ""; };
 const miniUrl = (id) => `https://drive.google.com/thumbnail?id=${id}&sz=w200`;
+const urlPedido = (it) => it.pedido_img || (it.pedido_id ? miniUrl(it.pedido_id) : "");
+const urlUsado = (it) => it.usado_img || (it.usado_id ? miniUrl(it.usado_id) : "");
+const scryImg = (set, cn) => (set && cn && set !== "LIGA" ? `https://api.scryfall.com/cards/${encodeURIComponent(set.toLowerCase())}/${encodeURIComponent(cn)}?format=image&version=small` : "");
 function renderAlteracoes() {
   const c = $("#f-alt");
   c.innerHTML = pedido.alteracoes.map((a, i) => `<div class="alt"><input type="text" data-a="${i}" data-f="titulo" value="${esc(a.titulo)}" placeholder="Título (ex.: Troca de arte)"><button class="peq" data-arm="${i}">Remover</button>` +
     a.itens.map((it, j) => `<div class="item"><input type="text" size="28" data-a="${i}" data-j="${j}" data-f="texto" value="${esc(it.texto)}" placeholder="Carta e o que mudou">
-      <input type="text" size="18" data-a="${i}" data-j="${j}" data-f="pedido_id" value="${esc(it.pedido_id || "")}" placeholder="Link/ID do que pediu">${it.pedido_id ? `<img src="${miniUrl(it.pedido_id)}" alt="">` : ""}
-      <input type="text" size="18" data-a="${i}" data-j="${j}" data-f="usado_id" value="${esc(it.usado_id || "")}" placeholder="Link/ID do que usou">${it.usado_id ? `<img src="${miniUrl(it.usado_id)}" alt="">` : ""}</div>`).join("") +
+      <input type="text" size="18" data-a="${i}" data-j="${j}" data-f="pedido_id" value="${esc(it.pedido_id || "")}" placeholder="Link/ID do que pediu">${urlPedido(it) ? `<img src="${esc(urlPedido(it))}" alt="">` : ""}
+      <input type="text" size="18" data-a="${i}" data-j="${j}" data-f="usado_id" value="${esc(it.usado_id || "")}" placeholder="Link/ID do que usou">${urlUsado(it) ? `<img src="${esc(urlUsado(it))}" alt="">` : ""}</div>`).join("") +
     `<button class="peq" data-iadd="${i}">+ carta</button></div>`).join("");
   c.querySelectorAll("input").forEach((el) => (el.onchange = () => {
     const a = pedido.alteracoes[+el.dataset.a], f = el.dataset.f;
@@ -172,6 +207,7 @@ function renderAlteracoes() {
         el.value = v;
         let img = el.nextElementSibling;
         if (!(img && img.tagName === "IMG")) { img = document.createElement("img"); el.after(img); }
+        a.itens[+el.dataset.j][f.replace("_id", "_img")] = "";  // o ID digitado vale mais que a miniatura vinda do bot
         v ? (img.src = miniUrl(v)) : img.remove();
       }
     }
@@ -197,7 +233,7 @@ async function renderFicha() {
     fichaMd = r.markdown;
   } catch (e) { $("#f-previa").innerHTML = `<span class="alerta">${esc(e.message)}</span>`; return; }
   // prévia: a mesma ficha, com as miniaturas visíveis
-  $("#f-previa").innerHTML = esc(fichaMd).replace(/!\[\|\d+\]\(https:\/\/drive\.google\.com\/thumbnail\?id=([-\w]+)&amp;sz=w300\)/g, (_, id) => `<img src="${miniUrl(id)}" alt="">`);
+  $("#f-previa").innerHTML = esc(fichaMd).replace(/!\[\|\d+\]\((https:\/\/[^)\s]+)\)/g, (_, u) => `<img src="${u.replace(/&amp;/g, "&")}" alt="">`);
 }
 async function copiar(texto, html, aviso) {
   try {
@@ -210,7 +246,7 @@ $("#f-copiar").onclick = () => copiar(fichaMd, null, "Ficha copiada: cole no Obs
 $("#f-msg").onclick = () => {
   const nome = $("#f-cliente").value.trim();
   const linhas = pedido.alteracoes.flatMap((a) => a.itens.filter((i) => i.texto.trim()).map((i) => "• " + i.texto.trim()));
-  const html = pedido.alteracoes.flatMap((a) => a.itens.filter((i) => i.texto.trim()).map((i) => `<p>${esc(i.texto)}<br>` + [i.pedido_id, i.usado_id].filter(Boolean).map((id) => `<img src="${miniUrl(id)}" height="120">`).join(" ") + "</p>")).join("");
+  const html = pedido.alteracoes.flatMap((a) => a.itens.filter((i) => i.texto.trim()).map((i) => `<p>${esc(i.texto)}<br>` + [urlPedido(i), urlUsado(i)].filter(Boolean).map((u) => `<img src="${esc(u)}" height="120">`).join(" ") + "</p>")).join("");
   const texto = `Oi${nome ? ", " + nome : ""}! Sobre o seu pedido:\n\n${linhas.join("\n") || "(nenhuma alteração registrada)"}\n\n${$("#f-conclusao").value.trim()}`.trim();
   copiar(texto, `<p>${esc(texto.split("\n")[0])}</p>${html}<p>${esc($("#f-conclusao").value.trim())}</p>`, "Mensagem copiada (com miniaturas, se o destino aceitar imagens; senão, só o texto).");
 };

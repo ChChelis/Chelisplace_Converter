@@ -2,8 +2,12 @@
 from . import orcamento
 
 
-def _miniatura(id_, largura=110):
-    return f"![|{largura}](https://drive.google.com/thumbnail?id={id_}&sz=w300)" if id_ else ""
+def _miniatura(url, largura=110):
+    return f"![|{largura}]({url})" if url else ""
+
+
+def drive_thumb(id_):
+    return f"https://drive.google.com/thumbnail?id={id_}&sz=w300" if id_ else ""
 
 
 def _lista(itens):
@@ -34,7 +38,7 @@ def gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_
             L.append(f"#### {a['titulo']}")
             linhas = []
             for i, it in enumerate(a["itens"], 1):
-                mini = " ".join(m for m in (_miniatura(it.get("pedido_id")), _miniatura(it.get("usado_id"))) if m)
+                mini = " ".join(m for m in (_miniatura(it.get("pedido_img") or drive_thumb(it.get("pedido_id"))), _miniatura(it.get("usado_img") or drive_thumb(it.get("usado_id")))) if m)
                 linhas.append(f"{i}. {it['texto']}" + (f"\n   {mini}" if mini else ""))
             L.append("\n".join(linhas))
     if conclusao:
