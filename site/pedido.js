@@ -25,7 +25,7 @@ function lerXmlMpc(buf) {
     for (const c of doc.querySelectorAll(`${tag} > card`)) {
       const id = c.querySelector("id")?.textContent.trim();
       const ext = ((c.querySelector("name")?.textContent || "").match(/\.(jpe?g|png|webp)$/i) || [".jpg"])[0].toLowerCase();
-      const nome = (c.querySelector("name")?.textContent || c.querySelector("query")?.textContent || id || "").replace(/\.(jpe?g|png|webp)$/i, "").replace(/\s*\([^)]{20,}\)\s*$/, "").trim();
+      const nome = (c.querySelector("name")?.textContent || c.querySelector("query")?.textContent || id || "").replace(/\.(jpe?g|png|webp)$/i, "").replace(/\s*\([^)]{20,}\)\s*$/, "").replace(/(\w)_s\b/g, "$1's").trim();
       const n = (c.querySelector("slots")?.textContent || "0").split(",").filter((x) => x.trim() !== "").length || 1;
       for (let i = 0; i < n; i++) saida.push({ nome, id, ext });
     }
@@ -33,7 +33,13 @@ function lerXmlMpc(buf) {
   };
   return { frentes: cartas("fronts"), versos: cartas("backs") };
 }
-function addFonte(f) { pedido.fontes.push(f); renderFontes(); }
+const assinatura = (f) => [...f.frentes, ...f.versos].map((c) => c.id || c.nome).join("|") + "#" + f.frentes.length;
+function addFonte(f) {
+  const i = pedido.fontes.findIndex((x) => assinatura(x) === assinatura(f));
+  if (i >= 0) { pedido.fontes[i] = f; $("#e-erro").textContent = "Esse pedido já estava na lista: mantive uma cópia só."; }  // mesmo conteúdo (ex.: XML do arquivo e do bot)
+  else pedido.fontes.push(f);
+  renderFontes();
+}
 function renderFontes() {
   const c = $("#e-fontes");
   c.innerHTML = pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span><button class="peq" data-rm="${i}">Remover</button></div>`).join("");
@@ -220,7 +226,9 @@ function renderAlteracoes() {
 $("#f-alt-add").onclick = () => { pedido.alteracoes.push({ titulo: "", itens: [{ texto: "" }] }); renderAlteracoes(); };
 ["#f-cliente", "#f-tel", "#f-conclusao"].forEach((s) => $(s).addEventListener("input", () => { if (s === "#f-cliente" && !clienteEditado) $("#m-cliente").value = $(s).value; renderFicha(); }));
 
-let fichaMd = "";
+let fichaMd = "", fichaManual = false;
+$("#f-previa").addEventListener("input", () => { fichaManual = true; fichaMd = $("#f-previa").value; });
+$("#f-refazer").onclick = () => { fichaManual = false; renderFicha(); };
 async function renderFicha() {
   if (!pedido.padrao) return;
   const alts = pedido.alteracoes.filter((a) => a.titulo.trim() && a.itens.some((i) => i.texto.trim())).map((a) => ({ ...a, itens: a.itens.filter((i) => i.texto.trim()) }));
@@ -231,10 +239,8 @@ async function renderFicha() {
       alteracoes: alts, conclusao: $("#f-conclusao").value.trim(), modo: pedido.modo, precos: pedido.precos[pedido.modo],
       chave_pix: $("#p-chave").value.trim() || "<CHAVE_PIX>", pago: ultimoOrc ? valorFinal() : null,
     });
-    fichaMd = r.markdown;
-  } catch (e) { $("#f-previa").innerHTML = `<span class="alerta">${esc(e.message)}</span>`; return; }
-  // prévia: a mesma ficha, com as miniaturas visíveis
-  $("#f-previa").innerHTML = esc(fichaMd).replace(/!\[\|\d+\]\((https:\/\/[^)\s]+)\)/g, (_, u) => `<img src="${u.replace(/&amp;/g, "&")}" alt="">`);
+    if (!fichaManual) { fichaMd = r.markdown; $("#f-previa").value = fichaMd; }
+  } catch (e) { if (!fichaManual) $("#f-previa").value = "Erro: " + e.message; }
 }
 async function copiar(texto, html, aviso) {
   try {
@@ -243,7 +249,7 @@ async function copiar(texto, html, aviso) {
     $("#f-aviso").textContent = aviso;
   } catch (e) { $("#f-aviso").textContent = "Não consegui copiar: " + e.message; }
 }
-$("#f-copiar").onclick = () => copiar(fichaMd, null, "Ficha copiada: cole no Obsidian (as miniaturas aparecem pelo link do Drive).");
+$("#f-copiar").onclick = () => copiar(fichaMd, null, "Texto da ficha copiado: cole no Obsidian (só texto; as miniaturas ficam no PDF).");
 $("#f-msg").onclick = () => {
   const nome = $("#f-cliente").value.trim();
   const linhas = pedido.alteracoes.flatMap((a) => a.itens.filter((i) => i.texto.trim()).map((i) => "• " + i.texto.trim()));
