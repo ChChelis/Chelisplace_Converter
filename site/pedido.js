@@ -96,36 +96,56 @@ function preencherOrcamento() {
   $("#o-origem").textContent = pedido.fontes.length ? `Vindo do pedido: ${pedido.fontes.map((f) => f.titulo).join(" + ")}. Pode ajustar os números à mão.` : "Sem pedido carregado: digite as quantidades à mão ou volte à etapa 1.";
   if (pedido.padrao) orcar();
 }
+const menorKit = (p) => p.kits.filter((k) => k.slots > 0).sort((x, y) => x.slots - y.slots)[0];
+function precosEfetivos(modo) {
+  const p = { ...pedido.precos[modo] }, k = menorKit(p);
+  if (p.avulso_auto === true && k) p.avulso = k.preco / k.slots;  // avulso = preço do menor kit ÷ slots dele
+  return p;
+}
 function desenharPrecos() {
-  const p = pedido.precos[$("#o-modo").value];
-  $("#o-kits").innerHTML = `<tr><th>Kit (slots)</th><th>Preço (R$)</th><th></th></tr>` + p.kits.map((k, i) =>
-    `<tr><td><input type="number" min="1" data-k="${i}" data-c="slots" value="${k.slots}"></td><td><input type="number" min="0" step="0.01" data-k="${i}" data-c="preco" value="${k.preco}"></td><td><button class="peq" data-krm="${i}">Remover</button></td></tr>`).join("");
-  const campo = (id, rot, v) => `<div><label>${rot}</label><input type="number" min="0" step="0.0001" data-p="${id}" value="${v}"></div>`;
-  $("#o-campos").innerHTML = campo("avulso", "Preço por slot avulso (R$)", p.avulso) + campo("colagem", "Colagem por slot (R$)", p.colagem) +
+  const modo = $("#o-modo").value, p = pedido.precos[modo];
+  $("#o-kits").innerHTML = `<tr><th>Kit (slots)</th><th>Preço (R$)</th><th class="suave">Equivale a</th><th></th></tr>` + p.kits.map((k, i) =>
+    `<tr><td><input type="number" min="1" data-k="${i}" data-c="slots" value="${k.slots}"></td><td><input type="number" min="0" step="0.01" data-k="${i}" data-c="preco" value="${k.preco}"></td>
+     <td class="suave" id="o-eq-${i}"></td><td><button class="peq" data-krm="${i}">Remover</button></td></tr>`).join("");
+  const campo = (id, rot, v, extra = "") => `<div><label>${rot}</label><input type="number" min="0" step="0.0001" data-p="${id}" value="${v}" ${extra}></div>`;
+  const ef = precosEfetivos(modo), auto = p.avulso_auto === true;
+  $("#o-campos").innerHTML = `<div><label>Preço por slot avulso (R$)</label><input type="number" min="0" step="0.0001" data-p="avulso" value="${+ef.avulso.toFixed(4)}" ${auto ? "disabled" : ""}>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="o-avulso-auto" ${auto ? "checked" : ""}> calcular pelo menor kit</label></div>` +
+    campo("colagem", "Colagem por slot (R$)", p.colagem) +
     (p.impressao_pagina !== undefined ? campo("impressao_pagina", "Impressão por página (R$)", p.impressao_pagina)
       : campo("impressao_kit", "Impressão por kit foil (R$)", p.impressao_kit) + campo("impressao_pagina_extra", "Página extra foil (R$)", p.impressao_pagina_extra));
-  $("#o-kits").querySelectorAll("input").forEach((el) => (el.oninput = () => { p.kits[+el.dataset.k][el.dataset.c] = +el.value; salvarPrecos(); orcar(); }));
+  const eq = () => p.kits.forEach((k, i) => { const el = $("#o-eq-" + i); if (el) el.textContent = k.slots > 0 ? `${Math.ceil(k.slots / 18)} página(s) · R$ ${fmt(k.preco / k.slots)}/slot` : ""; });
+  eq();
+  $("#o-kits").querySelectorAll("input").forEach((el) => (el.oninput = () => { p.kits[+el.dataset.k][el.dataset.c] = +el.value; salvarPrecos(); eq(); const av = $("#o-campos [data-p=avulso]"); if (p.avulso_auto === true) av.value = +precosEfetivos(modo).avulso.toFixed(4); orcar(); }));
   $("#o-kits").querySelectorAll("[data-krm]").forEach((b) => (b.onclick = () => { p.kits.splice(+b.dataset.krm, 1); salvarPrecos(); desenharPrecos(); orcar(); }));
-  $("#o-campos").querySelectorAll("input").forEach((el) => (el.oninput = () => { p[el.dataset.p] = +el.value; salvarPrecos(); orcar(); }));
+  $("#o-campos").querySelectorAll("input[data-p]").forEach((el) => (el.oninput = () => { p[el.dataset.p] = +el.value; salvarPrecos(); orcar(); }));
+  $("#o-avulso-auto").onchange = (e) => { p.avulso_auto = e.target.checked; if (!e.target.checked) p.avulso = +precosEfetivos(modo).avulso.toFixed(4); salvarPrecos(); desenharPrecos(); orcar(); };
 }
-$("#o-kit-add").onclick = () => { pedido.precos[$("#o-modo").value].kits.push({ slots: 36, preco: 50 }); salvarPrecos(); desenharPrecos(); orcar(); };
+$("#o-kit-add").onclick = () => { pedido.precos[$("#o-modo").value].kits.push({ slots: 18, preco: 30 }); salvarPrecos(); desenharPrecos(); orcar(); };
 $("#o-restaurar").onclick = () => { pedido.precos[$("#o-modo").value] = JSON.parse(JSON.stringify(pedido.padrao[$("#o-modo").value])); salvarPrecos(); desenharPrecos(); orcar(); };
-let ultimoOrc = null;
+let ultimoOrc = null, pagoEditado = false;
 async function orcar() {
   if (!pedido.padrao) return;
   pedido.modo = $("#o-modo").value;
-  ultimoOrc = await chamar("orcar", { frentes: +$("#o-frentes").value || 0, versos: +$("#o-versos").value || 0, modo: pedido.modo, precos: pedido.precos[pedido.modo] });
-  const r = ultimoOrc, pago = valorFinal();
+  const pr = precosEfetivos(pedido.modo);
+  ultimoOrc = await chamar("orcar", { frentes: +$("#o-frentes").value || 0, versos: +$("#o-versos").value || 0, modo: pedido.modo, precos: pr });
+  const r = ultimoOrc;
+  if (!pagoEditado) $("#o-pago").value = r.pago;  // o valor cobrado começa igual ao calculado
+  const pago = valorFinal();
+  const contas = [...r.usados.map((u) => `${u.qtd} × kit de ${u.slots} slots (R$ ${fmt(u.preco)}) = ${reais(u.qtd * u.preco)}`),
+    ...(r.resto ? [`${r.resto} slot(s) avulso(s) × R$ ${fmt(pr.avulso)} = ${reais(r.resto * pr.avulso)}`] : [])];
   $("#o-tabela").innerHTML = [
     ["Slots (frentes + versos)", r.slots], ["Páginas A3", r.paginas],
-    ["Kits fechados", r.usados.length ? r.usados.map((u) => `${u.qtd} × ${u.slots}`).join(" + ") : "0"], ["Slots avulsos", r.resto],
-    ["Valor do pedido" + (pago !== r.pago ? " (combinado)" : ""), reais(pago)],
+    ["Como o valor foi calculado", contas.length ? contas.join("<br>") + `<br><span class="suave">arredondado: ${reais(r.pago)}</span>` : "—"],
+    ["Valor cobrado do cliente" + (pago !== r.pago ? " (combinado)" : ""), `<b>${reais(pago)}</b>`],
     [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], ["Colagem", reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
   ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
   renderFicha();
 }
 const valorFinal = () => ($("#o-pago").value !== "" ? +$("#o-pago").value : ultimoOrc ? ultimoOrc.pago : 0);
-["#o-frentes", "#o-versos", "#o-pago"].forEach((s) => $(s).addEventListener("input", orcar));
+$("#o-pago").addEventListener("input", () => { pagoEditado = $("#o-pago").value !== ""; orcar(); });
+$("#o-pago-auto").onclick = () => { pagoEditado = false; orcar(); };
+["#o-frentes", "#o-versos"].forEach((s) => $(s).addEventListener("input", orcar));
 $("#o-modo").addEventListener("change", () => { desenharPrecos(); orcar(); });
 
 // ---------- conferência (motor local do bot) ----------
@@ -351,3 +371,18 @@ window.aoAbrirAba = (aba) => {
 };
 renderFontes(); renderAlteracoes();
 pronto.then(carregarPrecos);
+
+// ---------- Voltar / Próximo em cada etapa ----------
+(() => {
+  const ordem = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];
+  const nomes = { entrada: "Entrada", orcamento: "Orçamento", conferencia: "Conferência", checagem: "Imagens", ficha: "Cliente e ficha", montagem: "Montagem" };
+  const ir = (aba) => { document.querySelector(`#passos [data-aba=${aba}]`).click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  ordem.forEach((id, i) => {
+    const sec = document.getElementById(id), barra = document.createElement("div");
+    barra.className = "linha passos-rodape";
+    if (i > 0) barra.insertAdjacentHTML("beforeend", `<button class="acao sec" data-ir="${ordem[i - 1]}">← ${nomes[ordem[i - 1]]}</button>`);
+    if (i < ordem.length - 1) barra.insertAdjacentHTML("beforeend", `<button class="acao" data-ir="${ordem[i + 1]}">Próximo: ${nomes[ordem[i + 1]]} →</button>`);
+    barra.querySelectorAll("button").forEach((b) => (b.onclick = () => ir(b.dataset.ir)));
+    sec.append(barra);
+  });
+})();

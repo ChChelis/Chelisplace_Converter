@@ -49,3 +49,5 @@ details summary{cursor:pointer}
 .alt .item{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
 .alt img{height:64px;border-radius:4px}
 .conf-so-voce{border-color:#5a4513}
+.passos-rodape{margin-top:20px;padding-top:12px;border-top:1px solid var(--linha);justify-content:space-between}
+.passos-rodape button{margin-top:0}

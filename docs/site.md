@@ -54,3 +54,6 @@ O texto copiado para o Obsidian é só texto (sem links de imagem). As miniatura
 
 ### Imagens do XML para o Drive (etapa 4)
 Com o XML carregado e o login do Google feito, “Enviar as imagens para o Drive” cria (ou reaproveita) `Novo Processo Proxies/<pedido>` e copia cada imagem distinta do XML (frentes e versos) pelo próprio Drive (`files.copy`), com o nome `<carta> (<ID>).<ext>` que a checagem usa. Pula as que já estão lá, roda 4 cópias em paralelo, pede confirmação na página e não apaga nada. Ao terminar, a etapa 4 já abre nessa pasta. Falhas (por exemplo, arquivo sem permissão de cópia) são listadas; essas vão pelo bot. Testado com Drive simulado; **ainda não no Drive real**.
+
+### Orçamento: como funciona (atualizado)
+Cada linha da tabela é um **kit** (N slots por R$ X). O pedido usa o maior kit que couber, depois o seguinte; o que sobrar vai como **avulso** (R$/slot). Opção “calcular pelo menor kit”: avulso = preço ÷ slots do menor kit (18 por R$ 30 → R$ 1,6667). A conta aparece linha a linha, e o **valor cobrado** começa igual ao calculado (só mude se combinou outro; “Usar o calculado” volta). Cada etapa tem **← Voltar** e **Próximo →**.
