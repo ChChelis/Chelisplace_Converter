@@ -101,9 +101,9 @@ class TestImagemMontagem(Base):
     def test_planejar_pares_no_fim(self):
         pag = montagem.planejar([f"{i:02d}.png" for i in range(20)], pares=["fa.png", "fb.png"])
         self.assertEqual(len(pag), 2)
-        self.assertEqual(pag[1][17], "fa.png")
-        self.assertEqual(pag[1][16], "fb.png")
-        self.assertEqual(montagem.progresso(pag), ["018/022", "022/022"])
+        self.assertEqual(pag[1][16], "fa.png")  # pares consecutivos no fim, na ordem recebida
+        self.assertEqual(pag[1][17], "fb.png")
+        self.assertEqual(montagem.progresso(pag), ["18/22", "22/22"])
 
     def test_pdf_a3(self):
         p = self.d / "s.png"
@@ -116,6 +116,30 @@ class TestImagemMontagem(Base):
     def _mk(self):
         img(self.d / "o.png", "blue", (300, 400))
         return self.d / "o.png"
+
+    def test_niveis_do_psd(self):
+        im = Image.new("RGB", (3, 1))
+        for x, v in enumerate((0, 255, 49)):
+            im.putpixel((x, 0), (v, v, v))
+        saida = montagem.aplicar_niveis(im)
+        px = [saida.getpixel((x, 0)) for x in range(3)]
+        self.assertEqual((px[0], px[1]), ((15, 15, 15), (255, 255, 255)))
+        self.assertAlmostEqual(px[2][0], 64, delta=1)  # medido no PS: 49 -> 63,3
+
+    def test_pdf_qualidade_100_maior_que_30(self):
+        import numpy as np
+        pg = Image.fromarray((np.random.default_rng(3).random((600, 400, 3)) * 255).astype("uint8"))
+        a = montagem.exportar_pdf(pg, self.d / "q100.pdf")
+        b = montagem.exportar_pdf(pg, self.d / "q30.pdf", qualidade=30)
+        self.assertGreater(a.stat().st_size, 2 * b.stat().st_size)
+
+    def test_ordem_dos_pares_pelo_xml(self):
+        x = xml_mpc.Pedido(
+            frentes=[xml_mpc.Carta("f2" * 12, [9]), xml_mpc.Carta("f1" * 12, [2])],
+            versos=[xml_mpc.Carta("v2" * 12, [9]), xml_mpc.Carta("v1" * 12, [2])])
+        nomes = [f"{i} ({i}).png" for i in ("v2" * 12, "f1" * 12, "v1" * 12, "f2" * 12)]
+        ordem = checagem.ordem_pares(x, nomes)
+        self.assertEqual([checagem.id_do_arquivo(n) for n in ordem], ["f1" * 12, "v1" * 12, "f2" * 12, "v2" * 12])
 
     def test_posicoes(self):
         self.assertEqual(montagem.posicao(0), (0, 0))
