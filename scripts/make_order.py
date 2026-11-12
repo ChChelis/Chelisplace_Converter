@@ -150,14 +150,14 @@ def exact_print(front_uid, front_name):
     return None
 
 
-def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None):
+def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None, alt=None):
     refp = os.path.join(CACHE, f"sf_{uid}.jpg")
     if os.path.exists(ref_url):  # referência local (ex.: imagem da página da LigaMagic)
         shutil.copy(ref_url, refp)
     elif not fetch_img(ref_url, refp):
         raise RuntimeError("sem imagem de referência")
     ref = C.load(refp)
-    cands = search(name, ctype, src) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)
+    cands = search(name, ctype, src) or (alt and search(alt, ctype, src)) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)  # alt: nome real do Scryfall quando a lista usa o nome alternativo
     log(f"  {len(cands)} candidatos")
     fast = [c for mid in mem_ids for c in cands if c["identifier"] == mid]
     if fast:  # você já escolheu esta impressão antes: só confirma que ainda existe e pula o carregamento pesado
@@ -244,7 +244,7 @@ def main(lista, out):
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
-                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None)
+                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None, e["card"]["name"].split(" // ")[0] if fi == 0 and e["card"]["name"].split(" // ")[0] != e["name"].split(" // ")[0] else None)
                 u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"]})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
             if fi == 0:

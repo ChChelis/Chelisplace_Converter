@@ -50,7 +50,9 @@ def resolve(entry):
         card = scry(f"/cards/{entry['set']}/{urllib.parse.quote(cn)}")
         if card:
             fixes.append(f"número {entry['cn']} -> {cn}")
-    if card is not None and not same_name(card["name"], entry["name"]):  # Regra 3: set/número apontam para outra carta
+    if card is not None and card.get("flavor_name") and same_name(card["flavor_name"], entry["name"]):  # Regra 3a: nome alternativo (Secret Lair etc.): o set/número manda
+        fixes.append(f"nome alternativo: o Scryfall chama de '{card['name']}'")
+    elif card is not None and not same_name(card["name"], entry["name"]):  # Regra 3: set/número apontam para outra carta
         fixes.append(f"set/número davam '{card['name']}', esperado '{entry['name']}'")
         card = None
     if card is None:  # Regra 4: busca pelo nome dentro do set; senão, qualquer set
