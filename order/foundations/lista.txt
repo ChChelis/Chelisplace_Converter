@@ -1,0 +1,316 @@
+1 Abrade (FDC) 136
+1 Adaptive Omnitool (FDC) 243
+1 Aether Spellbomb (FDC) 244
+1 Aetherize (FDC) 59
+1 All Is Dust (FDC) 9
+1 Always Watching (FDC) 10
+1 Ambition's Cost (FDC) 84
+1 Angel of Finality (FDC) 11
+1 Angel of Vitality (FDC) 13
+1 Angel of the Ruins (FDC) 12
+1 Angelic Destiny (FDC) 14
+1 Angelic Field Marshal (FDC) 15
+1 Angelic Sleuth (FDC) 16
+1 Anger (FDC) 137
+1 Arachnogenesis (FDC) 187
+1 Arasta of the Endless Web (FDC) 188
+4 Arcane Signet (FDC) 245
+1 Archangel of Tithes (FDC) 17
+1 Army of the Damned (FDC) 85
+1 Atsushi, the Blazing Sky (FDC) 138
+1 Austere Command (FDC) 18
+1 Ayara, First of Locthwain (FDC) 86
+1 Bad Moon (FDC) 87
+1 Barren Moor (FDC) 295
+1 Basilisk Collar (FDC) 246
+1 Beast Whisperer (FDC) 189
+1 Beast Within (FDC) 190
+1 Birds of Paradise (FDC) 191
+1 Bishop of Wings (FDC) 19
+1 Bite Down (FDC) 192
+1 Bitter Reunion (FDC) 139
+1 Blasphemous Act (FDC) 140
+1 Bojuka Bog (FDC) 296
+3 Bonders' Enclave (FDC) 297
+1 Bontu's Monument (FDC) 247
+1 Breaching Dragonstorm (FDC) 141
+1 Breath Weapon (FDC) 142
+1 Broodstar (FDC) 60
+1 Buried Ruin (FDC) 298
+1 Carnage Tyrant (FDC) 193
+1 Carnelian Orb of Dragonkind (FDC) 143
+1 Carrion Feeder (FDC) 88
+1 Castle Locthwain (FDC) 299
+1 Cemetery Reaper (FDC) 89
+1 Cemetery Recruitment (FDC) 90
+1 Chain Reaction (FDC) 144
+1 Challenger Troll (FDC) 194
+1 Champion of the Perished (FDC) 91
+1 Chandra's Ignition (FDC) 145
+1 Chaos Warp (FDC) 146
+1 Charcoal Diamond (FDC) 248
+1 Chief of the Foundry (FDC) 249
+1 Cleansing Nova (FDC) 20
+1 Clifftop Lookout (FDC) 195
+1 Collective Resistance (FDC) 196
+1 Colossal Majesty (FDC) 197
+4 Commander's Sphere (FDC) 250
+1 Consumed by Greed (FDC) 92
+1 Consuming Corruption (FDC) 93
+1 Count on Luck (FDC) 147
+1 Counterspell (FDC) 61
+1 Court of Grace (FDC) 21
+1 Crucible of Fire (FDC) 148
+1 Cryptbreaker (FDC) 94
+1 Cultivator's Caravan (FDC) 251
+1 Curious Altisaur (FDC) 198
+1 Cursed Mirror (FDC) 149
+1 Cut a Deal (FDC) 22
+1 Darksteel Citadel (FDC) 300
+1 Darksteel Juggernaut (FDC) 252
+1 Day of Judgment (FDC) 23
+1 Dazzling Angel (FDC) 24
+1 Death Baron (FDC) 95
+1 Defy Death (FDC) 25
+1 Destroy Evil (FDC) 26
+1 Diregraf Colossus (FDC) 96
+1 Dragon Tempest (FDC) 150
+1 Dragon's Hoard (FDC) 253
+1 Dragonhawk, Fate's Tempest (FDC) 151
+1 Dragonlord's Servant (FDC) 152
+1 Dragonmaster Outcast (FDC) 153
+1 Dragonspeaker Shaman (FDC) 154
+1 Dragonstorm Globe (FDC) 254
+1 Drakuseth, Maw of Flames (FDC) 155
+1 Dungrove Elder (FDC) 199
+1 Duplicant (FDC) 255
+1 Elder Gargaroth (FDC) 200
+1 Elemental Bond (FDC) 201
+1 Elvish Mystic (FDC) 202
+1 Emeria Shepherd (FDC) 27
+1 Endless Atlas (FDC) 256
+1 Endless Ranks of the Dead (FDC) 97
+1 Eternal Taskmaster (FDC) 98
+1 Etherium Sculptor (FDC) 62
+1 Exemplar of Light (FDC) 28
+1 Exorcise (FDC) 29
+1 Ezuri's Predation (FDC) 203
+1 Fall from Favor (FDC) 63
+1 Fateful Absence (FDC) 30
+1 Fire Diamond (FDC) 257
+1 Firemane Commando (FDC) 31
+1 Firespitter Whelp (FDC) 157
+1 Fleshbag Marauder (FDC) 99
+1 Forgotten Cave (FDC) 301
+1 Forsaken Monument (FDC) 258
+1 Foundry Inspector (FDC) 259
+1 Foundry of the Consuls (FDC) 302
+1 Fyndhorn Elves (FDC) 204
+1 Garruk's Packleader (FDC) 205
+1 Garruk's Uprising (FDC) 206
+1 Geier Reach Sanitarium (FDC) 303
+1 Ghalta, Primal Hunger (FDC) 8
+1 Ghoulcaller Gisa (FDC) 6
+1 Giada, Font of Hope (FDC) 4
+1 Gigantosaurus (FDC) 207
+1 Go for the Throat (FDC) 100
+1 God-Eternal Bontu (FDC) 101
+1 Goddric, Cloaked Reveler (FDC) 158
+1 Goldlust Triad (FDC) 159
+1 Goreclaw, Terror of Qal Sisma (FDC) 208
+1 Graaz, Unstoppable Juggernaut (FDC) 260
+1 Grasp of Fate (FDC) 32
+1 Grave Titan (FDC) 102
+1 Graveborn Muse (FDC) 103
+1 Gravecrawler (FDC) 104
+1 Gray Merchant of Asphodel (FDC) 105
+1 Harmonize (FDC) 209
+1 Haven of the Spirit Dragon (FDC) 304
+1 Hazoret's Monument (FDC) 261
+1 Headless Rider (FDC) 106
+1 Hedron Archive (FDC) 262
+1 Hellkite Charger (FDC) 160
+1 Herald of Eternal Dawn (FDC) 33
+1 Herald of War (FDC) 34
+1 Herald's Horn (FDC) 264
+1 Heraldic Banner (FDC) 263
+1 Hit the Mother Lode (FDC) 161
+1 Hulking Raptor (FDC) 210
+1 Ichor Wellspring (FDC) 265
+1 Ilysian Caryatid (FDC) 211
+1 Infernal Idol (FDC) 266
+1 Inspiring Overseer (FDC) 35
+1 Invoke the Divine (FDC) 36
+1 Josu Vess, Lich Knight (FDC) 107
+1 Kalitas, Traitor of Ghet (FDC) 108
+1 Kappa Cannoneer (FDC) 64
+1 Kenrith's Transformation (FDC) 212
+1 Lathliss, Dragon Queen (FDC) 7
+1 Launch Mishap (FDC) 65
+1 Leyline Tyrant (FDC) 162
+1 Lightning Bolt (FDC) 163
+1 Liliana's Mastery (FDC) 109
+1 Liliana's Reaver (FDC) 110
+1 Linvala, the Preserver (FDC) 37
+1 Llanowar Elves (FDC) 213
+1 Llanowar Tribe (FDC) 214
+1 Lonely Sandbar (FDC) 305
+1 Loot, Exuberant Explorer (FDC) 215
+1 Lord of the Accursed (FDC) 111
+1 Lord of the Undead (FDC) 112
+1 Lyra Dawnbringer (FDC) 38
+1 Magmaquake (FDC) 164
+1 Mana Geyser (FDC) 165
+1 Managorger Hydra (FDC) 216
+1 Marble Diamond (FDC) 267
+1 Marchesa's Decree (FDC) 113
+1 Master Transmuter (FDC) 67
+1 Master of Etherium (FDC) 66
+1 Mazemind Tome (FDC) 268
+1 Memorial to Folly (FDC) 306
+1 Memory Guardian (FDC) 68
+1 Merchant of Truth (FDC) 39
+1 Metallic Mimic (FDC) 269
+1 Meteor Golem (FDC) 270
+1 Metropolis Reformer (FDC) 40
+1 Midnight Reaper (FDC) 114
+3 Mind Stone (FDC) 271
+1 Mind's Eye (FDC) 272
+1 Minion of the Mighty (FDC) 166
+1 Mire Triton (FDC) 115
+1 Misleading Signpost (FDC) 69
+1 Moan of the Unhallowed (FDC) 116
+1 Monstrous Onslaught (FDC) 217
+1 Mosswort Bridge (FDC) 307
+1 Mutilate (FDC) 117
+1 Myr Battlesphere (FDC) 273
+1 Myr Retriever (FDC) 274
+1 Necrotic Hex (FDC) 118
+1 Negate (FDC) 70
+1 Nettlecyst (FDC) 275
+1 Nevinyrral's Disk (FDC) 276
+1 Night's Whisper (FDC) 119
+1 Nogi, Draco-Zealot (FDC) 167
+1 Norn's Choirmaster (FDC) 41
+1 Noxious Ghoul (FDC) 120
+1 Open the Graves (FDC) 121
+1 Orb of Dragonkind (FDC) 168
+1 Ornithopter of Paradise (FDC) 277
+1 Outpost Siege (FDC) 169
+1 Oversold Cemetery (FDC) 122
+1 Overwhelming Stampede (FDC) 218
+1 Padeem, Consul of Innovation (FDC) 71
+1 Palladium Myr (FDC) 278
+1 Paradise Druid (FDC) 219
+1 Parapet Thrasher (FDC) 170
+2 Patchwork Banner (FDC) 279
+1 Phyrexian Arena (FDC) 123
+1 Propaganda (FDC) 72
+1 Psychosis Crawler (FDC) 280
+1 Pugnacious Hammerskull (FDC) 220
+1 Pull from Tomorrow (FDC) 73
+1 Radiant Fountain (FDC) 308
+1 Ram Through (FDC) 221
+1 Rapacious Dragon (FDC) 171
+1 Razorlash Transmogrant (FDC) 124
+1 Regal Imperiosaur (FDC) 222
+1 Remote Isle (FDC) 309
+1 Research Thief (FDC) 74
+1 Reya Dawnbringer (FDC) 42
+1 Rhonas the Indomitable (FDC) 223
+1 Rhonas's Monument (FDC) 281
+1 Righteous Valkyrie (FDC) 43
+1 Ripjaw Raptor (FDC) 224
+1 Rishkar, Peema Renegade (FDC) 225
+1 Rishkar's Expertise (FDC) 226
+1 Rogue's Passage (FDC) 310
+1 Sai, Master Thopterist (FDC) 5
+1 Sarkhan, Dragon Ascendant (FDC) 172
+1 Scavenger Grounds (FDC) 311
+1 Scavenging Ooze (FDC) 227
+1 Scourge of Valkas (FDC) 174
+1 Scourge of the Throne (FDC) 173
+1 Scrapshooter (FDC) 228
+1 Scrawling Crawler (FDC) 282
+1 Search the Premises (FDC) 44
+1 Secret Rendezvous (FDC) 45
+1 Secluded Steppe (FDC) 312
+1 Segovian Angel (FDC) 46
+1 Sephara, Sky's Blade (FDC) 47
+1 Seraph Sanctuary (FDC) 313
+1 Seraph of the Sword (FDC) 48
+1 Serra Avenger (FDC) 49
+1 Shamanic Revelation (FDC) 229
+1 Shimmer Dragon (FDC) 75
+1 Shimmer Myr (FDC) 283
+1 Shivan Devastator (FDC) 175
+1 Sign in Blood (FDC) 125
+1 Silver Myr (FDC) 284
+1 Skyline Despot (FDC) 176
+1 Skysovereign, Consul Flagship (FDC) 285
+5 Sol Ring (FDC) 286
+1 Soul-Guide Lantern (FDC) 287
+1 Soulless One (FDC) 126
+1 Speaker of the Heavens (FDC) 50
+1 Spinerock Knoll (FDC) 314
+1 Spire Golem (FDC) 288
+1 Spit Flame (FDC) 177
+1 Starnheim Aspirant (FDC) 51
+1 Steel Hellkite (FDC) 289
+1 Steel Leaf Champion (FDC) 230
+1 Steel Overseer (FDC) 290
+1 Sunblast Angel (FDC) 52
+1 Surrak and Goreclaw (FDC) 231
+1 Surrak, the Hunt Caller (FDC) 232
+3 Swiftfoot Boots (FDC) 291
+1 Swords to Plowshares (FDC) 53
+1 Syphon Flesh (FDC) 127
+1 Tamiyo's Logbook (FDC) 76
+1 Tamiyo's Safekeeping (FDC) 233
+1 Tangleweave Armor (FDC) 234
+1 Taurean Mauler (FDC) 178
+2 Temple of the False God (FDC) 315
+1 Tendrils of Corruption (FDC) 128
+1 Terrian, World Tyrant (FDC) 235
+1 Terror of Mount Velus (FDC) 179
+1 The Elder Dragon War (FDC) 156
+1 Thickest in the Thicket (FDC) 236
+1 Thirst for Knowledge (FDC) 77
+1 Thopter Fabricator (FDC) 78
+1 Thopter Spy Network (FDC) 79
+1 Thought Monitor (FDC) 80
+1 Thought Vessel (FDC) 292
+1 Thoughtcast (FDC) 81
+1 Thraben Watcher (FDC) 54
+1 Thrashing Brontodon (FDC) 237
+1 Thrill of Possibility (FDC) 180
+1 Thunderbreak Regent (FDC) 181
+1 Thundermane Dragon (FDC) 182
+1 Tome of Legends (FDC) 293
+1 Tranquil Thicket (FDC) 316
+1 Tyrant's Familiar (FDC) 183
+1 Undead Augur (FDC) 129
+1 Undead Butler (FDC) 130
+1 Undead Warchief (FDC) 131
+1 Unexpected Windfall (FDC) 184
+1 Unnatural Growth (FDC) 238
+1 Utvara Hellkite (FDC) 185
+1 Valorous Stance (FDC) 55
+1 Vanguard Seraph (FDC) 56
+1 Vanquisher's Banner (FDC) 294
+1 Vedalken Archmage (FDC) 82
+1 Vengeful Dead (FDC) 132
+1 Verdant Sun's Avatar (FDC) 239
+4 War Room (FDC) 317
+1 Warstorm Surge (FDC) 186
+1 Whiptongue Hydra (FDC) 240
+1 Whirler Rogue (FDC) 83
+1 Whisperer of the Wilds (FDC) 241
+1 Wight of Precinct Six (FDC) 133
+1 Witch's Clinic (FDC) 318
+1 Witch's Cottage (FDC) 319
+1 Withering Torment (FDC) 134
+1 Wojek Investigator (FDC) 57
+1 Yeva, Nature's Herald (FDC) 242
+1 Youthful Valkyrie (FDC) 58
+1 Zul Ashur, Lich Lord (FDC) 135

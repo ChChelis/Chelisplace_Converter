@@ -1,0 +1,22 @@
+name: Compilar o aplicativo (Windows)
+on:
+  workflow_dispatch:
+  push:
+    tags: ["app-v*"]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-app.txt pyinstaller
+      - run: pyinstaller app/build/chelis.spec --noconfirm
+      - name: Teste rápido do aplicativo compilado
+        run: dist/BotChelisplace/BotChelisplace.exe --selftest
+      - run: Compress-Archive -Path dist/BotChelisplace -DestinationPath BotChelisplace-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BotChelisplace-windows
+          path: BotChelisplace-windows.zip

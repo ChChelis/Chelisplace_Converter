@@ -14,8 +14,8 @@ import compare as C
 import deck_parse as D
 from build_review_artifact import uri, foot
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-CACHE = os.path.join(ROOT, "cache")
+ROOT = C.ROOT
+CACHE = C.CACHE
 MPC = "https://mpcfill.com"
 UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)"}
 TOP = 12            # finalistas por carta (recebem OCR e aparecem na página)
@@ -25,6 +25,7 @@ HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (t
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
 IDX_ALTA, IDX_MEDIA, IDX_BAIXA = 85, 70, 50  # faixas do índice de confiança (%)
 LIGA_SHIFT = 1.4  # imagens da LigaMagic pontuam ~1,4 abaixo das do Scryfall (menores, às vezes em português); faixas NÃO calibradas com decisões do usuário
+TRUST_BONUS = 0.5  # uploader de confiança (config/uploaders.json, escolhido por botões na página) ganha esta nota extra; valor inicial, ainda sem validação com dados
 PAIR_BONUS = 1.0  # verso da mesma fonte que a frente escolhida ganha esta nota extra (frente e verso devem combinar)
 BASICS = {"Island", "Plains", "Swamp", "Mountain", "Forest", "Wastes"}
 LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT", "PH", "TW", "CN"}
@@ -39,7 +40,7 @@ def http(url, data=None):
         try:
             return urllib.request.urlopen(urllib.request.Request(url, data, h), timeout=60).read()
         except urllib.error.HTTPError as e:
-            if e.code not in (429, 502, 503, 504) or a == 5:
+            if e.code not in (429, 502, 503, 504, 520, 521, 522, 523, 524) or a == 5:
                 raise
             time.sleep(float(e.headers.get("Retry-After") or 0) or 6 * (a + 1))
 
@@ -78,6 +79,9 @@ def search(name, ctype, src):
 
 def models():
     """Treina (ou lê do cache) os dois modelos; o cache vale enquanto gabaritos e compare.py não mudam."""
+    if C.MODELO:  # aplicativo: pesos prontos em modelo.json
+        d = json.load(open(C.MODELO, encoding="utf-8"))["modelos"]
+        return tuple((np.array(m[0]), np.array(m[1]), np.array(m[2]), float(m[3])) for m in d)
     import glob, hashlib
     h = hashlib.md5()
     for fp in sorted(glob.glob(os.path.join(ROOT, "order", "*", "gabarito.json")) + [os.path.join(ROOT, "testset", "gabarito.json"), os.path.join(ROOT, "scripts", "compare.py")]):
@@ -108,8 +112,23 @@ def explain(f):
     return " · ".join(out)
 
 
+def safe_cn(cn):
+    """O id do par vira id de documento no banco do artefato: só letras, dígitos e _ - . (o ★ de 796★ fazia a gravação falhar)."""
+    return re.sub(r"[^A-Za-z0-9._-]", "x", cn.replace("★", "-star").replace("†", "-dag"))
+
+
 def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:30]
+
+
+TRUST = set()
+PROGRESS = lambda fase, feito, total: None  # o aplicativo troca por uma função que mostra o andamento
+
+
+def trusted():
+    """Uploaders de confiança escolhidos pelo usuário na página (config/uploaders.json)."""
+    try: return set(json.load(open(os.path.join(ROOT, "config", "uploaders.json"), encoding="utf-8")).get("trusted", []))
+    except (OSError, ValueError): return set()
 
 
 def memory():
@@ -126,7 +145,7 @@ def memory():
         if not os.path.exists(gp):
             continue
         for uid, v in json.load(open(gp)).items():
-            if v["status"] == "ok" and v.get("accept_ids") and not v.get("excluded"):
+            if v["status"] == "ok" and v.get("accept_ids") and not v.get("excluded") and not v.get("bulk"):
                 u = json.load(open(os.path.join(od, name, "units", uid + ".json")))
                 mem[(u["set"].lower(), str(u["cn"]).lower(), u["face"])] = v["accept_ids"]  # pedido mais recente vence
     return mem
@@ -145,14 +164,14 @@ def exact_print(front_uid, front_name):
     return None
 
 
-def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None):
+def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None, alt=None):
     refp = os.path.join(CACHE, f"sf_{uid}.jpg")
     if os.path.exists(ref_url):  # referência local (ex.: imagem da página da LigaMagic)
         shutil.copy(ref_url, refp)
     elif not fetch_img(ref_url, refp):
         raise RuntimeError("sem imagem de referência")
     ref = C.load(refp)
-    cands = search(name, ctype, src) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)
+    cands = search(name, ctype, src) or (alt and search(alt, ctype, src)) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)  # alt: nome real do Scryfall quando a lista usa o nome alternativo
     log(f"  {len(cands)} candidatos")
     fast = [c for mid in mem_ids for c in cands if c["identifier"] == mid]
     if fast:  # você já escolheu esta impressão antes: só confirma que ainda existe e pula o carregamento pesado
@@ -181,7 +200,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         out = []
         for c in top:
             f = C.features(ref, rtok, C.load(os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")), C.tokens(C.footer_text(c["identifier"])))
-            out.append((float(C.score(full, np.array([f]))[0]) + (PAIR_BONUS if prefer_src and c["sourceName"] == prefer_src else 0.0), c, f))
+            out.append((float(C.score(full, np.array([f]))[0]) + (PAIR_BONUS if prefer_src and c["sourceName"] == prefer_src else 0.0) + (TRUST_BONUS if c["sourceName"] in TRUST else 0.0), c, f))
         return sorted(out, key=lambda r: -r[0])
 
     rows = rank(TOP)
@@ -207,8 +226,12 @@ def main(lista, out):
     logf = open(os.path.join(out, "log.txt"), "a", encoding="utf-8")
     def log(m):
         print(m, flush=True); logf.write(m + "\n"); logf.flush()
-    entries = [r for r in (D.resolve(D.parse_line(l)) for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l))]
+    lines = [l for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l)]
+    entries = []
+    for k, l in enumerate(lines):
+        PROGRESS("resolvendo", k, len(lines)); entries.append(D.resolve(D.parse_line(l)))
     src = sources(); cheap, full = models(); mem = memory()
+    global TRUST; TRUST = trusted()
     mt = os.path.join(out, "model.txt")
     if not os.path.exists(mt):
         open(mt, "w").write(C.data_key())
@@ -216,6 +239,7 @@ def main(lista, out):
     units = []
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
     for i, e in enumerate(entries):
+        PROGRESS("candidatos", i, len(entries))
         if not e["card"] and e["name"] in refs:  # nome que o Scryfall não resolve, mas tenho a imagem da LigaMagic
             e = {**e, "card": {"name": e["name"], "set": "liga", "collector_number": "", "layout": "normal"}, "images": [refs[e["name"]]], "fixes": e["fixes"] + ["sem Scryfall: só a imagem da LigaMagic"]}
         if shard and i % int(shard.split("/")[1]) != int(shard.split("/")[0]):
@@ -235,18 +259,18 @@ def main(lista, out):
                 if ex:
                     url = ex["card_faces"][1]["image_uris"]["large"]; cset, ccn = ex["set"], ex["collector_number"]
                     log(f"  verso: impressão da Liga identificada pelo rodapé: {cset} {ccn}")
-            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{cset}_{ccn}_{slug(names[min(fi, len(names) - 1)])}")
+            uid = (f"{i:03d}_liga_{slug(e['name'])}" if liga else f"{i:03d}_{cset}_{safe_cn(ccn)}_{slug(names[min(fi, len(names) - 1)])}")
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
-                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None)
-                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"]})
+                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None, e["card"]["name"].split(" // ")[0] if fi == 0 and e["card"]["name"].split(" // ")[0] != e["name"].split(" // ")[0] else None)
+                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"], "ref_url": url if str(url).startswith("http") else None})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
             if fi == 0:
                 uj = json.load(open(up, encoding="utf-8")); last_front = {"uid": uid, "src": uj["cands"][0]["source"] if uj["cands"] else None}
             units.append(up)
     if not shard:
-        build_catalog(units, out)
+        PROGRESS("catalogo", len(entries), len(entries)); build_catalog(units, out)
 
 
 def fill_meta(unit_files):
@@ -320,7 +344,7 @@ def build_catalog(unit_files, out):
     bracket = next((b for b in BRACKETS if b >= total_qty), BRACKETS[-1])
     liga_any = any(json.load(open(up, encoding="utf-8")).get("set") == "LIGA" for up in unit_files)
     onote = ("O índice de cada carta é a chance estimada de você aceitar a escolha do bot, calculada com as suas decisões anteriores (referências " + ("da Liga" if liga_any else "do Scryfall") + "). Audite só o que quiser; o painel do XML aceita um índice mínimo para entrar sem auditoria.") if cal else ("A referência de cada carta é a imagem da LigaMagic. As faixas de confiança ainda não foram calibradas para essas imagens: confira todas." if liga_any else "")
-    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
+    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote, "sources": sorted({s["name"] for s in sources().values()}, key=str.lower), "trusted": sorted(trusted())}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
     print("catálogo:", len(unit_files), "unidades,", len(names), "arquivos; quantidade", total_qty, "bracket", bracket)
 
 

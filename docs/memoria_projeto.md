@@ -49,7 +49,7 @@ Problema: o verso era buscado com o nome da frente e comparado com a face errada
 Artefatos (privados): teste FvFRD76JuvjoWidjpVneT7, pedido1 L8T4SrtifPeGaUGykYLMni, pedido2 Sddu22qZP4agSvjWegvk1R, Liga 9at1zmDW1qkRoBv3CNZoYc, Antonio 2 EbpdspyrNWUfm3hhPPa4EU (prefixo `https://claude.ai/artifact/`).
 
 ## Pendências / ideias
-- Recalibrar o índice com o gabarito do Antonio 2 (muda `data_key`) antes do próximo pedido; reavaliar o modelo com os pares Liga (ainda não feito desde que entraram).
+- Recalibração feita após Antonio 2 + Bernardo (325 pares): comparador acerta 252/325 (leave-one-out), 'nenhum' reconhecido 8/9. Curva scry: 14%→23%→53%→82%→88%; liga: 56%→74%→92%. Refazer a cada pedido novo conferido (`compare.py eval`, `calibrate.py`); o cache de imagem de referência é por id da unidade (`cache/sf_<id>.jpg`), então renomear id exige copiar o arquivo.
 - Terrenos básicos (Swamp/Island/Plains): milhares de artes, fora do CAP=800; hoje o usuário resolve à mão.
 - Camada de regras (moldura > arte, borda preta > branca) e lista fixa de uploaders do PC do usuário (começou do zero).
 - Índice em amostra pequena é otimista; a Liga tem poucos pares.
@@ -68,3 +68,17 @@ Artefatos (privados): teste FvFRD76JuvjoWidjpVneT7, pedido1 L8T4SrtifPeGaUGykYLM
 - Quatro fatias juntas estouram o Scryfall → retry + escalonar.
 - O contador de espera deve esperar todas as unidades existirem antes de montar o catálogo.
 - Liga: `LIGA_SHIFT` só vale para pedidos legados; edições da Liga vêm vazias no HTML (só nome EN e qty).
+
+- Ids de par vão para o banco do artefato: só `A-Za-z0-9_.~:@+-`. O ★ de números como 796★ virou `-star` (`safe_cn` em make_order); antes a gravação falhava e a escolha sumia da tela.
+
+- Decisões em rajada (10+ gravações com intervalo < 1 s, ex.: botão 'aceitar sem alerta') ganham `bulk: true` no gabarito (`export_order.py`) e ficam fora do treino, da calibração e da memória de escolhas: não são conferência carta a carta. Foundations Commander: 316/316 sugestões aceitas em 26 s, tratado como `bulk`; só entra no treino se o usuário confirmar que conferiu uma a uma.
+- O bot não escreve na pasta do PC do usuário (C:\\...): só com uma pasta do computador conectada à sessão (`list_computer_folders`); caso contrário, o Helium baixa pelo XML.
+
+- Foundations Commander foi conferido pelo usuário antes do aceite em lote: exportado com `--conferido`, entrou no treino (641 pares; comparador 559/641 = 87%; curva scry sobe a 95-97% nas notas altas, liga igual). Pedido fácil (quase só CompC), então o índice alto vale para casos parecidos, não para qualquer pedido.
+
+- Uploaders de confiança: painel na página (botões por uploader, busca, 'mostrar todos' = lista das fontes do MPCFill gravada em `catalog.json` > `order.sources`, adicionar nome manual). Estado no banco do artefato: coleção `config`, doc `uploaders` = {trusted:[...]}. Para o bot usar: copiar esse doc para `config/uploaders.json`; `make_order` dá `TRUST_BONUS` (0.5, ainda não validado com dados) de nota extra aos candidatos desses uploaders e grava `order.trusted` no catálogo. Atenção: o bônus entra na nota mostrada e no índice de confiança.
+- Hashaton (Guilherme): 90/100 sugestões do bot aceitas sem troca (alta 65/67, média 12/12, baixa 5/8, sem versão próxima 8/13); o usuário conferiu todas e aceitou em lote (`--conferido`).
+- Pedidos futuros: o usuário quer um aplicativo com o bot (exportar usos depois de compilado para atualizar o bot aqui e recompilar). Pendente: lembrar o usuário de pedir isso depois que o painel de uploaders for aprovado.
+
+- Recalibração com Hashaton (741 pares): comparador 650/741 = 87,7%; curva scry: ≤-1,59→8%, ≤-0,94→50%, ≤-0,10→66%, ≤0,05→75%, ≤0,88→81%, ≤2,90→95%, ≤3,71→96%, ≤4,03→98%; liga: 47→55→70→93%.
+- Achado: a regra 'Secret Lair (SLD) com índice < 85 vira sem versão próxima' é conservadora demais: no Hashaton 8 de 13 desses o usuário manteve a sugestão do bot. Rever a regra (make_order.build_catalog).

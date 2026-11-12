@@ -1,0 +1,342 @@
+{
+ "000_sld_2293_cryptolith-rite": {
+  "status": "ok",
+  "accept_ids": [
+   "1-3eC_k96IOjTlsP9Wu5BTO1urvly1bjN"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-28T18:49:20.850Z",
+  "reviewed_one_by_one": true
+ },
+ "001_30a_273_badlands": {
+  "status": "ok",
+  "accept_ids": [
+   "1cf9GZ-18fpnCkQDFcn1H8ZhV1YweS5Ie"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-28T18:42:43.060Z",
+  "reviewed_one_by_one": true
+ },
+ "002_30a_274_bayou": {
+  "status": "ok",
+  "accept_ids": [
+   "1ewcgg7uMuuGyewAudaizxub-UzFKwIsa"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.921Z",
+  "reviewed_one_by_one": true
+ },
+ "003_slz_219_chrome-mox": {
+  "status": "ok",
+  "accept_ids": [
+   "1ZuJneUMHmHCf6CiqBOC92utpZ-b7OnJh"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.930Z",
+  "reviewed_one_by_one": true
+ },
+ "004_soa_116_crop-rotation": {
+  "status": "ok",
+  "accept_ids": [
+   "1-D0D-EqZ22DlfH7q40CROMTOY-SedzR_"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.939Z",
+  "reviewed_one_by_one": true
+ },
+ "005_soa_79_cyclonic-rift": {
+  "status": "ok",
+  "accept_ids": [
+   "1_wpVSnNc0ZIy-8R-T7INa6Pby-NcYjkq"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.953Z",
+  "reviewed_one_by_one": true
+ },
+ "006_tle_309_deadly-rollick": {
+  "status": "ok",
+  "accept_ids": [
+   "17omWuqmv3-tCCDKPFmrjy4AjNMtIIh8_"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.960Z",
+  "reviewed_one_by_one": true
+ },
+ "007_tle_311_deflecting-swat": {
+  "status": "ok",
+  "accept_ids": [
+   "1ao1G1qz_erQBWzukSDfTZL1tokKmB6LF"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.973Z",
+  "reviewed_one_by_one": true
+ },
+ "008_sta_90_demonic-tutor": {
+  "status": "ok",
+  "accept_ids": [
+   "1p3Z_Kf_PRDHtMD7WNksP5p6FJzoKSb5_"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:48.986Z",
+  "reviewed_one_by_one": true
+ },
+ "009_tle_305_enlightened-tutor": {
+  "status": "ok",
+  "accept_ids": [
+   "1ZZ_cxiFONdmaeT3BV5PjcdvDcGht_d0u"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.009Z",
+  "reviewed_one_by_one": true
+ },
+ "010_tle_307_fierce-guardianship": {
+  "status": "ok",
+  "accept_ids": [
+   "1Y20RK4SwPIEUz9IILwBlZAFxZmBeuHXy"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-28T18:43:49.023Z",
+  "reviewed_one_by_one": true
+ },
+ "011_soa_84_force-of-will": {
+  "status": "ok",
+  "accept_ids": [
+   "1c_B24FVwPk7rt-IEoejq55fQw46jxQdN"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.038Z",
+  "reviewed_one_by_one": true
+ },
+ "012_usg_321_gaea-s-cradle": {
+  "status": "ok",
+  "accept_ids": [
+   "1tnTOK49DOJv-vjlVpw_60zXKJKnk_N1l"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.055Z",
+  "reviewed_one_by_one": true
+ },
+ "013_eos_61_gemstone-caverns": {
+  "status": "ok",
+  "accept_ids": [
+   "1Kucdt_NbGmOIiMlrH5VNgwLBpPmiSzRP"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-28T18:42:35.124Z",
+  "reviewed_one_by_one": true
+ },
+ "014_fra_320_karn-argent-defender": {
+  "status": "ok",
+  "accept_ids": [
+   "1jKI3kcvkZ2bK1jPB8i232l0hEv1StSuC"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.070Z",
+  "reviewed_one_by_one": true
+ },
+ "015_sld_796-star_mana-vault": {
+  "status": "ok",
+  "accept_ids": [
+   "1lmVXdKTMq-Cv0iKsQXO3mNmlJC8VdaU0"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-28T18:52:13.493Z",
+  "reviewed_one_by_one": true
+ },
+ "016_tle_2_drannith-magistrate": {
+  "status": "ok",
+  "accept_ids": [
+   "1T4uoaUocUOhUdodcA44wIGliza9HTIw_"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-28T18:49:46.014Z",
+  "reviewed_one_by_one": true
+ },
+ "017_sth_138_mox-diamond": {
+  "status": "ok",
+  "accept_ids": [
+   "1vrHDRm9oxMd4x_gPuyFN4qfHJiFcVxKr"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.084Z",
+  "reviewed_one_by_one": true
+ },
+ "018_mar_19_opposition-agent": {
+  "status": "ok",
+  "accept_ids": [
+   "1dmBWrn7MyIfMN14KoWqNMY_cwB-pTeAZ"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-28T18:41:24.308Z",
+  "reviewed_one_by_one": true
+ },
+ "019_ltr_433_orcish-bowmasters": {
+  "status": "ok",
+  "accept_ids": [
+   "1s5vIMAojHj3454SQEOu-h6jF5xfMYEBr"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.101Z",
+  "reviewed_one_by_one": true
+ },
+ "020_30a_275_plateau": {
+  "status": "ok",
+  "accept_ids": [
+   "1F-vfQ_qlmb9rJ78amwrLUNsPaIkd0UPw"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.117Z",
+  "reviewed_one_by_one": true
+ },
+ "021_fra_311_samut-hazoret-s-champion": {
+  "status": "ok",
+  "accept_ids": [
+   "1jkQQI5FQSd5lm9pSB09qvBx81u2jGNj2"
+  ],
+  "note": "",
+  "bot_conf": "nenhum",
+  "confirmed_at": "2026-10-28T18:42:40.522Z",
+  "reviewed_one_by_one": true
+ },
+ "022_30a_276_savannah": {
+  "status": "ok",
+  "accept_ids": [
+   "14aDdSOrsi3chamXoMtEcIv4Yt43FumUq"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-28T18:41:28.458Z",
+  "reviewed_one_by_one": true
+ },
+ "023_30a_277_scrubland": {
+  "status": "ok",
+  "accept_ids": [
+   "107jvbTO7fVUKzJ3AsEj_p1_8_9cTQeEH"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.134Z",
+  "reviewed_one_by_one": true
+ },
+ "024_wot_67_smothering-tithe": {
+  "status": "ok",
+  "accept_ids": [
+   "1N3ZDG-lUaAQ6ZmGLljRyG3IRxUcYr_vJ"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.149Z",
+  "reviewed_one_by_one": true
+ },
+ "025_fca_31_rhystic-study": {
+  "status": "ok",
+  "accept_ids": [
+   "1lqIdxMoMExuGm-DeBS91y56c7JhGe3IY"
+  ],
+  "note": "",
+  "bot_conf": "alta",
+  "confirmed_at": "2026-10-28T18:50:09.282Z",
+  "reviewed_one_by_one": true
+ },
+ "026_30a_278_taiga": {
+  "status": "ok",
+  "accept_ids": [
+   "1DMeDIjDgrDKBL8Rl1rsvmTTwkiBRCZs0"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.164Z",
+  "reviewed_one_by_one": true
+ },
+ "027_ltr_748_the-one-ring": {
+  "status": "ok",
+  "accept_ids": [
+   "1JpeEt5v4RcdLYYQKaF64E8QxBnD8Lqb7"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.173Z",
+  "reviewed_one_by_one": true
+ },
+ "028_30a_279_tropical-island": {
+  "status": "ok",
+  "accept_ids": [
+   "13-9SnpKLqj4oj2K2w7siXASw-5XCp-WX"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.193Z",
+  "reviewed_one_by_one": true
+ },
+ "029_30a_280_tundra": {
+  "status": "ok",
+  "accept_ids": [
+   "1odLlw9eLerIhEn_HYi97rdLIU0vYmA72"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-28T18:41:30.706Z",
+  "reviewed_one_by_one": true
+ },
+ "030_30a_281_underground-sea": {
+  "status": "ok",
+  "accept_ids": [
+   "1iPcSiQOPlIjewXV8vTTMw1OYrJnpK3Eu"
+  ],
+  "note": "",
+  "bot_conf": "baixa",
+  "confirmed_at": "2026-10-28T18:41:31.476Z",
+  "reviewed_one_by_one": true
+ },
+ "031_soa_100_vampiric-tutor": {
+  "status": "ok",
+  "accept_ids": [
+   "1OmKyfunUVaYwOh-EQv776vaSIhL1bsej"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.213Z",
+  "reviewed_one_by_one": true
+ },
+ "032_30a_282_volcanic-island": {
+  "status": "ok",
+  "accept_ids": [
+   "1agFClMOdiZTviUDlR0rNgA11SGxmWfHC"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.234Z",
+  "reviewed_one_by_one": true
+ },
+ "033_tle_314_worldly-tutor": {
+  "status": "ok",
+  "accept_ids": [
+   "1z1el6e-R7rk8pPSAZwnkI1hOTgOMfdSf"
+  ],
+  "note": "",
+  "bot_conf": "media",
+  "confirmed_at": "2026-10-28T18:43:49.248Z",
+  "reviewed_one_by_one": true
+ }
+}
