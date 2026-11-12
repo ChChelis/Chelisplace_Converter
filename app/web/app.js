@@ -40,6 +40,8 @@
     if (c.prop.conf === "nenhum") r.push("sem versão próxima: falar com o cliente");
     if (/Terreno básico/.test(c.prop.note || "")) r.push("terreno básico: a arte certa pode estar fora dos candidatos");
     if (c.set !== "LIGA" && (c.fixes || []).some(function (f) { return /adivinhada|sem Scryfall/.test(f); })) r.push("impressão adivinhada");
+    if ((c.fixes || []).some(function (f) { return /só virtual/.test(f); })) r.push("a lista trazia edição só virtual: usei a primeira em papel");
+    else if ((c.fixes || []).some(function (f) { return /primeira edição em papel/.test(f); })) r.push("edição não informada: usei a primeira em papel (confira a referência)");
     return r;
   }
   function hasIdx() { return S.cards.some(function (c) { return c.prop.idx != null; }); }
@@ -255,7 +257,7 @@
     var box = $("#refcol"); if (!box) return;
     if (!c) { box.innerHTML = ""; return; }
     var k = shownCand(c);
-    box.innerHTML = '<figure class="refcard"><img src="' + c.ref + '" alt="Referência do pedido" onerror="this.style.visibility=\'hidden\'"><figcaption>Referência do pedido · ' + esc(c.set) + " " + esc(c.cn) + " · ×" + c.qty + "</figcaption></figure>";
+    box.innerHTML = '<figure class="refcard"><img class="refimg" title="Clique para escolher outra edição" src="' + c.ref + '" alt="Referência do pedido" onerror="this.style.visibility=\'hidden\'"><figcaption>Referência do pedido · clique para trocar a edição · ' + esc(c.set) + " " + esc(c.cn) + " · ×" + c.qty + "</figcaption></figure>";
 
   }
   function renderInfo() {
@@ -451,6 +453,31 @@
   }
   function saveTrust() { api("PUT", "/api/uploaders", { trusted: trustList() }).catch(function (e) { toast("Não consegui salvar os uploaders: " + e.message); }); renderUpl(); if (S.nome) { renderFilters(); if (S.view === "car") renderInfo(); } }
 
+  /* ---------- trocar a edição da referência ---------- */
+  var VER = null;
+  function openVersoes(c) {
+    VER = { c: c, itens: [] }; $("#verTitulo").textContent = "Edições de " + c.name; $("#verConfirma").hidden = true;
+    $("#verGrid").innerHTML = '<div class="loading"><div class="spin"></div>Buscando as edições no Scryfall…</div>'; openModal("mVer");
+    api("GET", "/api/pedidos/" + encodeURIComponent(S.nome) + "/versoes/" + encodeURIComponent(c.id)).then(function (r) {
+      VER.itens = r.versoes;
+      $("#verGrid").innerHTML = r.versoes.map(function (v, i) {
+        return '<button class="vc' + (v.atual ? " atual" : "") + '" data-ver="' + i + '"><img loading="lazy" alt="" src="' + esc(v.img || "") + '" onerror="this.style.visibility=\'hidden\'"><b>' + esc(v.set.toUpperCase()) + " " + esc(v.cn) + "</b><small>" + esc(v.set_name) + " · " + esc(v.data.slice(0, 4)) + (v.atual ? " · atual" : "") + "</small></button>";
+      }).join("") || '<div class="info-t">Nenhuma edição em papel encontrada.</div>';
+    }).catch(function (e) { $("#verGrid").innerHTML = '<div class="info-t" style="color:var(--danger)">' + esc(e.message) + "</div>"; });
+  }
+  function pedeTroca(i) {
+    var v = VER.itens[i], box = $("#verConfirma"); VER.sel = v; box.hidden = false;
+    box.innerHTML = "<span>Trocar a referência para <b>" + esc(v.set.toUpperCase()) + " " + esc(v.cn) + "</b> (" + esc(v.set_name) + ")? A carta será reprocessada e a decisão atual dela, apagada.</span>" +
+      '<button class="btn pri" data-vok="1">Sim, trocar</button><button class="btn" data-vno="1">Cancelar</button>';
+  }
+  function fazTroca() {
+    var v = VER.sel, c = VER.c;
+    api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/versao/" + encodeURIComponent(c.id), { set: v.set, cn: v.cn }).then(function () {
+      closeModals(); toast("Reprocessando a carta com a edição nova"); S.live = true; S.job = { fase: "candidatos", feito: 0, total: 1 };
+      return loadTabs();
+    }).then(function () { renderLive(); liveTick(); }).catch(function (e) { toast("Não consegui trocar: " + e.message); });
+  }
+
   /* ---------- pedidos: abrir e excluir ---------- */
   function renderPed(confirma) {
     var box = $("#pedList");
@@ -504,6 +531,10 @@
     if (t.id === "vCar") return setView("car"); if (t.id === "vGrid") return setView("grid"); if (t.id === "vTri") return setView("tri");
     if (t.id === "fAl") return setMode("alertas"); if (t.id === "fPe") return setMode("pendentes"); if (t.id === "fTo") return setMode("todas");
     var chip = t.closest(".chip[data-b]"); if (chip) { S.bands[chip.dataset.b] = !S.bands[chip.dataset.b]; S.idx = 0; renderAll(); return; }
+    if (t.closest(".refimg") && S.view === "car" && F[S.idx]) { openVersoes(F[S.idx]); return; }
+    var vv = t.closest("[data-ver]"); if (vv && VER) { pedeTroca(+vv.dataset.ver); return; }
+    if (t.closest("[data-vok]")) { fazTroca(); return; }
+    if (t.closest("[data-vno]")) { $("#verConfirma").hidden = true; return; }
     if (t.id === "bPed") { loadTabs().then(function () { renderPed(); openModal("mPed"); }); return; }
     var dl = t.closest("[data-del]"); if (dl) { renderPed(dl.dataset.del); return; }
     if (t.closest("[data-delno]")) { renderPed(); return; }

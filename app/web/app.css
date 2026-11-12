@@ -198,3 +198,10 @@ body.only-trust .cd.hasno{display:none}
 @media(max-width:900px){.refcol{padding-top:0}}
 
 .carousel .info{align-self:start}
+
+.refcard img{cursor:zoom-in}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.vc{display:grid;gap:4px;padding:6px;border:2px solid transparent;border-radius:10px;background:rgba(16,19,26,.7);cursor:pointer;text-align:left}
+.vc:hover{border-color:var(--mute)} .vc.atual{border-color:var(--ok)}
+.vc img{width:100%;border-radius:6px;aspect-ratio:.716;object-fit:cover;background:#111}
+.vc b{font:500 12px var(--f-mono)} .vc small{color:var(--mute);font-size:11px}

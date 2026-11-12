@@ -293,8 +293,19 @@ def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unid
             print(m, flush=True); logf.write(m + "\n"); logf.flush()
     lines = [l for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l)]
     entries = []
+    ovp, rcp = os.path.join(out, "versoes.json"), os.path.join(out, "resolvidas.json")
+    try: ov = json.load(open(ovp, encoding="utf-8"))  # trocas de edição feitas pelo usuário: {índice da linha: {set, cn}}
+    except (OSError, ValueError): ov = {}
+    try: rc = json.load(open(rcp, encoding="utf-8"))  # linhas já resolvidas no Scryfall (retomar não repete as chamadas)
+    except (OSError, ValueError): rc = {}
     for k, l in enumerate(lines):
-        PROGRESS("resolvendo", k, len(lines)); entries.append(D.resolve(D.parse_line(l)))
+        PROGRESS("resolvendo", k, len(lines))
+        pl = D.parse_line(l)
+        if str(k) in ov: pl = {**pl, "set": ov[str(k)]["set"], "cn": ov[str(k)]["cn"]}
+        chave = json.dumps(pl, sort_keys=True)
+        if chave not in rc: rc[chave] = D.resolve(pl)
+        entries.append(rc[chave])
+    json.dump(rc, open(rcp, "w", encoding="utf-8"), ensure_ascii=False)
     src = sources(); cheap, full = models(); mem = memory()
     global TRUST; TRUST = trusted()
     mt = os.path.join(out, "model.txt")

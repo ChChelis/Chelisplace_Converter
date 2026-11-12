@@ -157,6 +157,53 @@ def excluir_pedido(nome):
     evento("pedido_excluido", pedido=nome)
 
 
+def versoes(nome, uid):
+    """Edições em papel da carta (da mais antiga para a mais nova), para o usuário escolher a referência."""
+    u = lj(os.path.join(pedido_dir(nome), "units", uid + ".json"))
+    if not u:
+        raise ValueError("carta não encontrada")
+    if u["set"] == "LIGA" or not u.get("cn"):
+        raise ValueError("a referência desta carta não vem do Scryfall")
+    c = M.D.scry(f"/cards/{u['set'].lower()}/{urllib.parse.quote(str(u['cn']))}")
+    if not c:
+        raise ValueError("não achei a carta no Scryfall")
+    out, pag = [], 1
+    while pag <= 3:
+        r = M.D.scry("/cards/search?q=" + urllib.parse.quote(f"oracleid:{c['oracle_id']} game:paper") + f"&unique=prints&order=released&dir=asc&page={pag}")
+        if not r:
+            break
+        for x in r["data"]:
+            im = x.get("image_uris") or ((x.get("card_faces") or [{}])[0].get("image_uris")) or {}
+            out.append({"set": x["set"], "set_name": x["set_name"], "cn": x["collector_number"], "data": x["released_at"], "img": im.get("small"),
+                        "nome": x.get("flavor_name") or x["name"], "atual": x["set"] == u["set"].lower() and str(x["collector_number"]) == str(u["cn"])})
+        if not r.get("has_more"):
+            break
+        pag += 1
+    return {"nome": c["name"], "versoes": out}
+
+
+def trocar_versao(nome, uid, sset, cn):
+    """Guarda a edição escolhida, apaga a carta (e as suas decisões) e reprocessa só ela."""
+    d = pedido_dir(nome)
+    j = JOBS.get("criar:" + nome)
+    if j and j["estado"] in ("fila", "rodando"):
+        raise ValueError("espere o processamento terminar")
+    u = lj(os.path.join(d, "units", uid + ".json"))
+    if not u:
+        raise ValueError("carta não encontrada")
+    if not re.match(r"^[a-z0-9]{2,6}$", str(sset)) or not re.match(r"^[A-Za-z0-9★†._-]{1,12}$", str(cn)):
+        raise ValueError("edição inválida")
+    ovp = os.path.join(d, "versoes.json")
+    with LOCK:
+        ov = lj(ovp, {}); ov[str(u["entry"])] = {"set": sset, "cn": str(cn)}; sj(ovp, ov)
+    for f in unidades(d):
+        x = lj(f)
+        if x and x.get("entry") == u["entry"]:
+            os.remove(f); gravar_decisao(nome, x["id"], None)
+    evento("versao_trocada", pedido=nome, de=f"{u['set']} {u['cn']}", para=f"{sset} {cn}")
+    iniciar(nome, d)
+
+
 def criar_pedido(nome, texto):
     d = pedido_dir(nome)
     if os.path.exists(os.path.join(d, "lista.txt")):
@@ -272,7 +319,7 @@ def exportar_usos():
         for u in unidades.values():
             u.pop("refp", None)  # caminho do computador do usuário: sem valor aqui
         pedidos.append({"nome": p["nome"], "lista": open(os.path.join(d, "lista.txt"), encoding="utf-8").read(), "decisoes": lj(os.path.join(d, "decisions.json"), {}),
-                        "gabarito": lj(os.path.join(d, "gabarito.json")), "model": (open(os.path.join(d, "model.txt")).read().strip() if os.path.exists(os.path.join(d, "model.txt")) else None),
+                        "gabarito": lj(os.path.join(d, "gabarito.json")), "versoes": lj(os.path.join(d, "versoes.json"), {}), "model": (open(os.path.join(d, "model.txt")).read().strip() if os.path.exists(os.path.join(d, "model.txt")) else None),
                         "unidades": unidades})
     ev = []
     pe = os.path.join(HOME, "uso", "eventos.jsonl")
@@ -335,7 +382,7 @@ class H(BaseHTTPRequestHandler):
             m = re.match(r"^/api/pedidos/([^/]+)$", p)
             if m and metodo == "DELETE":
                 excluir_pedido(m.group(1)); return self.enviar(200, {"ok": True})
-            m = re.match(r"^/api/pedidos/([^/]+)/(catalogo|decisoes|xml|baixar|andamento|continuar)(?:/(.+))?$", p)
+            m = re.match(r"^/api/pedidos/([^/]+)/(catalogo|decisoes|xml|baixar|andamento|continuar|versoes|versao)(?:/(.+))?$", p)
             if m:
                 nome, acao, extra = m.groups()
                 if acao == "catalogo":
@@ -345,6 +392,10 @@ class H(BaseHTTPRequestHandler):
                     if (JOBS.get("criar:" + nome) or {}).get("estado") in ("fila", "rodando"):
                         return self.enviar(200, {"ok": True})
                     iniciar(nome, pedido_dir(nome)); return self.enviar(200, {"ok": True})
+                if acao == "versoes" and metodo == "GET":
+                    return self.enviar(200, versoes(nome, extra))
+                if acao == "versao" and metodo == "POST":
+                    b = self.corpo(); trocar_versao(nome, extra, b.get("set", ""), b.get("cn", "")); return self.enviar(200, {"ok": True})
                 if acao == "andamento":
                     return self.enviar(200, JOBS.get("criar:" + nome) or {"estado": "sem andamento"})
                 if acao == "decisoes":

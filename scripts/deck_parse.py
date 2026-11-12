@@ -41,6 +41,18 @@ def same_name(a, b):
     return norm(a).lower().split(" // ")[0] == norm(b).lower().split(" // ")[0]
 
 
+def em_papel(card):
+    """A impressão existe em papel? (Scryfall: games inclui 'paper'; edições só do Arena/MTGO não servem.)"""
+    return card is not None and "paper" in (card.get("games") or ["paper"])
+
+
+def primeira_em_papel(name, sset=None):
+    """Primeira edição da carta em papel (a mais antiga no Scryfall), opcionalmente dentro de um set."""
+    q = f'!"{name}" game:paper' + (f" set:{sset}" if sset else "")
+    r = scry("/cards/search?q=" + urllib.parse.quote(q) + "&unique=prints&order=released&dir=asc")
+    return r["data"][0] if r and r.get("data") else None
+
+
 def resolve(entry):
     """Devolve o dict da linha com `card` (Scryfall), `images` (1 por face) e `fixes`."""
     fixes = []
@@ -50,17 +62,19 @@ def resolve(entry):
         card = scry(f"/cards/{entry['set']}/{urllib.parse.quote(cn)}")
         if card:
             fixes.append(f"número {entry['cn']} -> {cn}")
+    if card is not None and not em_papel(card):  # edição só virtual (Arena/MTGO): não serve; cai na primeira em papel
+        fixes.append(f"edição só virtual ({entry['set']} {entry['cn']}): usando a primeira em papel")
+        card = None
     if card is not None and card.get("flavor_name") and same_name(card["flavor_name"], entry["name"]):  # Regra 3a: nome alternativo (Secret Lair etc.): o set/número manda
         fixes.append(f"nome alternativo: o Scryfall chama de '{card['name']}'")
     elif card is not None and not same_name(card["name"], entry["name"]):  # Regra 3: set/número apontam para outra carta
         fixes.append(f"set/número davam '{card['name']}', esperado '{entry['name']}'")
         card = None
-    if card is None:  # Regra 4: busca pelo nome dentro do set; senão, qualquer set
-        q = urllib.parse.quote(entry["name"])
+    if card is None:  # Regra 4: primeira edição em papel, dentro do set pedido ou em qualquer set
         # sem busca aproximada: fuzzy trocou "Sol Rng" por "Oathsworn Giant"; nome errado vai para revisão manual
-        card = (entry["set"] and scry(f"/cards/named?exact={q}&set={entry['set']}")) or scry(f"/cards/named?exact={q}")
+        card = (entry["set"] and primeira_em_papel(entry["name"], entry["set"])) or primeira_em_papel(entry["name"])
         if card:
-            fixes.append(f"impressão adivinhada: {card['set']} {card['collector_number']}")
+            fixes.append(f"primeira edição em papel: {card['set']} {card['collector_number']}")
     if card is None:
         return {**entry, "card": None, "images": [], "fixes": fixes + ["NÃO ENCONTRADA: revisar à mão"]}
     # Regra 5: dupla-face (inclusive token) não tem image_uris no topo; usa 1 imagem por face
