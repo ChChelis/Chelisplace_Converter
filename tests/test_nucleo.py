@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from nucleo import checagem, imagem, montagem, orcamento, xml_mpc
+from nucleo import checagem, ficha, imagem, montagem, orcamento, pix, xml_mpc
 
 A, B, C, V = ("a" * 33, "b" * 33, "c" * 33, "v" * 33)
 XML = f"""<order><details><quantity>4</quantity></details>
@@ -95,6 +95,40 @@ class TestOrcamento(unittest.TestCase):
     def test_foil(self):
         r = orcamento.calcular(180, modo="foil")
         self.assertEqual((r["pago"], r["impressao"]), (330, 121.99))
+
+
+class TestOrcamentoEditavel(unittest.TestCase):
+    def test_kits_e_avulso_editados(self):
+        p = dict(kits=[dict(slots=108, preco=135), dict(slots=36, preco=50)], avulso=2.0)
+        r = orcamento.calcular(150, 0, "normal", p)  # 1 kit de 108 + 1 de 36 + 6 avulsos
+        self.assertEqual((r["kits"], r["resto"], r["pago"]), (2, 6, 135 + 50 + 12))
+
+    def test_padrao_nao_muda(self):
+        self.assertEqual(orcamento.calcular(120, 0, "normal", orcamento.padrao()), orcamento.calcular(120))
+
+
+class TestPixFicha(unittest.TestCase):
+    def test_crc(self):
+        self.assertEqual(pix._crc16("123456789"), "29B1")
+
+    def test_payload(self):
+        p = pix.payload("a@b.com", "Chelis Plácê", "São Paulo", 135)
+        self.assertTrue(p.startswith("000201") and "5406135.00" in p and "CHELIS PLACE" in p)
+        self.assertEqual(p[-4:], pix._crc16(p[:-4]))
+        with self.assertRaises(ValueError):
+            pix.payload("", "x", "y")
+
+    def test_pdf_cobranca(self):
+        pdf = pix.pdf_cobranca([[1, 0], [0, 1]], "abc", "Ana", 10)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_ficha(self):
+        md, r = ficha.gerar("Ana", "1", [dict(titulo="XML", frentes=["A", "B"], versos=["V"])],
+                            [dict(titulo="Troca", itens=[dict(texto="x", pedido_id="i1", usado_id="i2")])], "ok", "normal", None)
+        self.assertIn("### Pedido: 3 slots", md)
+        self.assertIn("thumbnail?id=i2", md)
+        self.assertLess(md.index("#### Conclusão"), md.index("#### Confidencial"))
+        self.assertLess(md.index("### Alterações"), md.index("#### Confidencial"))
 
 
 class TestImagemMontagem(Base):

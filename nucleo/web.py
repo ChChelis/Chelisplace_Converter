@@ -2,11 +2,15 @@
 import json
 from pathlib import Path
 
-from . import checagem, imagem, montagem, orcamento, xml_mpc
+from . import checagem, ficha, imagem, montagem, orcamento, pix, xml_mpc
 
 
-def orcar(frentes, versos, modo):
-    return json.dumps(orcamento.calcular(int(frentes), int(versos), modo))
+def orcar(frentes, versos, modo, precos=None):
+    return json.dumps(orcamento.calcular(int(frentes), int(versos), modo, precos))
+
+
+def orcamento_padrao():
+    return json.dumps({m: orcamento.padrao(m) for m in orcamento.TABELAS})
 
 
 def checar(pasta, xml_path, faltantes_path=None, ignorar=None):
@@ -65,3 +69,17 @@ def montar(pasta_raiz, pasta_pares, pasta_saida, cliente, xml_path=None, pasta_e
     extras = lista(pasta_extras) if pasta_extras else []  # a página numera os nomes para fixar a ordem
     pdfs = montagem.montar_pedido(lista(pasta_raiz), pasta_saida, cliente, pares=pares, extras=extras)
     return json.dumps([str(p) for p in pdfs])
+
+
+def gerar_ficha(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_pix, pago=None):
+    md, r = ficha.gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_pix or "<CHAVE_PIX>", pago)
+    return json.dumps(dict(markdown=md, orcamento=r))
+
+
+def pix_payload(chave, nome, cidade, valor=None):
+    return pix.payload(chave, nome, cidade, valor)
+
+
+def pix_pdf(matriz, codigo, cliente, valor, saida):
+    pix.pdf_cobranca(matriz, codigo, cliente, valor, saida)
+    return saida
