@@ -190,7 +190,7 @@
   /* ---------- carrossel ---------- */
   var reelEls = {};
   function mountCarousel() {
-    $("#main").innerHTML = '<div class="carousel"><div class="reelwrap"><div class="reel" id="reel" aria-label="Cartas"></div></div><div class="info" id="info"></div></div>';
+    $("#main").innerHTML = '<div class="carousel"><div class="reelwrap"><div class="reel" id="reel" aria-label="Candidato"></div></div><div class="refcol" id="refcol"></div><div class="info" id="info"></div></div>';
     reelEls = {}; bindReel(); layoutReel(true); renderInfo();
   }
   function mkReelCard(c) {
@@ -227,7 +227,7 @@
     reel.addEventListener("click", function (e) {
       var el = e.target.closest(".rc"); if (!el) return;
       var i = F.findIndex(function (c) { return c.id === el.dataset.id; });
-      if (i !== S.idx) go(i - S.idx); else flip();
+      if (i !== S.idx) go(i - S.idx);
     });
     reel.addEventListener("mousemove", function (e) {
       if (matchMedia("(hover:none)").matches) return;
@@ -251,31 +251,42 @@
     var sug = c.prop.accept || [], near = c.prop.near || [], rk = function (n) { return sug.indexOf(n) >= 0 ? 0 : near.indexOf(n) >= 0 ? 1 : 2; };
     return c.cands.slice().sort(function (a, b) { return rk(a.n) - rk(b.n) || a.n - b.n; });
   }
+  function renderRef(c) {
+    var box = $("#refcol"); if (!box) return;
+    if (!c) { box.innerHTML = ""; return; }
+    var k = shownCand(c);
+    box.innerHTML = '<figure class="refcard"><img src="' + c.ref + '" alt="Referência do pedido" onerror="this.style.visibility=\'hidden\'"><figcaption>Referência do pedido · ' + esc(c.set) + " " + esc(c.cn) + " · ×" + c.qty + "</figcaption></figure>";
+
+  }
   function renderInfo() {
     var box = $("#info"); if (!box) return; var c = F[S.idx];
+    renderRef(c);
     if (!c) { box.innerHTML = '<div class="empty">Nenhuma carta com esses filtros.</div>'; return; }
-    var st = stOf(c.id), k = shownCand(c), als = alertOf(c), list = ordered(c), lim = S.shown ? list.length : 10, i = c.prop.idx;
+    var st = stOf(c.id), k = shownCand(c), als = alertOf(c), list = ordered(c), lim = S.shown ? list.length : 12, i = c.prop.idx;
     var cl = c.prop.conf === "alta" ? "hi" : c.prop.conf === "media" ? "mid" : "lo";
     var sel = chosenN(c), sug = c.prop.accept || [], near = c.prop.near || [];
     var hasTrust = c.cands.some(trusted);
+    var rotulo = !sug.length ? "Confirmar: nenhum serve" : S.pv && S.pv !== sel ? "Aceitar candidato " + S.pv : "Aceitar sugestão";
     box.innerHTML = '<div class="meta" style="margin-bottom:8px">' + esc(S.nome).toUpperCase() + " · " + (S.idx + 1) + " / " + F.length + "</div>" +
       "<h1>" + esc(c.name) + '</h1><div class="type">' + esc(c.set) + " " + esc(c.cn) + (c.face ? " · verso" + (frontOf(c) ? " de " + esc(frontOf(c).name) : "") : "") + " · ×" + c.qty + "</div>" +
       '<div class="tags"><span class="tag ' + cl + '">confiança ' + esc(c.prop.conf) + "</span>" + (i != null ? '<span class="tag ' + cls(i) + '">índice ' + i + "%</span>" : "") +
       '<span class="tag">' + (st === "ok" ? "conferido" : st === "nenhum" ? "nenhum serve" : st === "duvida" ? "dúvida" : "pendente") + "</span>" +
       als.map(function (a) { return '<span class="tag alert">' + esc(a) + "</span>"; }).join("") + "</div>" +
-      '<p class="note"><b>Meu motivo:</b> ' + esc(c.prop.note) + "</p>" +
-      '<div class="cmp"><figure><div style="display:flex;gap:10px;align-items:flex-end"><img class="refmini" src="' + c.ref + '" alt="Referência" onerror="this.style.visibility=\'hidden\'"><div class="foot" style="flex:1;background-image:url(' + c.ref + ')"></div></div><figcaption>Referência · rodapé</figcaption></figure>' +
-      (k ? '<figure><div class="foot" style="height:98px;background-image:url(' + k.img + ')"></div><figcaption>Candidato ' + k.n + " · rodapé</figcaption></figure>" : "") + "</div>" +
+      '<div class="foots"><div><div class="foot big" style="background-image:url(' + c.ref + ')"></div><span>rodapé da referência</span></div>' +
+      (k ? '<div><div class="foot big" style="background-image:url(' + k.img + ')"></div><span>rodapé do candidato ' + k.n + '</span></div>' : "") + "</div>" +
+      '<details class="mot"' + (LS.get("motivo", "0") === "1" ? " open" : "") + '><summary>Meu motivo</summary><p class="note">' + esc(c.prop.note) + "</p></details>" +
+      '<div class="rows"><button class="btn pri" data-a="accept">' + esc(rotulo) + '</button><button class="btn bad" data-a="nenhum">Nenhum serve</button><button class="btn warn" data-a="duvida">Dúvida</button><button class="btn" data-a="clear">Limpar</button></div>' +
+      '<div class="meta" style="margin:10px 0 6px">Candidatos: toque para ver ao lado da referência · duplo toque ou Enter para aceitar</div>' +
       '<div class="cands">' + list.slice(0, lim).map(function (x) {
         var tr = trusted(x), hide = S.onlyTrust && hasTrust && !tr;
-        return '<div class="cd' + (sug.indexOf(x.n) >= 0 ? " sug" : near.indexOf(x.n) >= 0 ? " near" : "") + (st === "ok" && sel === x.n ? " sel" : "") + (tr ? " trusted" : "") + (hide ? " hasno" : "") + '" data-n="' + x.n + '" tabindex="0" role="button" aria-label="Candidato ' + x.n + '">' +
+        return '<div class="cd' + (sug.indexOf(x.n) >= 0 ? " sug" : near.indexOf(x.n) >= 0 ? " near" : "") + (st === "ok" && sel === x.n ? " sel" : "") + (k && k.n === x.n ? " view" : "") + (tr ? " trusted" : "") + (hide ? " hasno" : "") + '" data-n="' + x.n + '" tabindex="0" role="button" aria-label="Candidato ' + x.n + '">' +
           '<img loading="lazy" src="' + x.img + '" alt=""><span class="n">' + x.n + '</span><div class="s">' + esc(x.source) + " · " + x.dpi + " dpi" + (x.sc != null ? " · " + x.sc : "") + "</div></div>";
       }).join("") + "</div>" + (list.length > lim ? '<button class="btn" id="bMore">Mostrar mais (' + (list.length - lim) + ")</button>" : "") +
-      '<div class="rows"><button class="btn pri" data-a="accept">' + ((c.prop.accept || []).length ? "Aceitar sugestão" : "Confirmar: nenhum serve") + '</button><button class="btn bad" data-a="nenhum">Nenhum serve</button><button class="btn warn" data-a="duvida">Dúvida</button><button class="btn" data-a="clear">Limpar</button></div>' +
       '<input class="notein" type="text" id="note" placeholder="Anotação (opcional)" value="' + esc((S.dec[c.id] && S.dec[c.id].note) || "") + '" aria-label="Anotação">' +
-      '<div class="nav"><button class="btn" data-g="-1">↑ Anterior</button><button class="btn" data-g="1">Próxima ↓</button><button class="btn" id="bFlip">Virar (referência)</button><button class="btn" id="bToGrid">Ver grade</button></div>' +
-      '<div class="keys"><kbd>↑</kbd> <kbd>↓</kbd> cartas · <kbd>←</kbd> <kbd>→</kbd> candidatos · <kbd>Enter</kbd> aceita o candidato em vista · <kbd>N</kbd> nenhum · <kbd>D</kbd> dúvida · <kbd>Backspace</kbd> limpa · <kbd>Espaço</kbd> vira · <kbd>Z</kbd> desfaz · <kbd>G</kbd> grade · <kbd>T</kbd> triagem</div>';
+      '<div class="nav"><button class="btn" data-g="-1">↑ Anterior</button><button class="btn" data-g="1">Próxima ↓</button><button class="btn" id="bToGrid">Ver grade</button></div>' +
+      '<div class="keys"><kbd>↑</kbd> <kbd>↓</kbd> cartas · <kbd>←</kbd> <kbd>→</kbd> candidatos · <kbd>Enter</kbd> aceita o candidato em vista · <kbd>N</kbd> nenhum · <kbd>D</kbd> dúvida · <kbd>Backspace</kbd> limpa · <kbd>Z</kbd> desfaz · <kbd>G</kbd> grade · <kbd>T</kbd> triagem</div>';
     var note = $("#note"); if (note) note.addEventListener("change", function () { saveNote(c, note.value); });
+    var mot = $(".mot", box); if (mot) mot.addEventListener("toggle", function () { LS.set("motivo", mot.open ? "1" : "0"); });
   }
   function actCur(a) {
     var c = F[S.idx]; if (!c) return;
@@ -486,12 +497,16 @@
     var u = t.closest("[data-u]"); if (u) { S.T[u.dataset.u] = !S.T[u.dataset.u]; saveTrust(); return; }
     if (t.id === "upladd") { var n = $("#uplnew").value.trim(); if (n) { S.T[n] = true; $("#uplnew").value = ""; saveTrust(); } return; }
     if (t.id === "bMore") { S.shown = 1; renderInfo(); return; }
-    if (t.id === "bFlip") return flip(); if (t.id === "bToGrid") return setView("grid");
+    if (t.id === "bToGrid") return setView("grid");
     var g = t.closest("[data-g]"); if (g) return go(+g.dataset.g);
     var a = t.closest("[data-a]"); if (a && S.view === "car") return actCur(a.dataset.a);
-    var cd = t.closest(".cd"); if (cd && S.view === "car") { S.pv = +cd.dataset.n; var c = F[S.idx]; decide(c, "ok", [S.pv], "individual"); S.pv = null; renderOverview(); renderFilters(); layoutReel(); renderInfo(); return; }
+    var cd = t.closest(".cd"); if (cd && S.view === "car") { S.pv = +cd.dataset.n; layoutReel(); renderInfo(); return; }
     var tv = t.closest("[data-v]"); if (tv && S.view === "tri") return flyOut(tv.dataset.v);
     if (t.id === "triUndo") return undo();
+  });
+  document.addEventListener("dblclick", function (e) {
+    var cd = e.target.closest(".cd"); if (!cd || S.view !== "car") return;
+    S.pv = +cd.dataset.n; actCur("accept");
   });
   $("#q").addEventListener("input", function (e) { S.q = e.target.value; S.idx = 0; renderAll(); });
   $("#onlytrust").addEventListener("change", function (e) { S.onlyTrust = e.target.checked; LS.set("onlytrust", e.target.checked ? "1" : "0"); renderFilters(); if (S.view === "car") renderInfo(); });
@@ -510,7 +525,7 @@
       var c = F[S.idx], list = c ? ordered(c) : [];
       if (k === "ArrowDown") { e.preventDefault(); go(1); } else if (k === "ArrowUp") { e.preventDefault(); go(-1); }
       else if ((k === "ArrowRight" || k === "ArrowLeft") && c) { e.preventDefault(); var cur = list.map(function (x) { return x.n; }).indexOf(S.pv || chosenN(c)); var nx = list[(cur + (k === "ArrowRight" ? 1 : -1) + list.length) % list.length]; S.pv = nx && nx.n; layoutReel(); renderInfo(); }
-      else if (k === "Enter") { e.preventDefault(); actCur("accept"); } else if (k === " ") { e.preventDefault(); flip(); }
+      else if (k === "Enter") { e.preventDefault(); actCur("accept"); }
       else if (k === "n" || k === "N") actCur("nenhum"); else if (k === "d" || k === "D") actCur("duvida"); else if (k === "Backspace") { e.preventDefault(); actCur("clear"); }
       else if (k === "g" || k === "G") setView("grid"); else if (k === "t" || k === "T") setView("tri"); else if (k === "z" || k === "Z") undo();
     } else if (S.view === "tri") {
