@@ -31,9 +31,30 @@ function gravar(dir, arquivos) {
 }
 
 const acoes = {
-  async orcar({ frentes, versos, modo }) {
-    py.globals.set("a", [frentes, versos, modo]);
+  async orcar({ frentes, versos, modo, precos }) {
+    py.globals.set("a", [frentes, versos, modo, py.toPy(precos || {})]);
     return JSON.parse(py.runPython("web.orcar(*a)"));
+  },
+  async orcamento_padrao() { return JSON.parse(py.runPython("web.orcamento_padrao()")); },
+  async ficha(args) {
+    py.globals.set("a", py.toPy(args));
+    return JSON.parse(py.runPython("web.gerar_ficha(**a)"));
+  },
+  async pix_codigo(args) {
+    py.globals.set("a", py.toPy(args));
+    return py.runPython("web.pix_payload(**a)");
+  },
+  async ficha_pdf({ dados, imagens, matriz, codigo }) {
+    gravar("/w/fpdf", []);
+    py.globals.set("a", [py.toPy(dados), py.toPy(imagens.map(([u, b]) => [u, b])), matriz ? py.toPy(matriz) : null, codigo || null, "/w/fpdf/ficha.pdf"]);
+    py.runPython("web.ficha_pdf_arquivo(a[0], dict((k, bytes(v)) for k, v in a[1]), a[2], a[3], a[4])");
+    return py.FS.readFile("/w/fpdf/ficha.pdf");
+  },
+  async pix_pdf({ matriz, codigo, cliente, valor }) {
+    gravar("/w/pix", []);
+    py.globals.set("a", [py.toPy(matriz), codigo, cliente, valor, "/w/pix/pix.pdf"]);
+    py.runPython("web.pix_pdf(*a)");
+    return py.FS.readFile("/w/pix/pix.pdf");
   },
   async checar({ xml, nomes, ignorar }) {
     gravar("/w/pasta", nomes.map((n) => [n, new Uint8Array(0)]));
@@ -45,13 +66,13 @@ const acoes = {
     return r;
   },
   async iniciar_montagem() {
-    for (const d of ["/w/png", "/w/png_pares", "/w/pdf"]) { limpar(d); py.FS.mkdirTree(d); }
+    for (const d of ["/w/png", "/w/png_pares", "/w/png_extras", "/w/pdf"]) { limpar(d); py.FS.mkdirTree(d); }
     return true;
   },
   // Um lote de imagens por vez, para não estourar a memória do navegador.
   async redim({ grupo, arquivos }) {
     gravar("/w/in", arquivos);
-    const dest = grupo === "pares" ? "/w/png_pares" : "/w/png";
+    const dest = { pares: "/w/png_pares", extras: "/w/png_extras" }[grupo] || "/w/png";
     py.globals.set("a", ["/w/in", dest]);
     py.runPython("web.redimensionar_pasta(*a)");
     limpar("/w/in");
@@ -60,7 +81,7 @@ const acoes = {
   async montar_pdfs({ cliente, xml }) {
     let caminhoXml = null;
     if (xml) { gravar("/w/xml", [["pedido.xml", new Uint8Array(xml)]]); caminhoXml = "/w/xml/pedido.xml"; }
-    py.globals.set("a", ["/w/png", "/w/png_pares", "/w/pdf", cliente, caminhoXml]);
+    py.globals.set("a", ["/w/png", "/w/png_pares", "/w/pdf", cliente, caminhoXml, "/w/png_extras"]);
     const caminhos = JSON.parse(py.runPython("web.montar(*a)"));
     return caminhos.map((c) => [c.split("/").pop(), py.FS.readFile(c)]);
   },

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chelisplace Pedidos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%232b5fd9%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,25 +19,61 @@
   <br><button class="acao" id="drive-entrar">Entrar com Google</button><button class="acao sec" id="drive-sair" hidden>Sair</button>
   <div id="drive-erro" class="alerta"></div>
 </details>
-<nav role="tablist">
-  <button role="tab" data-aba="orcamento" aria-selected="true">Orçamento</button>
-  <button role="tab" data-aba="checagem" aria-selected="false">Checagem</button>
-  <button role="tab" data-aba="montagem" aria-selected="false">Montagem</button>
+<nav role="tablist" id="passos">
+  <button role="tab" data-aba="entrada" aria-selected="true"><b>1</b> Entrada</button>
+  <button role="tab" data-aba="orcamento" aria-selected="false"><b>2</b> Orçamento</button>
+  <button role="tab" data-aba="conferencia" aria-selected="false"><b>3</b> Conferência</button>
+  <button role="tab" data-aba="checagem" aria-selected="false"><b>4</b> Imagens</button>
+  <button role="tab" data-aba="ficha" aria-selected="false"><b>5</b> Cliente e ficha</button>
+  <button role="tab" data-aba="montagem" aria-selected="false"><b>6</b> Montagem</button>
 </nav>
+<div class="resumo" id="resumo"></div>
 
-<section id="orcamento">
-  <h2>Orçamento</h2>
+<section id="entrada">
+  <h2>Entrada do pedido</h2>
+  <p class="suave">Traga o pedido de qualquer um dos jeitos; dá para somar mais de uma fonte. Nada sai do seu computador.</p>
   <div class="linha">
-    <div><label for="o-frentes">Frentes</label><input id="o-frentes" type="number" min="0" value="100"></div>
+    <div class="cartao"><h3>Lista colada</h3><p class="suave">Moxfield, Liga ou Archidekt em texto: <code>1 Sol Ring (C21) 263</code> ou <code>2x Sol Ring</code>.</p>
+      <textarea id="e-lista" rows="6" placeholder="1 Sol Ring (C21) 263&#10;4 Island"></textarea>
+      <button class="acao" id="e-lista-add">Usar esta lista</button></div>
+    <div class="cartao"><h3>XML do MPCFill</h3><p class="suave">O XML pronto, já com as imagens escolhidas.</p>
+      <input id="e-xml" type="file" accept=".xml"></div>
+    <div class="cartao"><h3>Imagens + decklist</h3><p class="suave">Modelo “deco”: <code>decklist.txt</code> (<code>2x Nome</code>); as imagens vêm na etapa 4.</p>
+      <input id="e-deck" type="file" accept=".txt"></div>
+  </div>
+  <div id="e-fontes"></div>
+  <div id="e-erro" class="alerta"></div>
+</section>
+
+<section id="orcamento" hidden>
+  <h2>Orçamento</h2>
+  <p id="o-origem" class="suave"></p>
+  <div class="linha">
+    <div><label for="o-frentes">Frentes</label><input id="o-frentes" type="number" min="0" value="0"></div>
     <div><label for="o-versos">Versos distintos</label><input id="o-versos" type="number" min="0" value="0"></div>
     <div><label for="o-modo">Modo</label><select id="o-modo"><option value="normal">Normal</option><option value="foil">Foil</option></select></div>
   </div>
+  <details class="conf" id="o-precos" open><summary>Kits e preços (valem para este modo)</summary>
+    <table id="o-kits"></table>
+    <button class="peq" id="o-kit-add">+ kit</button>
+    <div class="linha" id="o-campos"></div>
+    <button class="peq" id="o-restaurar">Voltar aos preços de fábrica</button>
+  </details>
   <table id="o-tabela"></table>
-  <p class="suave">Cada verso distinto conta mais um slot. Custo e lucro são só para você: não envie esta tabela ao cliente.</p>
+  <div class="linha"><div><label for="o-pago">Valor combinado com o cliente (vazio = calculado)</label><input id="o-pago" type="number" min="0" step="1"></div></div>
+  <p class="suave">Cada verso distinto conta mais um slot. Custo, colagem e lucro são só seus: não envie esta tabela ao cliente. Os preços ficam guardados neste navegador.</p>
+</section>
+
+<section id="conferencia" hidden>
+  <h2>Conferência das cartas</h2>
+  <p class="suave">A busca no MPCFill e a comparação das artes rodam no <b>Bot Chelisplace</b> (programa local). Com ele aberto, esta página o encontra sozinha.</p>
+  <div id="b-estado" class="conf"></div>
+  <div id="b-pedidos"></div>
+  <p class="suave">Sem o bot, siga com o XML pronto: etapa 1.</p>
 </section>
 
 <section id="checagem" hidden>
-  <h2>Checagem do pedido</h2>
+  <h2>Imagens e checagem</h2>
   <p class="suave">Compara a pasta de imagens com o XML do MPC pelo ID do Drive. Nada é apagado.</p>
   <label for="c-xml">XML do pedido</label>
   <input id="c-xml" type="file" accept=".xml"> <span id="c-xml-nome" class="suave"></span>
@@ -51,10 +88,40 @@
   <div id="c-resultado"></div>
 </section>
 
+<section id="ficha" hidden>
+  <h2>Cliente e ficha</h2>
+  <div class="linha">
+    <div><label for="f-cliente">Nome do cliente</label><input id="f-cliente" type="text"></div>
+    <div><label for="f-tel">Telefone</label><input id="f-tel" type="text"></div>
+  </div>
+  <h3>Alterações no pedido</h3>
+  <p class="suave">Troca de arte, item removido, cartas sem versão próxima: registre aqui com as miniaturas. Cole o link do Drive (ou o ID) da imagem pedida e da usada.</p>
+  <div id="f-alt"></div>
+  <button class="acao sec" id="f-alt-add">+ alteração</button>
+  <label for="f-conclusao">Conclusão (texto ao cliente)</label>
+  <textarea id="f-conclusao" rows="3"></textarea>
+  <h3>Prévia</h3>
+  <div id="f-previa" class="previa"></div>
+  <button class="acao" id="f-copiar">Copiar ficha (Obsidian)</button>
+  <button class="acao sec" id="f-msg">Copiar mensagem ao cliente</button>
+  <button class="acao" id="f-pdf">PDF da ficha para o cliente</button>
+  <span id="f-aviso" class="suave"></span>
+  <details class="conf"><summary>Pix (PDF com QR Code)</summary>
+    <div class="linha">
+      <div><label for="p-chave">Chave Pix</label><input id="p-chave" type="text" autocomplete="off"></div>
+      <div><label for="p-nome">Nome do recebedor</label><input id="p-nome" type="text" placeholder="Chelisplace"></div>
+      <div><label for="p-cidade">Cidade</label><input id="p-cidade" type="text" placeholder="Sao Paulo"></div>
+    </div>
+    <p class="suave">Chave, nome e cidade ficam só neste navegador. O QR leva o valor do pedido.</p>
+    <button class="acao" id="p-pdf">Gerar PDF do Pix</button><span id="p-aviso" class="suave"></span><div id="p-saida"></div>
+  </details>
+</section>
+
 <section id="montagem" hidden>
   <h2>Montagem das páginas</h2>
   <p class="suave">Imagens soltas na pasta formam o pedido; a subpasta <b>pares</b> vai para os últimos slots (na ordem do XML). Cada página é um PDF A3 com 18 cartas.</p>
   <p id="m-resumo"></p>
+  <div id="m-plano"></div>
   <details id="m-trocar"><summary>Escolher ou trocar a pasta e o XML</summary>
     <div class="linha suave">
       <label><input type="radio" name="fonte-m" value="pc" checked> Computador</label>
@@ -75,7 +142,9 @@
   <div id="m-saida"></div>
 </section>
 </main>
+<script src="qrcode.min.js"></script>
 <script src="drive.js"></script>
 <script src="app.js"></script>
+<script src="pedido.js"></script>
 </body>
 </html>

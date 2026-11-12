@@ -30,16 +30,18 @@ def posicao(slot):
     return round(coluna * PASSO_X), round(linha * PASSO_Y)
 
 
-def planejar(raiz, pares=(), preenchimento=(), por_pagina=POR_PAGINA):
+def planejar(raiz, pares=(), preenchimento=(), extras=(), por_pagina=POR_PAGINA):
     """Devolve páginas (listas de 18 caminhos ou None).
 
     raiz: caminhos em ordem alfabética; preenchimento: [(caminho, cópias)] logo depois da raiz;
     pares: consecutivos nos últimos slots, na ordem recebida (frente seguida do verso, como no Photoshop).
+    extras: imagens que não estão no XML; ficam depois dos pares, também no fim, na ordem recebida.
+    Se o total não fecha um múltiplo de 18, os slots em branco ficam entre a raiz e os pares.
     """
     fila = sorted(raiz, key=lambda p: Path(p).name.lower())
     for caminho, copias in preenchimento:
         fila += [caminho] * copias
-    pares = list(pares)
+    pares = list(pares) + list(extras)
     total = len(fila) + len(pares)
     n_pag = max(1, math.ceil(total / por_pagina))
     slots = [None] * (n_pag * por_pagina)
@@ -110,8 +112,8 @@ def exportar_pdf(pagina, destino, qualidade=QUALIDADE_PDF):
     return destino
 
 
-def montar_pedido(raiz, pasta_saida, cliente, pares=(), preenchimento=(), **kw):
-    paginas = planejar(raiz, pares, preenchimento)
+def montar_pedido(raiz, pasta_saida, cliente, pares=(), preenchimento=(), extras=(), **kw):
+    paginas = planejar(raiz, pares, preenchimento, extras)
     prog = progresso(paginas)
     pdfs = []
     for n, (slots, p) in enumerate(zip(paginas, prog), 1):
