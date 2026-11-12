@@ -333,7 +333,7 @@ function desenharEnvio() {
       }));
       sessao.pasta = await montarPastaDrive({ id: pastaId, name: nome });  // a etapa 4 já abre nesta pasta
       carregarIgnorados(); atualizarRotulos();
-      return `${feitas} copiada(s), ${puladas} já estava(m) lá` + (falhas.length ? `, ${falhas.length} falharam (${falhas.slice(0, 3).join("; ")}${falhas.length > 3 ? "…" : ""}). Para essas, use o botão de baixar do bot.` : ". Pasta pronta: clique em Conferir.");
+      return `${feitas} copiada(s), ${puladas} já estava(m) lá` + (falhas.length ? `, ${falhas.length} falharam (${falhas.slice(0, 3).join("; ")}${falhas.length > 3 ? "…" : ""}). Essas precisam ser baixadas pelo bot (tela “XML e imagens” dele) para a pasta do pedido.` : ". Pasta pronta: clique em Conferir.");
     });
   };
 }

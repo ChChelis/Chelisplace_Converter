@@ -51,3 +51,6 @@ Com o bot aberto, “Cartas sem versão próxima de <pedido>” lê `/api/pedido
 
 ### PDF da ficha (substitui as miniaturas no texto)
 O texto copiado para o Obsidian é só texto (sem links de imagem). As miniaturas aparecem na **prévia da página** e no **PDF da ficha para o cliente** (`nucleo/ficha_pdf.py`: pedido, alterações com miniaturas, valor, QR do Pix; nada confidencial). A página baixa cada miniatura (direto, ou pelo Drive logado, ou pelo cache do bot) e avisa quantas não vieram.
+
+### Imagens do XML para o Drive (etapa 4)
+Com o XML carregado e o login do Google feito, “Enviar as imagens para o Drive” cria (ou reaproveita) `Novo Processo Proxies/<pedido>` e copia cada imagem distinta do XML (frentes e versos) pelo próprio Drive (`files.copy`), com o nome `<carta> (<ID>).<ext>` que a checagem usa. Pula as que já estão lá, roda 4 cópias em paralelo, pede confirmação na página e não apaga nada. Ao terminar, a etapa 4 já abre nessa pasta. Falhas (por exemplo, arquivo sem permissão de cópia) são listadas; essas vão pelo bot. Testado com Drive simulado; **ainda não no Drive real**.
