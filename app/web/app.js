@@ -451,6 +451,27 @@
   }
   function saveTrust() { api("PUT", "/api/uploaders", { trusted: trustList() }).catch(function (e) { toast("Não consegui salvar os uploaders: " + e.message); }); renderUpl(); if (S.nome) { renderFilters(); if (S.view === "car") renderInfo(); } }
 
+  /* ---------- pedidos: abrir e excluir ---------- */
+  function renderPed(confirma) {
+    var box = $("#pedList");
+    box.innerHTML = S.pedidos.map(function (p) {
+      var info = (p.processando ? "processando " : "") + (p.unidades || 0) + "/" + (p.linhas || "?") + " cartas · " + (p.decididas || 0) + " decididas · " + (p.mb || 0) + " MB · " + esc(p.modificado || "");
+      return '<div class="box" style="grid-template-columns:1fr auto;align-items:center;gap:10px"><div><h3>' + esc(p.nome) + '</h3><div class="info-t">' + info + "</div></div>" +
+        (confirma === p.nome
+          ? '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="info-t">Apagar este pedido e as ' + (p.decididas || 0) + ' decisões?</span><button class="btn bad" data-delok="' + esc(p.nome) + '">Sim, excluir</button><button class="btn" data-delno="1">Cancelar</button></div>'
+          : '<div style="display:flex;gap:8px"><button class="btn" data-open="' + esc(p.nome) + '">Abrir</button><button class="btn bad" data-del="' + esc(p.nome) + '"' + (p.processando ? " disabled" : "") + ">Excluir</button></div>") + "</div>";
+    }).join("") || '<div class="info-t">Nenhum pedido.</div>';
+  }
+  function excluirPedido(nome) {
+    api("DELETE", "/api/pedidos/" + encodeURIComponent(nome)).then(function () {
+      toast("Pedido excluído"); var era = S.nome === nome;
+      return loadTabs().then(function () {
+        renderPed();
+        if (era) { S.nome = null; S.cards = []; S.dec = {}; stopLive(); var pr = S.pedidos.filter(function (x) { return x.unidades; })[0]; if (pr) openPedido(pr.nome); else { $("#ov").hidden = true; $("#filters").hidden = true; $("#main").innerHTML = '<div class="empty">Nenhum pedido.<br><br><button class="btn pri" id="firstNew">Criar um pedido</button></div>'; } }
+      });
+    }).catch(function (e) { toast("Não consegui excluir: " + e.message); renderPed(); });
+  }
+
   /* ---------- novo pedido ---------- */
   function startNovo() {
     var nome = $("#nNome").value.trim(), lista = $("#nLista").value; $("#nErro").textContent = "";
@@ -483,6 +504,11 @@
     if (t.id === "vCar") return setView("car"); if (t.id === "vGrid") return setView("grid"); if (t.id === "vTri") return setView("tri");
     if (t.id === "fAl") return setMode("alertas"); if (t.id === "fPe") return setMode("pendentes"); if (t.id === "fTo") return setMode("todas");
     var chip = t.closest(".chip[data-b]"); if (chip) { S.bands[chip.dataset.b] = !S.bands[chip.dataset.b]; S.idx = 0; renderAll(); return; }
+    if (t.id === "bPed") { loadTabs().then(function () { renderPed(); openModal("mPed"); }); return; }
+    var dl = t.closest("[data-del]"); if (dl) { renderPed(dl.dataset.del); return; }
+    if (t.closest("[data-delno]")) { renderPed(); return; }
+    var dk = t.closest("[data-delok]"); if (dk) { excluirPedido(dk.dataset.delok); return; }
+    var op = t.closest("[data-open]"); if (op) { closeModals(); openPedido(op.dataset.open); return; }
     if (t.id === "bUpl") { renderUpl(); openModal("mUpl"); return; }
     if (t.id === "bXml") { openDrawer(true); return; }
     if (t.id === "bUso") { api("GET", "/api/estado").then(function (j) { $("#sobre").innerHTML = "Versão <b>" + esc(j.versao) + "</b><br>Dados: " + esc(j.dados) + "<br>Modelo: " + esc(j.modelo); }); openModal("mUso"); return; }
@@ -491,6 +517,7 @@
     if (t.id === "mkxml") return gerarXml();
     if (t.id === "mkimg") { var pasta = $("#pasta").value.trim(); LS.set("pasta", pasta); api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/baixar", { pasta: pasta || null }).then(function () { pollImg(); }).catch(function (er) { $("#imgMsg").textContent = "Erro: " + er.message; }); return; }
     if (t.id === "mkmsg") return clientMsg();
+    if (t.id === "firstNew") { $("#nProg").hidden = true; $("#nErro").textContent = ""; openModal("mNovo"); return; }
     if (t.id === "nGo") return startNovo();
     if (t.id === "bCont") { api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/continuar", {}).then(function () { return loadTabs(); }).then(function () { openPedido(S.nome); }); return; }
     if (t.id === "uplall") { S.showAllUpl = !S.showAllUpl; renderUpl(); return; }

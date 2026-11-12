@@ -110,7 +110,8 @@ def listar_pedidos():
         job = JOBS.get("criar:" + n)
         linhas = sum(1 for l in open(os.path.join(d, "lista.txt"), encoding="utf-8") if l.strip())
         completo = os.path.exists(os.path.join(d, "pronto.txt")) or os.path.exists(os.path.join(d, "catalog.json"))
-        out.append({"nome": n, "pronto": completo, "processando": bool(job and job["estado"] in ("fila", "rodando")), "unidades": len(unidades(d)), "linhas": linhas,
+        mb = sum(os.path.getsize(os.path.join(r, f)) for r, _, fs in os.walk(d) for f in fs) / 1e6
+        out.append({"nome": n, "mb": round(mb, 1), "modificado": datetime.fromtimestamp(os.path.getmtime(d)).strftime("%d/%m/%Y %H:%M"), "pronto": completo, "processando": bool(job and job["estado"] in ("fila", "rodando")), "unidades": len(unidades(d)), "linhas": linhas,
                     "cartas": (lj(os.path.join(d, "catalog.json"), {}).get("order") or {}).get("quantity"),
                     "decididas": sum(1 for v in dec.values() if v.get("status") != "pendente"), "job": job})
     return out
@@ -136,6 +137,24 @@ def iniciar(nome, d):
     job = {"estado": "fila", "fase": "", "feito": 0, "total": 0, "erro": None, "inicio": agora()}
     JOBS["criar:" + nome] = job
     threading.Thread(target=rodar_pipeline, args=(nome, d, job), daemon=True).start()
+
+
+def excluir_pedido(nome):
+    """Apaga a pasta do pedido (lista, cartas processadas e decisões). As imagens baixadas ficam no cache, que serve a outros pedidos."""
+    if DEV:
+        raise ValueError("modo de desenvolvimento: não exclui pedidos")
+    d = pedido_dir(nome)
+    if not os.path.isdir(d):
+        raise ValueError("esse pedido não existe")
+    j = JOBS.get("criar:" + nome)
+    if j and j["estado"] in ("fila", "rodando"):
+        raise ValueError("espere o processamento terminar")
+    real, base = os.path.realpath(d), os.path.realpath(ORDER)
+    if os.path.dirname(real) != base:
+        raise ValueError("caminho inválido")
+    shutil.rmtree(real)
+    JOBS.pop("criar:" + nome, None); JOBS.pop("baixar:" + nome, None)
+    evento("pedido_excluido", pedido=nome)
 
 
 def criar_pedido(nome, texto):
@@ -194,7 +213,8 @@ def uploaders():
 
 def gerar_xml(nome, conferido):
     d = pedido_dir(nome)
-    r = EX.montar(d, decisoes(nome), conferido)
+    cards, _ = M.build_catalog(unidades(d), d, leve=True)
+    r = EX.montar(d, decisoes(nome), conferido, cards)
     evento("xml_gerado", pedido=nome, usadas=r["usadas"], em_lote=r["em_lote"])
     return {k: v for k, v in r.items() if k != "xml"}
 
@@ -217,13 +237,11 @@ def baixar_imagens(nome, destino):
 
     def run():
         shutil.copy(xml_path, os.path.join(destino, "pedido.xml"))
-        usados = {}
         for i, (cid, nm) in enumerate(cards):
             nm = re.sub(r'[<>:"/\\|?*]', "_", nm or cid)
-            if nm.lower() in usados and usados[nm.lower()] != cid:  # mesmo nome, arte diferente
-                base, ext = os.path.splitext(nm); nm = f"{base} [{cid[:6]}]{ext}"
-            usados[nm.lower()] = cid
-            alvo = os.path.join(destino, nm)
+            base, ext = os.path.splitext(nm)
+            alvo = os.path.join(destino, f"{base} [{cid}]{ext}")  # o id do MPCFill no nome: dá para voltar do arquivo para o XML
+            nm = os.path.basename(alvo)
             job["feito"] = i
             if os.path.exists(alvo) and os.path.getsize(alvo) > 1000:
                 continue
@@ -314,6 +332,9 @@ class H(BaseHTTPRequestHandler):
                     return self.enviar(200, listar_pedidos())
                 b = self.corpo(); criar_pedido(b.get("nome", ""), b.get("lista", ""))
                 return self.enviar(200, {"ok": True})
+            m = re.match(r"^/api/pedidos/([^/]+)$", p)
+            if m and metodo == "DELETE":
+                excluir_pedido(m.group(1)); return self.enviar(200, {"ok": True})
             m = re.match(r"^/api/pedidos/([^/]+)/(catalogo|decisoes|xml|baixar|andamento|continuar)(?:/(.+))?$", p)
             if m:
                 nome, acao, extra = m.groups()
