@@ -17,7 +17,7 @@
 
   var BANDS = [["alta", "Alta"], ["media", "Média"], ["baixa", "Baixa"], ["nenhum", "Sem versão"]];
   var RANK = { nenhum: 0, baixa: 1, media: 2, alta: 3 };
-  var S = { pedidos: [], nome: null, order: {}, cards: [], byId: {}, dec: {}, view: LS.get("view", "car"), idx: 0, mode: LS.get("mode", "alertas"), bands: {}, q: "", pv: null, T: {}, onlyTrust: LS.get("onlytrust", "0") === "1", shown: 0, t0: 0, flip: 0, undo: [], skipped: {}, showAllUpl: false, busy: false };
+  var S = { pedidos: [], nome: null, order: {}, cards: [], byId: {}, dec: {}, view: LS.get("view", "car"), idx: 0, mode: LS.get("mode", "alertas"), bands: {}, q: "", pv: null, T: {}, onlyTrust: LS.get("onlytrust", "0") === "1", shown: 0, live: false, liveT: null, job: null, t0: 0, flip: 0, undo: [], skipped: {}, showAllUpl: false, busy: false };
   var F = [];
 
   /* ---------- derivados ---------- */
@@ -56,6 +56,7 @@
       if (S.mode === "pendentes") return stOf(c.id) === "pendente";
       return true;
     });
+    if (S.live) { list.sort(function (a, b) { return a.entry - b.entry || a.face - b.face; }); return list; }  // processando: ordem fixa, para a tela não pular
     list.sort(function (a, b) { return RANK[a.prop.conf] - RANK[b.prop.conf] || (a.prop.idx || 0) - (b.prop.idx || 0) || a.entry - b.entry || a.face - b.face; });
     return list;
   }
@@ -94,19 +95,53 @@
   function renderTabs() {
     $("#tabs").innerHTML = S.pedidos.map(function (p) {
       return '<button class="tab" role="tab" data-p="' + esc(p.nome) + '" aria-selected="' + (S.nome === p.nome) + '"><b>' + esc(p.nome) + "</b>" +
-        (p.pronto ? "<small>" + (S.nome === p.nome && S.cards.length ? S.cards.filter(function (c) { return stOf(c.id) !== "pendente"; }).length + "/" + S.cards.length : (p.decididas || 0) + "/" + (p.cartas || "?")) + "</small>" : "<small>processando…</small>") + "</button>";
+        (p.processando ? "<small>processando " + p.unidades + "/" + p.linhas + "</small>" : p.pronto || p.unidades ? "<small>" + (S.nome === p.nome && S.cards.length ? S.cards.filter(function (c) { return stOf(c.id) !== "pendente"; }).length + "/" + S.cards.length : (p.decididas || 0) + "/" + (p.cartas || p.linhas || "?")) + "</small>" : "<small>sem cartas</small>") + "</button>";
     }).join("") + '<button class="tab add" data-p="__novo">+ Novo pedido</button>';
   }
   function openPedido(nome) {
-    S.nome = nome; LS.set("pedido", nome); renderTabs();
+    stopLive(); S.nome = nome; LS.set("pedido", nome); renderTabs();
     $("#main").innerHTML = '<div class="loading"><div class="spin"></div>Carregando ' + esc(nome) + "…</div>";
     return Promise.all([api("GET", "/api/pedidos/" + encodeURIComponent(nome) + "/catalogo"), api("GET", "/api/pedidos/" + encodeURIComponent(nome) + "/decisoes")]).then(function (r) {
       S.order = r[0].order || {}; S.cards = r[0].cards; S.byId = {}; S.cards.forEach(function (c) { S.byId[c.id] = c; });
-      S.dec = r[1]; S.undo = []; S.skipped = {}; S.idx = 0; S.pv = null;
+      S.dec = r[1]; S.undo = []; S.skipped = {}; S.idx = 0; S.pv = null; S.live = !!r[0].vivo; S.job = r[0].job;
       if (!hasIdx() && S.mode === "alertas") S.mode = "todas";
       $("#filters").hidden = false; $("#ov").hidden = false;
-      renderAll();
-    }).catch(function (e) { $("#main").innerHTML = '<div class="empty">Esse pedido ainda não está pronto (' + esc(e.message) + ").</div>"; $("#ov").hidden = true; $("#filters").hidden = true; });
+      renderAll(); renderLive(); if (S.live) liveTick();
+    }).catch(function (e) {
+      $("#main").innerHTML = '<div class="empty">Esse pedido ainda não tem cartas prontas (' + esc(e.message) + ').<br><br><button class="btn pri" id="bCont">Continuar o processamento</button></div>';
+      $("#ov").hidden = true; $("#filters").hidden = true;
+    });
+  }
+
+  /* ---------- andamento: mostra as cartas prontas enquanto o resto processa ---------- */
+  function stopLive() { clearTimeout(S.liveT); S.live = false; S.job = null; var l = $("#live"); if (l) l.hidden = true; }
+  function renderLive() {
+    var l = $("#live"), j = S.job, p = S.pedidos.filter(function (x) { return x.nome === S.nome; })[0] || {};
+    if (!S.nome) { l.hidden = true; return; }
+    if (S.live && j) {
+      var fases = { resolvendo: "Conferindo as cartas no Scryfall", candidatos: "Buscando e comparando candidatos", catalogo: "Finalizando" };
+      l.hidden = false;
+      l.innerHTML = "<span>" + (fases[j.fase] || "Processando") + " — <b>" + (j.feito || 0) + "</b> de <b>" + (j.total || p.linhas || "?") + "</b> cartas. Você já pode conferir as que estão prontas.</span>" +
+        '<div class="prog" style="flex:1;min-width:160px"><i style="width:' + (j.total ? 100 * j.feito / j.total : 0) + '%"></i></div>';
+    } else if (!S.live && p.linhas && p.unidades < p.linhas && !p.pronto) {
+      l.hidden = false; l.innerHTML = "<span>Processamento interrompido: <b>" + p.unidades + "</b> de <b>" + p.linhas + "</b> cartas prontas.</span>" + '<button class="btn pri" id="bCont">Continuar</button>';
+    } else l.hidden = true;
+  }
+  function liveTick() {
+    clearTimeout(S.liveT);
+    S.liveT = setTimeout(function () {
+      var nome = S.nome; if (!nome) return;
+      api("GET", "/api/pedidos/" + encodeURIComponent(nome) + "/catalogo").then(function (r) {
+        if (S.nome !== nome) return;
+        var id = F[S.idx] && F[S.idx].id, scroll = ($(".gridwrap") || {}).scrollTop || 0;
+        S.cards = r.cards; S.byId = {}; S.cards.forEach(function (c) { S.byId[c.id] = c; }); S.order = r.order || {}; S.job = r.job; S.live = !!r.vivo;
+        F = filtered(); var k = F.findIndex(function (c) { return c.id === id; }); S.idx = k >= 0 ? k : Math.min(S.idx, Math.max(0, F.length - 1));
+        renderOverview(); renderFilters(); renderLive();
+        if (S.view === "car") { if ($("#reel")) { layoutReel(); renderInfo(); } else mountCarousel(); }
+        else if (S.view === "grid") { mountGrid(); var gw = $(".gridwrap"); if (gw) gw.scrollTop = scroll; } else renderTri();
+        if (S.live) liveTick(); else { loadTabs().then(function () { renderAll(true); renderLive(); }); toast("Pedido pronto"); }
+      }).catch(function () { liveTick(); });
+    }, 5000);
   }
 
   /* ---------- resumo do pedido ---------- */
@@ -418,7 +453,7 @@
       $("#nFase").textContent = (fases[j.fase] || j.estado) + (j.total ? " — " + j.feito + " de " + j.total : "");
       var base = j.fase === "resolvendo" ? 0 : j.fase === "candidatos" ? 15 : 97, span = j.fase === "resolvendo" ? 15 : j.fase === "candidatos" ? 82 : 3;
       $("#nBar").style.width = (base + (j.total ? span * j.feito / j.total : 0)) + "%";
-      if (j.estado === "pronto") { $("#nGo").disabled = false; closeModals(); loadTabs().then(function () { openPedido(nome); }); return; }
+      if (j.estado === "pronto" || (j.fase === "candidatos" && j.feito >= 1)) { $("#nGo").disabled = false; closeModals(); loadTabs().then(function () { openPedido(nome); }); return; }
       if (j.estado === "erro") { $("#nErro").textContent = "Erro: " + j.erro; $("#nGo").disabled = false; return; }
       setTimeout(function () { pollNovo(nome); }, 2000);
     }).catch(function () { setTimeout(function () { pollNovo(nome); }, 3000); });
@@ -446,6 +481,7 @@
     if (t.id === "mkimg") { var pasta = $("#pasta").value.trim(); LS.set("pasta", pasta); api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/baixar", { pasta: pasta || null }).then(function () { pollImg(); }).catch(function (er) { $("#imgMsg").textContent = "Erro: " + er.message; }); return; }
     if (t.id === "mkmsg") return clientMsg();
     if (t.id === "nGo") return startNovo();
+    if (t.id === "bCont") { api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/continuar", {}).then(function () { return loadTabs(); }).then(function () { openPedido(S.nome); }); return; }
     if (t.id === "uplall") { S.showAllUpl = !S.showAllUpl; renderUpl(); return; }
     var u = t.closest("[data-u]"); if (u) { S.T[u.dataset.u] = !S.T[u.dataset.u]; saveTrust(); return; }
     if (t.id === "upladd") { var n = $("#uplnew").value.trim(); if (n) { S.T[n] = true; $("#uplnew").value = ""; saveTrust(); } return; }
@@ -486,7 +522,7 @@
   /* ---------- início ---------- */
   api("GET", "/api/estado").then(function (j) { ((j.uploaders || {}).trusted || []).forEach(function (n) { S.T[n] = true; }); $("#cntU").textContent = trustList().length; }).catch(function () {});
   loadTabs().then(function (p) {
-    var pronto = p.filter(function (x) { return x.pronto; }), last = LS.get("pedido", ""), pick = pronto.filter(function (x) { return x.nome === last; })[0] || pronto[pronto.length - 1];
+    var pronto = p.filter(function (x) { return x.pronto || x.unidades; }), last = LS.get("pedido", ""), pick = pronto.filter(function (x) { return x.nome === last; })[0] || pronto[pronto.length - 1];
     if (pick) openPedido(pick.nome); else $("#main").innerHTML = '<div class="empty">Nenhum pedido ainda.<br><br><button class="btn pri" id="firstNew">Criar o primeiro pedido</button></div>';
     var fn = $("#firstNew"); if (fn) fn.addEventListener("click", function () { openModal("mNovo"); });
   }).catch(function (e) { $("#main").innerHTML = '<div class="empty">Não consegui falar com o servidor local (' + esc(e.message) + ").</div>"; });

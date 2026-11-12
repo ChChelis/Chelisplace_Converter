@@ -4,7 +4,7 @@ Uso (venv com rapidocr): venv/bin/python scripts/make_order.py lista.txt order/<
 Retomável: cada carta resolvida fica em order/<nome>/units/<id>.json.
 Nada é decidido calado: o bot só PRÉ-SELECIONA; a conferência e o XML saem do artefato.
 """
-import concurrent.futures as cf, io, json, os, re, shutil, sys, time, urllib.error, urllib.request
+import concurrent.futures as cf, io, json, os, re, shutil, sys, threading, time, urllib.error, urllib.request
 import numpy as np
 from PIL import Image
 
@@ -32,6 +32,9 @@ LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT",
 BRACKETS = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612]
 
 
+NET = threading.BoundedSemaphore(int(os.environ.get("CHELIS_CONEXOES", 20)))  # downloads de imagem simultâneos (todas as cartas juntas)
+
+
 def http(url, data=None):
     h = dict(UA)
     if data is not None:
@@ -54,8 +57,10 @@ def fetch_img(url, path):
             os.remove(path)
     for a in range(3):
         try:
-            raw = http(url); Image.open(io.BytesIO(raw)).load()
-            open(path, "wb").write(raw); return True
+            with NET:
+                raw = http(url)
+            Image.open(io.BytesIO(raw)).load()
+            open(path + ".part", "wb").write(raw); os.replace(path + ".part", path); return True
         except Exception:
             time.sleep(1 + a)
     return False
@@ -181,7 +186,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         return {"id": uid, "name": name, "refp": refp, "cands": [{"n": 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "t": c.get("cardType"), "q": c.get("searchq"), "sc": None, "why": "escolhida por você antes", "mem": True}],
                 "prop": {"accept": [1], "near": [], "conf": "alta", "note": "Escolhida por você em pedido anterior (sem alternativas carregadas)."}}
     sp = lambda c: os.path.join(CACHE, f"mpcs_{c['identifier']}.jpg")
-    with cf.ThreadPoolExecutor(4) as ex:
+    with cf.ThreadPoolExecutor(16) as ex:
         ok = list(ex.map(lambda c: fetch_img(c["smallThumbnailUrl"], sp(c)), cands))
     cands = [c for c, o in zip(cands, ok) if o]
     xs = np.array([C.features(ref, set(), C.load(sp(c)), set())[0:8] for c in cands]) if cands else np.zeros((0, 8))
@@ -194,9 +199,11 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
     def rank(n):
         top = [cands[i] for i in order[:n]]
         top += [c for c in cands if c["identifier"] in mem_ids and c not in top]  # as já escolhidas por você sempre concorrem
-        for c in top:
+        def prepara(c):
             mp = os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")
             fetch_img(c["mediumThumbnailUrl"], mp); C.ocr_footer(mp, c["identifier"])
+        with cf.ThreadPoolExecutor(8) as ex:
+            list(ex.map(prepara, top))
         out = []
         for c in top:
             f = C.features(ref, rtok, C.load(os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")), C.tokens(C.footer_text(c["identifier"])))
@@ -221,11 +228,13 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
             "pair_src": prefer_src, "prop": {"accept": accept, "near": [n for n in (2, 3, 4)], "conf": conf, "note": note}}
 
 
-def main(lista, out):
+def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unidades; a tela monta o catálogo leve na hora
     os.makedirs(os.path.join(out, "units"), exist_ok=True)
     logf = open(os.path.join(out, "log.txt"), "a", encoding="utf-8")
+    trava = threading.Lock()
     def log(m):
-        print(m, flush=True); logf.write(m + "\n"); logf.flush()
+        with trava:
+            print(m, flush=True); logf.write(m + "\n"); logf.flush()
     lines = [l for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l)]
     entries = []
     for k, l in enumerate(lines):
@@ -236,16 +245,14 @@ def main(lista, out):
     if not os.path.exists(mt):
         open(mt, "w").write(C.data_key())
     refs = json.load(open(os.environ["REFS"], encoding="utf-8")) if os.environ.get("REFS") else {}
-    units = []
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
-    for i, e in enumerate(entries):
-        PROGRESS("candidatos", i, len(entries))
+
+    def entrada(i, e):
+        ups = []
         if not e["card"] and e["name"] in refs:  # nome que o Scryfall não resolve, mas tenho a imagem da LigaMagic
             e = {**e, "card": {"name": e["name"], "set": "liga", "collector_number": "", "layout": "normal"}, "images": [refs[e["name"]]], "fixes": e["fixes"] + ["sem Scryfall: só a imagem da LigaMagic"]}
-        if shard and i % int(shard.split("/")[1]) != int(shard.split("/")[0]):
-            continue
         if not e["card"]:
-            log(f"{i:03d} NÃO RESOLVIDA: {e['name']} {e['fixes']}"); continue
+            log(f"{i:03d} NÃO RESOLVIDA: {e['name']} {e['fixes']}"); return []
         names = e["card"]["name"].split(" // ") if len(e["images"]) > 1 else e["name"].split(" // ")  # a lista da Liga traz só o nome da frente
         last_front = None
         tokenish = e["card"]["layout"] in ("token", "double_faced_token", "emblem")
@@ -265,11 +272,24 @@ def main(lista, out):
                 log(f"{uid}  ({e['qty']}x)")
                 u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None, e["card"]["name"].split(" // ")[0] if fi == 0 and e["card"]["name"].split(" // ")[0] != e["name"].split(" // ")[0] else None)
                 u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"], "ref_url": url if str(url).startswith("http") else None})
-                json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
+                json.dump(u, open(up + ".tmp", "w", encoding="utf-8"), ensure_ascii=False); os.replace(up + ".tmp", up)  # atômico: o app lê as prontas enquanto o resto processa
             if fi == 0:
                 uj = json.load(open(up, encoding="utf-8")); last_front = {"uid": uid, "src": uj["cands"][0]["source"] if uj["cands"] else None}
-            units.append(up)
-    if not shard:
+            ups.append(up)
+        return ups
+
+    idxs = [i for i in range(len(entries)) if not (shard and i % int(shard.split("/")[1]) != int(shard.split("/")[0]))]
+    res, feitas = {}, 0
+    with cf.ThreadPoolExecutor(int(os.environ.get("CHELIS_TRABALHADORES", min(4, os.cpu_count() or 2)))) as ex:
+        futs = {ex.submit(entrada, i, entries[i]): i for i in idxs}
+        for f in cf.as_completed(futs):
+            i = futs[f]
+            try: res[i] = f.result()
+            except Exception as err:  # uma carta com problema não derruba o pedido todo
+                log(f"ERRO na carta {i:03d} ({entries[i]['name']}): {type(err).__name__}: {err}"); res[i] = []
+            feitas += 1; PROGRESS("candidatos", feitas, len(idxs))
+    units = [u for i in sorted(res) for u in res[i]]
+    if not shard and catalogo:
         PROGRESS("catalogo", len(entries), len(entries)); build_catalog(units, out)
 
 
@@ -293,7 +313,8 @@ def fill_meta(unit_files):
         if ch: json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
 
 
-def build_catalog(unit_files, out):
+def build_catalog(unit_files, out, leve=False):
+    """leve=True (aplicativo): devolve (cartas sem imagens embutidas, resumo do pedido) em vez de gravar os arquivos do catálogo."""
     fill_meta(unit_files)
     mt = os.path.join(out, "model.txt")  # modelo com que o pedido foi processado; só pedidos com o modelo atual usam o índice
     cal = CAL.load() if os.path.exists(mt) and open(mt).read().strip() == C.data_key() else None
@@ -323,6 +344,11 @@ def build_catalog(unit_files, out):
             tie = sorted([c for c in u["cands"] if c["sc"] >= best - .25], key=lambda c: (-c["dpi"], -c["sc"]))
             u["cands"] = tie + [c for c in u["cands"] if c["sc"] < best - .25]
             for i, c in enumerate(u["cands"]): c["n"] = i + 1
+        if leve:
+            cards.append({"id": u["id"], "name": u["name"], "set": u["set"], "cn": u["cn"], "qty": u["qty"], "entry": u["entry"], "face": u["face"],
+                          "prop": u["prop"], "cands": u["cands"], "fixes": u.get("fixes", [])})
+            if u["face"] == 0: total_qty += u["qty"]
+            continue
         refp = u.get("refp") or os.path.join(CACHE, f"sf_{u['id']}.jpg")
         ref = Image.open(refp)
         cands = []
@@ -336,6 +362,8 @@ def build_catalog(unit_files, out):
             chunks.append(cur); cur, size = [], 0
         cur.append(card); size += s
         if u["face"] == 0: total_qty += u["qty"]
+    if leve:
+        return cards, {"quantity": total_qty, "bracket": next((b for b in BRACKETS if b >= total_qty), BRACKETS[-1]), "trusted": sorted(trusted())}
     if cur: chunks.append(cur)
     names = []
     for i, ch in enumerate(chunks):
