@@ -57,9 +57,9 @@ input[type=search]{width:200px;max-width:100%}
 .confirm{position:relative;z-index:4;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin-bottom:10px;border:1px solid var(--accent);border-radius:12px;background:rgba(58,44,14,.85)}
 main{position:relative;z-index:2;flex:1;min-height:0;display:flex}
 /* carrossel */
-.carousel{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(16px,4vw,64px);align-items:center;min-height:0;padding-bottom:12px}
+.carousel{--ch:min(calc(100vh - 330px),600px,calc((100vw - 32px - 560px)/2/.716));flex:1;display:grid;grid-template-columns:auto auto minmax(340px,1fr);gap:clamp(12px,2.4vw,40px);align-items:center;min-height:0;padding-bottom:12px}
 .reelwrap{height:100%;display:flex;justify-content:center;align-items:center;min-height:0}
-.reel{--ch:min(calc(100vh - 330px),600px);position:relative;height:calc(var(--ch)*1.14);width:calc(var(--ch)*.716);perspective:1400px;overflow:hidden;touch-action:pan-x;margin:auto}
+.reel{position:relative;height:calc(var(--ch)*1.14);width:calc(var(--ch)*.716);perspective:1400px;overflow:hidden;touch-action:pan-x;margin:auto}
 .rc{position:absolute;left:0;top:0;width:100%;height:var(--ch);transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .45s;will-change:transform;cursor:pointer}
 .rc.cur{z-index:2}
 .tilt{width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.8,.2,1);position:relative}
@@ -174,11 +174,27 @@ body.only-trust .cd.hasno{display:none}
 @media(max-width:900px){
   body{overflow:auto}
   #app{height:auto;min-height:100%}
-  .carousel{grid-template-columns:1fr;align-items:start}
-  .reel{--ch:min(calc(100vw - 80px),460px)}
+  .carousel{grid-template-columns:1fr;align-items:start;--ch:min(calc(100vw - 80px),460px)}
+  .refcol{margin:0 auto}
   .reelwrap{height:auto}
   .info{overflow:visible}
   .keys{display:none}
   main{min-height:70vh}
 }
 @media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* referência ao lado do candidato: é o que o cliente pediu e o que você compara */
+.refcol{width:calc(var(--ch)*.716);align-self:start;padding-top:calc((var(--ch)*1.14 - var(--ch))/2 + 4px)}
+.refcard{margin:0;display:grid;gap:6px}
+.refcard img{width:100%;display:block;border-radius:4.7% / 3.4%;box-shadow:0 30px 60px -20px #000c,0 0 0 1px #0008;background:#111;aspect-ratio:.716;object-fit:cover}
+.refcard figcaption,.foots span{font:500 11px var(--f-mono);color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.foots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 12px;max-width:640px}
+.foot.big{height:84px;background-size:150% auto;background-position:0% 100%}
+.mot{margin:0 0 10px;max-width:62ch}
+.mot summary{cursor:pointer;color:var(--mute);font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
+.mot .note{margin:6px 0 0}
+.cands{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));max-width:none}
+.cd.view{outline:2px solid var(--info);outline-offset:1px}
+@media(max-width:900px){.refcol{padding-top:0}}
+
+.carousel .info{align-self:start}
