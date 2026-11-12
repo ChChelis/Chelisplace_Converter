@@ -2,3 +2,6 @@
   82 candidatos
 001_uma_236_ancient-tomb  (1x)
   234 candidatos
+002_soa_67_angel-s-grace  (1x)
+  50 candidatos
+003_hoc_95_arcane-signet  (1x)
