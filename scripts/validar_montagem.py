@@ -64,6 +64,7 @@ def paginas(pdf_ps, pdf_nuc, saida, dpi=50):
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")  # nomes de carta com acento no console do Windows
     if len(sys.argv) != 5 or sys.argv[1] not in ("imagens", "paginas"):
         sys.exit(__doc__)
     {"imagens": imagens, "paginas": paginas}[sys.argv[1]](sys.argv[2], sys.argv[3], Path(sys.argv[4]))

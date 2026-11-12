@@ -57,8 +57,10 @@ const acoes = {
     limpar("/w/in");
     return true;
   },
-  async montar_pdfs({ cliente }) {
-    py.globals.set("a", ["/w/png", "/w/png_pares", "/w/pdf", cliente]);
+  async montar_pdfs({ cliente, xml }) {
+    let caminhoXml = null;
+    if (xml) { gravar("/w/xml", [["pedido.xml", new Uint8Array(xml)]]); caminhoXml = "/w/xml/pedido.xml"; }
+    py.globals.set("a", ["/w/png", "/w/png_pares", "/w/pdf", cliente, caminhoXml]);
     const caminhos = JSON.parse(py.runPython("web.montar(*a)"));
     return caminhos.map((c) => [c.split("/").pop(), py.FS.readFile(c)]);
   },

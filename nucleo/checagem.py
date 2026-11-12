@@ -141,3 +141,16 @@ def xml_dos_faltantes(pedido, resultado, caminho):
     novo.detalhes["quantity"] = str(sum(len(c.slots) for c in novo.frentes))
     xml_mpc.escrever(novo, caminho)
     return novo
+
+
+def ordem_pares(pedido, nomes):
+    """Arquivos dos pares na ordem do XML (slot): cada frente seguida do seu verso."""
+    por_id = {}
+    for n in nomes:
+        i = id_do_arquivo(n)
+        if i:
+            por_id.setdefault(i, n)
+    saida = []
+    for f, v in sorted(pares(pedido), key=lambda par: min(c.slots[0] for c in pedido.frentes if c.id == par[0])):
+        saida += [por_id[i] for i in (f, v) if i in por_id]
+    return saida

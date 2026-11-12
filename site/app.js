@@ -177,7 +177,8 @@ $("#m-rodar").addEventListener("click", async () => {
       }
     }
     status.textContent = "Montando páginas…";
-    const pdfs = await chamar("montar_pdfs", { cliente });
+    const xmlArq = $("#m-xml").files[0];
+    const pdfs = await chamar("montar_pdfs", { cliente, xml: xmlArq ? await xmlArq.arrayBuffer() : null });
     prog.style.width = "100%";
     status.textContent = `${pdfs.length} PDF(s) prontos.`;
     for (const [nome, bytes] of pdfs) saida.append(baixar(new Blob([bytes], { type: "application/pdf" }), nome));

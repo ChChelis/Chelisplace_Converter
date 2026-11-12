@@ -38,7 +38,7 @@ def ler(caminho):
     if re.search(rb"<!(DOCTYPE|ENTITY)", dados, re.I):
         raise ValueError("XML com DOCTYPE/ENTITY recusado")
     raiz = ET.fromstring(dados)
-    det = {c.tag: (c.text or "").strip() for c in (raiz.find("details") or [])}
+    det = {c.tag: (c.text or "").strip() for c in (raiz.find("details") if raiz.find("details") is not None else [])}
     return Pedido(_cartas(raiz.find("fronts")), _cartas(raiz.find("backs")),
                   (raiz.findtext("cardback") or "").strip(), det)
 
