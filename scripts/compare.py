@@ -144,6 +144,12 @@ def _motor():
         if criar: _feitos += 1
     if criar:
         from rapidocr_onnxruntime import RapidOCR
+        import rapidocr_onnxruntime.utils as U
+        if not getattr(U, "_um_fio", False):  # cada motor usa 1 núcleo: vários motores em paralelo ocupam a máquina sem brigar por threads
+            _so = U.SessionOptions
+            def _um_fio_so():
+                o = _so(); o.intra_op_num_threads = 1; o.inter_op_num_threads = 1; return o
+            U.SessionOptions = _um_fio_so; U._um_fio = True
         return RapidOCR()
     return _motores.get()
 
@@ -158,7 +164,7 @@ def ocr_footer(path, key):
     arr = np.asarray(c.resize((c.size[0] * 2, c.size[1] * 2)))
     m = _motor()
     try:
-        r, _ = m(arr)
+        r, _ = m(arr, use_cls=False)  # rodapé é texto horizontal: pular o classificador de ângulo economiza ~1/4 do tempo
     finally:
         _motores.put(m)
     tmp = ocr_path(key) + ".tmp%d" % __import__("threading").get_ident()
