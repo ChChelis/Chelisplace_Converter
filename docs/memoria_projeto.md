@@ -85,3 +85,5 @@ Artefatos (privados): teste FvFRD76JuvjoWidjpVneT7, pedido1 L8T4SrtifPeGaUGykYLM
 
 ## Processo completo e núcleo sem Photoshop (nov/2026)
 O fluxo inteiro (entrada → XML → Helium/MPCFill → `/checagem` → `/clientrundown` → `/montagem` no Photoshop → gráfica) está em `docs/referencia_processo.md`. O núcleo Python equivalente está em `nucleo/` (`docs/nucleo.md`), validado contra o Photoshop (`docs/validacao_montagem.md`), e a página que o roda no navegador está em `site/` (`docs/site.md`; domínio chelisplace.com no Squarespace Domains; hospedagem prevista: Cloudflare Pages, grátis). Pasta de pedidos: `G:\Meu Drive\Novo Processo Proxies`. Decisões do Chelis: PDF em qualidade 100; cartas 816×1110 idênticas (teste na gráfica depois). Falta: publicar, login Google/Drive, intermediário do MPCFill (sem CORS), conferência dentro do site, ajustador de imagem (ACERTADORSCRYFALL), pasta `completar/`, Archidekt, tutorial novo. Existe também `app/` (aplicativo local do bot, outra sessão).
+
+Próxima etapa: juntar o bot e o pós-pedido numa página só. Ponto de partida em `docs/handoff_pagina_final.md`.
