@@ -21,6 +21,7 @@
       <button id="vGrid" aria-pressed="false">Grade</button>
       <button id="vTri" aria-pressed="false">Triagem</button>
     </div>
+    <button class="btn" id="bPed">Pedidos</button>
     <button class="btn" id="bUpl">Uploaders<span class="cnt" id="cntU">0</span></button>
     <button class="btn" id="bXml">XML e imagens</button>
     <button class="btn" id="bUso">Usos</button>
@@ -52,6 +53,14 @@
     <div class="box" id="nProg" hidden><div class="info-t" id="nFase"></div><div class="prog"><i id="nBar" style="width:0%"></i></div></div>
     <div id="nErro" class="info-t" style="color:var(--danger)"></div>
     <div><button class="btn pri" id="nGo">Processar pedido</button></div>
+  </div>
+</section>
+
+<section class="modal" id="mPed" role="dialog" aria-label="Pedidos">
+  <header><h2>Pedidos</h2><button class="btn" data-close>Fechar</button></header>
+  <div class="body">
+    <p class="info-t" style="margin:0">Excluir apaga a lista, as cartas processadas e as suas decisões do pedido. As imagens baixadas continuam no cache e servem a outros pedidos.</p>
+    <div id="pedList" style="display:grid;gap:8px"></div>
   </div>
 </section>
 
