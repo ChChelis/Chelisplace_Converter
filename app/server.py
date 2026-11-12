@@ -84,35 +84,58 @@ def evento(tipo, **dados):
 
 
 # ---------- pedidos ----------
+def fontes():
+    if "n" not in FONTES:
+        try: FONTES["n"] = sorted({x["name"] for x in M.sources().values()}, key=str.lower)
+        except Exception:  # noqa: BLE001
+            return []  # sem internet agora: tenta de novo na próxima
+    return FONTES["n"]
+
+
+FONTES = {}
+
+
+def unidades(d):
+    ud = os.path.join(d, "units")
+    return sorted(os.path.join(ud, f) for f in os.listdir(ud) if f.endswith(".json")) if os.path.isdir(ud) else []
+
+
 def listar_pedidos():
     out = []
     for n in sorted(os.listdir(ORDER)):
         d = os.path.join(ORDER, n)
         if not os.path.isdir(d) or not os.path.exists(os.path.join(d, "lista.txt")):
             continue
-        cat = lj(os.path.join(d, "catalog.json"), {})
         dec = lj(os.path.join(d, "decisions.json"), {})
-        out.append({"nome": n, "pronto": bool(cat.get("chunks")), "cartas": (cat.get("order") or {}).get("quantity"),
-                    "decididas": sum(1 for v in dec.values() if v.get("status") != "pendente"), "job": JOBS.get("criar:" + n)})
+        job = JOBS.get("criar:" + n)
+        linhas = sum(1 for l in open(os.path.join(d, "lista.txt"), encoding="utf-8") if l.strip())
+        completo = os.path.exists(os.path.join(d, "pronto.txt")) or os.path.exists(os.path.join(d, "catalog.json"))
+        out.append({"nome": n, "pronto": completo, "processando": bool(job and job["estado"] in ("fila", "rodando")), "unidades": len(unidades(d)), "linhas": linhas,
+                    "cartas": (lj(os.path.join(d, "catalog.json"), {}).get("order") or {}).get("quantity"),
+                    "decididas": sum(1 for v in dec.values() if v.get("status") != "pendente"), "job": job})
     return out
 
 
 def catalogo_leve(nome):
-    """Catálogo sem as imagens embutidas: a interface busca as imagens em /img/ (cache local, resolução maior)."""
+    """Catálogo sem imagens embutidas, montado na hora a partir das unidades já prontas (a tela mostra as primeiras enquanto o resto processa)."""
     d = pedido_dir(nome)
-    cat = lj(os.path.join(d, "catalog.json"))
-    if not cat:
+    ups = unidades(d)
+    if not ups:
         return None
-    cards = []
-    for ch in cat["chunks"]:
-        for c in lj(os.path.join(d, ch))["cards"]:
-            c["ref"] = "/img/sf/" + c["id"]
-            c.pop("refFoot", None)
-            for k in c["cands"]:
-                k["img"] = "/img/mpc/" + k["id"]
-                k.pop("foot", None)
-            cards.append(c)
-    return {"order": cat["order"], "cards": cards}
+    cards, info = M.build_catalog(ups, d, leve=True)
+    for c in cards:
+        c["ref"] = "/img/sf/" + c["id"]
+        for k in c["cands"]:
+            k["img"] = "/img/mpc/" + k["id"]
+    info["sources"] = fontes()
+    job = JOBS.get("criar:" + nome)
+    return {"order": info, "cards": cards, "vivo": bool(job and job["estado"] in ("fila", "rodando")), "job": job}
+
+
+def iniciar(nome, d):
+    job = {"estado": "fila", "fase": "", "feito": 0, "total": 0, "erro": None, "inicio": agora()}
+    JOBS["criar:" + nome] = job
+    threading.Thread(target=rodar_pipeline, args=(nome, d, job), daemon=True).start()
 
 
 def criar_pedido(nome, texto):
@@ -124,9 +147,7 @@ def criar_pedido(nome, texto):
         raise ValueError("não encontrei nenhuma linha de carta (ex.: 1 Sol Ring (C21) 263)")
     os.makedirs(os.path.join(d, "units"), exist_ok=True)
     open(os.path.join(d, "lista.txt"), "w", encoding="utf-8").write("\n".join(linhas) + "\n")
-    job = {"estado": "fila", "fase": "", "feito": 0, "total": len(linhas), "erro": None, "inicio": agora()}
-    JOBS["criar:" + nome] = job
-    threading.Thread(target=rodar_pipeline, args=(nome, d, job), daemon=True).start()
+    iniciar(nome, d)
     evento("pedido_criado", pedido=nome, linhas=len(linhas))
 
 
@@ -139,8 +160,8 @@ def rodar_pipeline(nome, d, job):
         if C.MODELO is None and modelo_atual():
             C.MODELO = modelo_atual()
         try:
-            M.main(os.path.join(d, "lista.txt"), d)
-            job["estado"] = "pronto"
+            M.main(os.path.join(d, "lista.txt"), d, catalogo=False)
+            open(os.path.join(d, "pronto.txt"), "w").write(agora()); job["estado"] = "pronto"
         except Exception as e:  # noqa: BLE001
             job.update(estado="erro", erro=f"{type(e).__name__}: {e}")
             open(os.path.join(d, "erro.txt"), "w").write(traceback.format_exc())
@@ -293,12 +314,16 @@ class H(BaseHTTPRequestHandler):
                     return self.enviar(200, listar_pedidos())
                 b = self.corpo(); criar_pedido(b.get("nome", ""), b.get("lista", ""))
                 return self.enviar(200, {"ok": True})
-            m = re.match(r"^/api/pedidos/([^/]+)/(catalogo|decisoes|xml|baixar|andamento)(?:/(.+))?$", p)
+            m = re.match(r"^/api/pedidos/([^/]+)/(catalogo|decisoes|xml|baixar|andamento|continuar)(?:/(.+))?$", p)
             if m:
                 nome, acao, extra = m.groups()
                 if acao == "catalogo":
                     c = catalogo_leve(nome)
                     return self.enviar(200 if c else 404, c or {"erro": "pedido ainda não está pronto"})
+                if acao == "continuar" and metodo == "POST":
+                    if (JOBS.get("criar:" + nome) or {}).get("estado") in ("fila", "rodando"):
+                        return self.enviar(200, {"ok": True})
+                    iniciar(nome, pedido_dir(nome)); return self.enviar(200, {"ok": True})
                 if acao == "andamento":
                     return self.enviar(200, JOBS.get("criar:" + nome) or {"estado": "sem andamento"})
                 if acao == "decisoes":

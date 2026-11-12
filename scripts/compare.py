@@ -129,22 +129,41 @@ def pairs():
             yield k, {**og[k], "accept": []}, u["cands"], os.path.join(CACHE, f"sf_{k}.jpg")
 
 
-_ocr = None
+_motores = __import__("queue").Queue(); _feitos = 0; _trava = __import__("threading").Lock()
+N_OCR = int(os.environ.get("CHELIS_OCR", min(4, os.cpu_count() or 2)))  # motores de OCR simultâneos (cada um ocupa memória)
+
+
+def _motor():
+    global _feitos
+    try:
+        return _motores.get_nowait()
+    except __import__("queue").Empty:
+        pass
+    with _trava:
+        criar = _feitos < N_OCR
+        if criar: _feitos += 1
+    if criar:
+        from rapidocr_onnxruntime import RapidOCR
+        return RapidOCR()
+    return _motores.get()
 
 
 def ocr_footer(path, key):
-    """Lê o rodapé da imagem e guarda em cache/ocr_<key>.txt (não repete)."""
-    global _ocr
+    """Lê o rodapé da imagem e guarda em cache/ocr_<key>.txt (não repete). Pode ser chamada de várias threads."""
     if os.path.exists(ocr_path(key)):
         return
-    if _ocr is None:
-        from rapidocr_onnxruntime import RapidOCR
-        _ocr = RapidOCR()
     im = load(path)
     w, h = im.size
     c = im.crop((0, int(h * .90), int(w * .6), h))
-    r, _ = _ocr(np.asarray(c.resize((c.size[0] * 2, c.size[1] * 2))))
-    open(ocr_path(key), "w", encoding="utf-8").write(" | ".join(t[1] for t in (r or [])))
+    arr = np.asarray(c.resize((c.size[0] * 2, c.size[1] * 2)))
+    m = _motor()
+    try:
+        r, _ = m(arr)
+    finally:
+        _motores.put(m)
+    tmp = ocr_path(key) + ".tmp%d" % __import__("threading").get_ident()
+    open(tmp, "w", encoding="utf-8").write(" | ".join(t[1] for t in (r or [])))
+    os.replace(tmp, ocr_path(key))
 
 
 def cmd_ocr():
