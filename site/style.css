@@ -1,0 +1,31 @@
+:root{--fundo:#f6f5f1;--cartao:#fff;--texto:#1d1d1b;--suave:#6b6a64;--linha:#e1dfd7;--acento:#2b5fd9;--ok:#1f7a3d;--alerta:#b3261e;--aviso:#9a6700}
+@media (prefers-color-scheme:dark){:root{--fundo:#161614;--cartao:#1f1f1c;--texto:#ecebe5;--suave:#a09f97;--linha:#34332e;--acento:#7ea2ff;--ok:#5fcf86;--alerta:#ff8a80;--aviso:#e0b04a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--texto);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header,main{max-width:860px;margin:0 auto;padding:0 16px}
+header{padding-top:20px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+h1{font-size:1.2rem;margin:0}
+#estado{color:var(--suave);font-size:.9rem}
+nav{display:flex;gap:4px;margin:16px 0;border-bottom:1px solid var(--linha)}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:inherit;color:var(--suave);cursor:pointer}
+nav button[aria-selected=true]{color:var(--texto);border-color:var(--acento)}
+section{background:var(--cartao);border:1px solid var(--linha);border-radius:10px;padding:20px;margin-bottom:24px}
+section[hidden]{display:none}
+h2{font-size:1.05rem;margin:0 0 12px}
+label{display:block;font-size:.9rem;color:var(--suave);margin:12px 0 4px}
+input,select,button.acao{font:inherit;padding:8px 10px;border:1px solid var(--linha);border-radius:6px;background:var(--fundo);color:var(--texto)}
+button.acao{background:var(--acento);color:#fff;border-color:var(--acento);cursor:pointer;margin:12px 8px 0 0}
+button.acao.sec{background:none;color:var(--texto);border-color:var(--linha)}
+button.acao:disabled{opacity:.5;cursor:not-allowed}
+.linha{display:flex;gap:12px;flex-wrap:wrap}
+table{border-collapse:collapse;width:100%;margin-top:12px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--linha);font-size:.95rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.ok{color:var(--ok)}.alerta{color:var(--alerta)}.aviso{color:var(--aviso)}.suave{color:var(--suave);font-size:.9rem}
+ul{margin:4px 0 12px;padding-left:20px}
+.conf{border:1px solid var(--linha);border-radius:8px;padding:12px;margin-top:12px}
+.barra{height:8px;background:var(--linha);border-radius:4px;overflow:hidden;margin-top:12px}
+.barra>div{height:100%;background:var(--acento);width:0}
+a.baixar{display:inline-block;margin:6px 12px 0 0}
+a{color:var(--acento)}
+h3{font-size:.95rem;margin:16px 0 0}
