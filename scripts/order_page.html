@@ -130,6 +130,14 @@ button:hover { border-color: var(--muted); } button.primary:hover { filter: brig
 .cand.sug { box-shadow: 0 0 0 1px var(--accent) inset; }
 header.top { background: rgba(8,9,12,.92); backdrop-filter: blur(8px); }
 @media (prefers-reduced-motion: no-preference) { .cand { transition: transform .2s; } .cand:hover { transform: translateY(-3px); } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { border-radius: 99px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
+.chip small { font-family: var(--mono); opacity: .7; margin-left: 4px; }
+.chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+label.inl { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+.cand.trusted { box-shadow: 0 0 0 1px var(--accent) inset; }
+.cand.trusted .meta::before { content: "★ "; color: var(--accent); }
+body.only-trust .pair.has-trust .cand:not(.trusted) { display: none; }
 </style>
 
 <div class="wrap">
@@ -154,6 +162,13 @@ header.top { background: rgba(8,9,12,.92); backdrop-filter: blur(8px); }
       <div class="actions"><button class="primary" id="mkxml">Gerar XML</button><button id="mkmsg">Mensagem para o cliente (alertas)</button></div>
       <textarea id="cmsg" readonly rows="8" hidden aria-label="Mensagem para o cliente"></textarea>
       <div id="xmlmsg" aria-live="polite"></div>
+    </details>
+    <details class="xml" id="upl"><summary>Uploaders de confiança <span class="sec-count" id="uplcount"></span></summary>
+      <p class="note">Toque para marcar ou desmarcar. Os marcados ganham ★ nos candidatos, um pequeno bônus na nota do bot (nos próximos pedidos) e podem ser os únicos exibidos.</p>
+      <div class="actions"><input type="text" id="uplq" placeholder="Buscar uploader" aria-label="Buscar uploader"><button id="uplall"></button>
+        <label class="inl"><input type="checkbox" id="onlytrust"> Mostrar só candidatos de confiança (quando houver)</label></div>
+      <div class="chips" id="uplchips"></div>
+      <div class="actions"><input type="text" id="uplnew" placeholder="Uploader que não está na lista" aria-label="Nome do uploader"><button id="upladd">Adicionar</button></div>
     </details>
     <div class="banner" id="banner" hidden></div>
     <div class="banner" id="onote" hidden></div>
@@ -219,7 +234,7 @@ header.top { background: rgba(8,9,12,.92); backdrop-filter: blur(8px); }
   }
   function candHtml(c, k) {
     var sug = (c.prop.accept || []).indexOf(k.n) >= 0, near = (c.prop.near || []).indexOf(k.n) >= 0;
-    return '<div class="cand' + (sug ? " sug" : near ? " near" : "") + '" tabindex="0" role="button" data-n="' + k.n + '" aria-label="Candidato ' + k.n + ', ' + esc(k.source) + '">' +
+    return '<div class="cand' + (sug ? " sug" : near ? " near" : "") + (T[k.source] ? " trusted" : "") + '" data-src="' + esc(k.source) + '" tabindex="0" role="button" data-n="' + k.n + '" aria-label="Candidato ' + k.n + ', ' + esc(k.source) + '">' +
       '<img loading="lazy" src="' + k.img + '" alt="">' + '<span class="n">' + k.n + '</span>' +
       '<span class="tag' + (sug ? "" : " near") + '" data-tag hidden></span>' +
       '<button class="zoom" data-zoom="' + k.n + '" aria-label="Ver aqui o candidato ' + k.n + '">Ver aqui</button>' +
@@ -501,6 +516,47 @@ header.top { background: rgba(8,9,12,.92); backdrop-filter: blur(8px); }
   $("#mkmsg").addEventListener("click", clientMsg);
   ["#incl", "#minidx"].forEach(function (s) { $(s).addEventListener("change", xmlPreview); });
 
+  /* ---------- uploaders de confiança ---------- */
+  var T = {}, cfgRef = null, showAllUpl = false;  // T: nome do uploader -> true se de confiança
+  function trustList() { return Object.keys(T).filter(function (k) { return T[k]; }).sort(); }
+  function saveTrust() {
+    if (!cfgRef) return;
+    cfgRef.set({ trusted: trustList(), at: new Date().toISOString() }).catch(function (e) { banner("Não consegui salvar os uploaders (" + ((e && e.code) || "erro") + ")."); });
+  }
+  function renderUpl() {
+    var counts = {}, names = {}, q = ($("#uplq").value || "").toLowerCase();
+    cards.forEach(function (c) { var seen = {}; c.cands.forEach(function (k) { if (!seen[k.source]) { seen[k.source] = 1; counts[k.source] = (counts[k.source] || 0) + 1; } }); });
+    (order.sources || []).concat(Object.keys(counts), trustList()).forEach(function (n) { names[n] = 1; });
+    var list = Object.keys(names).filter(function (n) { return (showAllUpl || counts[n] || T[n]) && (!q || n.toLowerCase().indexOf(q) >= 0); });
+    list.sort(function (a, b) { return (T[b] ? 1 : 0) - (T[a] ? 1 : 0) || (counts[b] || 0) - (counts[a] || 0) || a.toLowerCase().localeCompare(b.toLowerCase()); });
+    $("#uplchips").innerHTML = list.map(function (n) {
+      return '<button class="chip' + (T[n] ? " on" : "") + '" data-u="' + esc(n) + '" aria-pressed="' + !!T[n] + '">' + (T[n] ? "★ " : "") + esc(n) + (counts[n] ? " <small>" + counts[n] + "</small>" : "") + "</button>";
+    }).join("") || '<span class="empty">Nenhum uploader encontrado.</span>';
+    $("#uplcount").textContent = trustList().length ? "(" + trustList().length + " marcados)" : "";
+    $("#uplall").textContent = showAllUpl ? "Só os deste pedido" : "Mostrar todos (" + Object.keys(names).length + ")";
+  }
+  function applyTrust() {
+    cards.forEach(function (c) {
+      var el = document.getElementById("p-" + c.id); if (!el) return;
+      el.classList.toggle("has-trust", c.cands.some(function (k) { return T[k.source]; }));
+      el.querySelectorAll(".cand").forEach(function (x) { x.classList.toggle("trusted", !!T[x.dataset.src]); });
+    });
+    document.body.classList.toggle("only-trust", $("#onlytrust").checked);
+    renderUpl();
+  }
+  $("#uplq").addEventListener("input", renderUpl);
+  $("#uplall").addEventListener("click", function () { showAllUpl = !showAllUpl; renderUpl(); });
+  $("#onlytrust").addEventListener("change", function () { LS.set("onlytrust", this.checked ? "1" : "0"); applyTrust(); });
+  $("#uplchips").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-u]"); if (!b) return;
+    T[b.dataset.u] = !T[b.dataset.u];
+    saveTrust(); applyTrust();
+  });
+  $("#upladd").addEventListener("click", function () {
+    var n = $("#uplnew").value.trim(); if (!n) return;
+    T[n] = true; $("#uplnew").value = ""; saveTrust(); applyTrust();
+  });
+
   /* ---------- início ---------- */
   fetch("catalog.json").then(function (r) { return r.json(); }).then(function (idx) {
     order = idx.order || {};
@@ -509,12 +565,19 @@ header.top { background: rgba(8,9,12,.92); backdrop-filter: blur(8px); }
     cards = [].concat.apply([], parts.map(function (p) { return p.cards; })); cards.forEach(function (c) { byId[c.id] = c; });
     view = hasIdx() ? LS.get("view", "alertas") : "todas";
     if (order.note && !hasIdx()) { var on = $("#onote"); on.textContent = order.note; on.hidden = false; }  // com índice, o painel de resumo já explica
-    build(); stats();
+    (order.trusted || []).forEach(function (n) { T[n] = true; });
+    $("#onlytrust").checked = LS.get("onlytrust", "0") === "1";
+    build(); stats(); applyTrust();
   }).catch(function () { $("#main").innerHTML = '<p class="empty">Não consegui carregar o catálogo de pares.</p>'; });
 
   (window.claude && claude.use ? claude.use("db") : Promise.resolve(null)).then(function (db) {
     if (!db) { banner("Armazenamento indisponível: as escolhas valem só até recarregar a página."); return; }
     ref = db.collection("pares"); saveOk = true;
+    cfgRef = db.collection("config").doc("uploaders");
+    cfgRef.onSnapshot(function (snap) {
+      if (snap.exists) { T = {}; ((snap.data() || {}).trusted || []).forEach(function (n) { T[n] = true; }); }
+      applyTrust();
+    }, function () {});
     ref.onSnapshot(function (snap) {
       var next = {};
       snap.docs.forEach(function (d) { next[d.id] = d.data(); });

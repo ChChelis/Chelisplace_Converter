@@ -25,6 +25,7 @@ HI, MID, LO = 2.6, 2.0, 1.0   # limiares de nota; recalibrar quando retreinar (t
 CHEAP = [0, 1, 2, 3, 7]       # inteira, arte, moldura, borda, símbolo: sinais sem OCR
 IDX_ALTA, IDX_MEDIA, IDX_BAIXA = 85, 70, 50  # faixas do índice de confiança (%)
 LIGA_SHIFT = 1.4  # imagens da LigaMagic pontuam ~1,4 abaixo das do Scryfall (menores, às vezes em português); faixas NÃO calibradas com decisões do usuário
+TRUST_BONUS = 0.5  # uploader de confiança (config/uploaders.json, escolhido por botões na página) ganha esta nota extra; valor inicial, ainda sem validação com dados
 PAIR_BONUS = 1.0  # verso da mesma fonte que a frente escolhida ganha esta nota extra (frente e verso devem combinar)
 BASICS = {"Island", "Plains", "Swamp", "Mountain", "Forest", "Wastes"}
 LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT", "PH", "TW", "CN"}
@@ -117,6 +118,15 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:30]
 
 
+TRUST = set()
+
+
+def trusted():
+    """Uploaders de confiança escolhidos pelo usuário na página (config/uploaders.json)."""
+    try: return set(json.load(open(os.path.join(ROOT, "config", "uploaders.json"), encoding="utf-8")).get("trusted", []))
+    except (OSError, ValueError): return set()
+
+
 def memory():
     """Escolhas já confirmadas pelo usuário: (set, número, face) -> ids aceitos, em ordem de preferência."""
     mem = {}
@@ -186,7 +196,7 @@ def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_i
         out = []
         for c in top:
             f = C.features(ref, rtok, C.load(os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")), C.tokens(C.footer_text(c["identifier"])))
-            out.append((float(C.score(full, np.array([f]))[0]) + (PAIR_BONUS if prefer_src and c["sourceName"] == prefer_src else 0.0), c, f))
+            out.append((float(C.score(full, np.array([f]))[0]) + (PAIR_BONUS if prefer_src and c["sourceName"] == prefer_src else 0.0) + (TRUST_BONUS if c["sourceName"] in TRUST else 0.0), c, f))
         return sorted(out, key=lambda r: -r[0])
 
     rows = rank(TOP)
@@ -214,6 +224,7 @@ def main(lista, out):
         print(m, flush=True); logf.write(m + "\n"); logf.flush()
     entries = [r for r in (D.resolve(D.parse_line(l)) for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l))]
     src = sources(); cheap, full = models(); mem = memory()
+    global TRUST; TRUST = trusted()
     mt = os.path.join(out, "model.txt")
     if not os.path.exists(mt):
         open(mt, "w").write(C.data_key())
@@ -325,7 +336,7 @@ def build_catalog(unit_files, out):
     bracket = next((b for b in BRACKETS if b >= total_qty), BRACKETS[-1])
     liga_any = any(json.load(open(up, encoding="utf-8")).get("set") == "LIGA" for up in unit_files)
     onote = ("O índice de cada carta é a chance estimada de você aceitar a escolha do bot, calculada com as suas decisões anteriores (referências " + ("da Liga" if liga_any else "do Scryfall") + "). Audite só o que quiser; o painel do XML aceita um índice mínimo para entrar sem auditoria.") if cal else ("A referência de cada carta é a imagem da LigaMagic. As faixas de confiança ainda não foram calibradas para essas imagens: confira todas." if liga_any else "")
-    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
+    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote, "sources": sorted({s["name"] for s in sources().values()}, key=str.lower), "trusted": sorted(trusted())}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
     print("catálogo:", len(unit_files), "unidades,", len(names), "arquivos; quantidade", total_qty, "bracket", bracket)
 
 

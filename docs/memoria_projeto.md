@@ -75,3 +75,7 @@ Artefatos (privados): teste FvFRD76JuvjoWidjpVneT7, pedido1 L8T4SrtifPeGaUGykYLM
 - O bot não escreve na pasta do PC do usuário (C:\\...): só com uma pasta do computador conectada à sessão (`list_computer_folders`); caso contrário, o Helium baixa pelo XML.
 
 - Foundations Commander foi conferido pelo usuário antes do aceite em lote: exportado com `--conferido`, entrou no treino (641 pares; comparador 559/641 = 87%; curva scry sobe a 95-97% nas notas altas, liga igual). Pedido fácil (quase só CompC), então o índice alto vale para casos parecidos, não para qualquer pedido.
+
+- Uploaders de confiança: painel na página (botões por uploader, busca, 'mostrar todos' = lista das fontes do MPCFill gravada em `catalog.json` > `order.sources`, adicionar nome manual). Estado no banco do artefato: coleção `config`, doc `uploaders` = {trusted:[...]}. Para o bot usar: copiar esse doc para `config/uploaders.json`; `make_order` dá `TRUST_BONUS` (0.5, ainda não validado com dados) de nota extra aos candidatos desses uploaders e grava `order.trusted` no catálogo. Atenção: o bônus entra na nota mostrada e no índice de confiança.
+- Hashaton (Guilherme): 90/100 sugestões do bot aceitas sem troca (alta 65/67, média 12/12, baixa 5/8, sem versão próxima 8/13); o usuário conferiu todas e aceitou em lote (`--conferido`).
+- Pedidos futuros: o usuário quer um aplicativo com o bot (exportar usos depois de compilado para atualizar o bot aqui e recompilar). Pendente: lembrar o usuário de pedir isso depois que o painel de uploaders for aprovado.
