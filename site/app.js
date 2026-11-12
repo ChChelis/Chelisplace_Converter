@@ -286,6 +286,7 @@ async function prepararMontagem() {
   // decisão sobre extras vale para este conjunto de arquivos; se mudar, pergunta de novo
   const chave = extras.map((x) => x.nome).join("|");
   if (chave !== MONT.chaveExtras) { MONT.chaveExtras = chave; MONT.incluirExtras = extras.length ? null : false; }
+  if (!extras.length) MONT.incluirExtras = false;  // nada a perguntar
   const extrasUsados = MONT.incluirExtras ? extras : [];
   const nExtras = extrasUsados.length + MONT.adicionadas.length;
   const total = raizXml.length + p.pares.length + nExtras;
@@ -312,6 +313,12 @@ async function prepararMontagem() {
     h += MONT.permitirBranco ? `<span class="suave">Vai montar com ${falta} slot(s) em branco.</span> <button class="peq" id="m-branco-nao">Desfazer</button>` : `<button class="acao sec" id="m-branco">Montar com ${falta} slot(s) em branco</button>`;
     h += `</div>`;
   } else if (total) h += `<p class="ok">As páginas fecham em múltiplos de 18.</p>`;
+  // por que o botão está travado (sempre dizer)
+  const motivos = [];
+  if (!total) motivos.push("não há nenhuma imagem para montar");
+  if (MONT.incluirExtras === null) motivos.push("responda sobre as imagens fora do XML");
+  if (falta && !MONT.permitirBranco) motivos.push(`complete os ${falta} slot(s) que faltam ou escolha montar com slots em branco`);
+  if (motivos.length) h += `<p class="aviso">Montar PDFs está travado: ${motivos.join("; ")}.</p>`;
   plano.innerHTML = h;
   const liga = (id, fn) => { const el = $("#" + id); if (el) el.onclick = async () => { fn(); await prepararMontagem(); }; };
   liga("m-extras-sim", () => (MONT.incluirExtras = true));
