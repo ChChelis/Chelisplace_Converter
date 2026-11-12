@@ -4,7 +4,7 @@ Uso (venv com rapidocr): venv/bin/python scripts/make_order.py lista.txt order/<
 Retomável: cada carta resolvida fica em order/<nome>/units/<id>.json.
 Nada é decidido calado: o bot só PRÉ-SELECIONA; a conferência e o XML saem do artefato.
 """
-import concurrent.futures as cf, io, json, os, re, shutil, sys, threading, time, urllib.error, urllib.request
+import base64, concurrent.futures as cf, http.client, io, json, os, re, shutil, ssl, sys, threading, time, urllib.error, urllib.parse, urllib.request
 import numpy as np
 from PIL import Image
 
@@ -17,7 +17,7 @@ from build_review_artifact import uri, foot
 ROOT = C.ROOT
 CACHE = C.CACHE
 MPC = "https://mpcfill.com"
-UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)"}
+UA = {"User-Agent": "chelisplace-bot/0.1"}
 TOP = 12            # finalistas por carta (recebem OCR e aparecem na página)
 TOP2 = 30           # finalistas das cartas de nota baixa (segunda passada)
 CAP = 800           # máximo de candidatos lidos por busca (Sol Ring tem 719)
@@ -32,7 +32,47 @@ LANGS = {"PT", "FR", "ES", "DE", "IT", "JA", "JP", "KO", "RU", "ZH", "CS", "CT",
 BRACKETS = [18, 36, 55, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 396, 504, 612]
 
 
-NET = threading.BoundedSemaphore(int(os.environ.get("CHELIS_CONEXOES", 20)))  # downloads de imagem simultâneos (todas as cartas juntas)
+NET = threading.BoundedSemaphore(int(os.environ.get("CHELIS_CONEXOES", 32)))  # downloads de imagem simultâneos (todas as cartas juntas)
+
+
+_tl = threading.local()
+_ctx = ssl.create_default_context()
+
+
+def _conn(host):
+    """Uma conexão HTTPS por thread e por servidor, reaproveitada entre as imagens (abrir uma nova a cada miniatura era o que mais custava)."""
+    d = getattr(_tl, "d", None)
+    if d is None:
+        d = _tl.d = {}
+    c = d.get(host)
+    if c is None:
+        px = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+        if px:
+            u = urllib.parse.urlparse(px)
+            c = http.client.HTTPSConnection(u.hostname, u.port, context=_ctx, timeout=60)
+            auth = {"Proxy-Authorization": "Basic " + base64.b64encode(f"{urllib.parse.unquote(u.username or '')}:{urllib.parse.unquote(u.password or '')}".encode()).decode()} if u.username else None
+            c.set_tunnel(host, 443, headers=auth)
+        else:
+            c = http.client.HTTPSConnection(host, context=_ctx, timeout=60)
+        d[host] = c
+    return c
+
+
+def get_img(url, hops=0):
+    """GET de imagem com conexão reaproveitada e redirecionamentos (o Drive redireciona cada miniatura); qualquer falha cai no http() com tentativas."""
+    try:
+        u = urllib.parse.urlparse(url); c = _conn(u.netloc)
+        try:
+            c.request("GET", u.path + ("?" + u.query if u.query else ""), headers={"User-Agent": UA["User-Agent"]}); r = c.getresponse(); raw = r.read()
+        except Exception:
+            _tl.d.pop(u.netloc, None); raise
+        if r.status in (301, 302, 303, 307, 308) and hops < 4:
+            return get_img(r.getheader("Location"), hops + 1)
+        if r.status == 200 and len(raw) > 500:
+            return raw
+    except Exception:  # noqa: BLE001
+        pass
+    return http(url)
 
 
 def http(url, data=None):
@@ -58,7 +98,7 @@ def fetch_img(url, path):
     for a in range(3):
         try:
             with NET:
-                raw = http(url)
+                raw = get_img(url)
             Image.open(io.BytesIO(raw)).load()
             open(path + ".part", "wb").write(raw); os.replace(path + ".part", path); return True
         except Exception:

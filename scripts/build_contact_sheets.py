@@ -8,7 +8,7 @@ from io import BytesIO
 from PIL import Image, ImageDraw
 import numpy as np
 
-UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)", "Accept": "*/*"}
+UA = {"User-Agent": "chelisplace-bot/0.1", "Accept": "*/*"}
 MPC = "https://mpcfill.com"
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 CACHE = os.path.join(ROOT, "cache")

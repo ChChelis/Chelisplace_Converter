@@ -104,7 +104,7 @@
     return Promise.all([api("GET", "/api/pedidos/" + encodeURIComponent(nome) + "/catalogo"), api("GET", "/api/pedidos/" + encodeURIComponent(nome) + "/decisoes")]).then(function (r) {
       S.order = r[0].order || {}; S.cards = r[0].cards; S.byId = {}; S.cards.forEach(function (c) { S.byId[c.id] = c; });
       S.dec = r[1]; S.undo = []; S.skipped = {}; S.idx = 0; S.pv = null; S.live = !!r[0].vivo; S.job = r[0].job;
-      if (!hasIdx() && S.mode === "alertas") S.mode = "todas";
+      if ((!hasIdx() || S.live) && S.mode === "alertas") S.mode = "todas";  // processando: ainda não dá para filtrar alertas
       $("#filters").hidden = false; $("#ov").hidden = false;
       renderAll(); renderLive(); if (S.live) liveTick();
     }).catch(function (e) {

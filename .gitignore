@@ -1,3 +1,5 @@
 cache/
 order/*/catalog*.json
 site/nucleo/
+__pycache__/
+*.pyc

@@ -7,7 +7,7 @@ Uso: python3 -I scripts/deck_parse.py testset/deck_exemplo.txt
 """
 import json, re, sys, time, urllib.error, urllib.parse, urllib.request
 
-UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)", "Accept": "application/json"}
+UA = {"User-Agent": "chelisplace-bot/0.1", "Accept": "application/json"}
 LINE = re.compile(r"^(\d+)x?\s+(.+?)(?:\s+\((\w+)\)\s+(\S+?))?(?:\s+\*[A-Za-z]\*)?\s*$")
 
 
