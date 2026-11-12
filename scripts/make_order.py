@@ -350,7 +350,7 @@ def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unid
                 log(f"ERRO na carta {i:03d} ({entries[i]['name']}): {type(err).__name__}: {err}"); res[i] = []
             feitas += 1; PROGRESS("candidatos", feitas, len(idxs))
     if adiadas:  # o Scryfall pode ter ficado fora do ar por um momento: espera, tenta de novo e, se ainda falhar, deixa para conferir à mão
-        log(f"{len(adiadas)} cartas sem referência; aguardando 60 s para tentar de novo"); time.sleep(60)
+        log(f"{len(adiadas)} cartas sem referência; aguardando 60 s para tentar de novo"); PROGRESS("tentando de novo", feitas, len(idxs)); time.sleep(60)
         for sem_ref in (False, True):
             ainda = []
             with cf.ThreadPoolExecutor(W) as ex:

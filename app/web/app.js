@@ -119,7 +119,7 @@
     var l = $("#live"), j = S.job, p = S.pedidos.filter(function (x) { return x.nome === S.nome; })[0] || {};
     if (!S.nome) { l.hidden = true; return; }
     if (S.live && j) {
-      var fases = { resolvendo: "Conferindo as cartas no Scryfall", candidatos: "Buscando e comparando candidatos", catalogo: "Finalizando" };
+      var fases = { resolvendo: "Conferindo as cartas no Scryfall", candidatos: "Buscando e comparando candidatos", "tentando de novo": "Scryfall não respondeu para algumas cartas: tentando de novo", catalogo: "Finalizando" };
       l.hidden = false;
       l.innerHTML = "<span>" + (fases[j.fase] || "Processando") + " — <b>" + (j.feito || 0) + "</b> de <b>" + (j.total || p.linhas || "?") + "</b> cartas. Você já pode conferir as que estão prontas.</span>" +
         '<div class="prog" style="flex:1;min-width:160px"><i style="width:' + (j.total ? 100 * j.feito / j.total : 0) + '%"></i></div>';
