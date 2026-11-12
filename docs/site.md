@@ -35,3 +35,12 @@ Ordem: **cartas do XML → (slots em branco) → pares → extras**. Extras são
 - **Página incompleta:** se o total não é múltiplo de 18, a página diz quanto falta ("a última página tem 3 de 18 slots: faltam 15") e oferece: adicionar imagens do computador (entram depois dos pares) ou "Montar com N slot(s) em branco" (os brancos ficam antes dos pares).
 - Pares ignorados na Checagem não entram na montagem e a página avisa.
 - Mudou a lista de extras (pasta alterada): ela pergunta de novo.
+
+## Página única (nov/2026): fluxo do pedido do começo ao fim
+Visual no estilo da Vitrine de Sets (escuro, acento âmbar). Seis passos em abas: **1 Entrada → 2 Orçamento → 3 Conferência → 4 Imagens (checagem) → 5 Cliente e ficha → 6 Montagem**.
+- **Entrada** (`site/pedido.js`): lista colada (`1 Nome (SET) num` ou `2x Nome`), XML do MPCFill, ou `decklist.txt` (modelo “deco”; as imagens entram no passo 4). Dá para somar fontes. O resumo (frentes, versos, slots, páginas) fica no topo.
+- **Orçamento**: quantidades vêm da entrada (editáveis). Kits predefinidos e preços **editáveis** (kits de N slots por R$, avulso, colagem, impressão); ficam em `localStorage` (“precos”), com botão para voltar aos de fábrica. Pode digitar o valor combinado com o cliente. Custo/colagem/lucro marcados “só para você”. Cálculo em `nucleo/orcamento.py` (`calcular(..., precos)`: usa o maior kit que cabe, depois o próximo; resto no avulso).
+- **Conferência**: procura o **motor local do bot** em `http://127.0.0.1:8781` (`app/server.py`, agora com porta padrão 8781 e CORS só para `localhost:8780`, `pedidos.chelisplace.com` e `*.pages.dev`). Com o bot aberto: link para a conferência e botão “Usar o XML de <pedido>”, que entra como fonte. Sem o bot, segue com XML pronto.
+- **Cliente e ficha**: nome, telefone, alterações (título + cartas, com link/ID do Drive do que o cliente pediu e do que foi usado → miniaturas), conclusão. A ficha segue `docs/referencia_processo.md` §5 (`nucleo/ficha.py`) e é **copiada** para o Obsidian; as miniaturas são links `![|110](https://drive.google.com/thumbnail?id=…)`. “Copiar mensagem ao cliente” leva texto + miniaturas.
+- **Pix**: chave, nome e cidade ficam só no navegador (nunca no código). Gera o copia-e-cola (BR Code, `nucleo/pix.py`) e um **PDF com QR** (matriz do QR vem de `site/qrcode.min.js`, qrcode-generator 1.4.4, MIT).
+Pendente nesta etapa: testar o motor local com o Windows real; miniaturas escolhidas direto dos candidatos do bot (hoje por link/ID do Drive); Archidekt.

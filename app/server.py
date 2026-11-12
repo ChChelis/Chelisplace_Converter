@@ -287,8 +287,24 @@ TIPOS = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=u
          ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2"}
 
 
+# Páginas que podem falar com este motor local (a página única do site). Mais nada.
+ORIGENS = {"http://localhost:8780", "http://127.0.0.1:8780", "https://pedidos.chelisplace.com"}
+PORTA_PADRAO = 8781
+
+
 class H(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+
+    def cors(self):
+        o = self.headers.get("Origin")
+        if o in ORIGENS or (o or "").endswith(".pages.dev") and o.startswith("https://"):
+            self.send_header("Access-Control-Allow-Origin", o); self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
+
+    def do_OPTIONS(self):
+        self.send_response(204); self.cors(); self.send_header("Content-Length", "0"); self.end_headers()
 
     def log_message(self, *a):
         pass
@@ -298,6 +314,7 @@ class H(BaseHTTPRequestHandler):
             corpo = json.dumps(corpo, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header("Content-Type", tipo); self.send_header("Content-Length", str(len(corpo))); self.send_header("Cache-Control", "no-store")
+        self.cors()
         for k, v in (extra or {}).items():
             self.send_header(k, v)
         self.end_headers(); self.wfile.write(corpo)
@@ -404,8 +421,11 @@ def selftest():
 def main():
     if "--selftest" in sys.argv:
         return selftest()
-    porta = int(sys.argv[sys.argv.index("--porta") + 1]) if "--porta" in sys.argv else 0
-    srv = ThreadingHTTPServer(("127.0.0.1", porta), H)
+    porta = int(sys.argv[sys.argv.index("--porta") + 1]) if "--porta" in sys.argv else PORTA_PADRAO
+    try:
+        srv = ThreadingHTTPServer(("127.0.0.1", porta), H)
+    except OSError:  # porta ocupada: qualquer outra (a página só acha a padrão)
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
     print("Bot Chelisplace", VERSAO, "-", url, "- dados em", HOME, flush=True)
     if "--sem-navegador" not in sys.argv:

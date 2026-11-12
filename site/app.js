@@ -32,6 +32,7 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
   document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", x === b));
   document.querySelectorAll("main > section").forEach((s) => (s.hidden = s.id !== b.dataset.aba));
   if (b.dataset.aba === "montagem") prepararMontagem();
+  if (window.aoAbrirAba) window.aoAbrirAba(b.dataset.aba);
 }));
 
 // ---------- pasta ----------
@@ -150,19 +151,6 @@ function confirmar(onde, texto, fazer) {
   c.append(sim, nao);
   onde.append(c);
 }
-
-// ---------- orçamento ----------
-const ORC = ["#o-frentes", "#o-versos", "#o-modo"];
-async function orcar() {
-  await pronto;
-  const r = await chamar("orcar", { frentes: +$("#o-frentes").value || 0, versos: +$("#o-versos").value || 0, modo: $("#o-modo").value });
-  $("#o-tabela").innerHTML = [
-    ["Slots (frentes + versos)", r.slots], ["Páginas A3", r.paginas], ["Kits fechados", r.kits], ["Slots avulsos", r.resto],
-    ["Valor do pedido", reais(r.pago)], ["Custo de impressão", reais(r.impressao)], ["Custo de colagem", reais(r.colagem)], ["Lucro", reais(r.lucro)],
-  ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
-}
-ORC.forEach((s) => $(s).addEventListener("input", orcar));
-orcar();
 
 // ---------- pedido em uso (compartilhado entre Checagem e Montagem) ----------
 const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set() };

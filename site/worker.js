@@ -31,9 +31,24 @@ function gravar(dir, arquivos) {
 }
 
 const acoes = {
-  async orcar({ frentes, versos, modo }) {
-    py.globals.set("a", [frentes, versos, modo]);
+  async orcar({ frentes, versos, modo, precos }) {
+    py.globals.set("a", [frentes, versos, modo, py.toPy(precos || {})]);
     return JSON.parse(py.runPython("web.orcar(*a)"));
+  },
+  async orcamento_padrao() { return JSON.parse(py.runPython("web.orcamento_padrao()")); },
+  async ficha(args) {
+    py.globals.set("a", py.toPy(args));
+    return JSON.parse(py.runPython("web.gerar_ficha(**a)"));
+  },
+  async pix_codigo(args) {
+    py.globals.set("a", py.toPy(args));
+    return py.runPython("web.pix_payload(**a)");
+  },
+  async pix_pdf({ matriz, codigo, cliente, valor }) {
+    gravar("/w/pix", []);
+    py.globals.set("a", [py.toPy(matriz), codigo, cliente, valor, "/w/pix/pix.pdf"]);
+    py.runPython("web.pix_pdf(*a)");
+    return py.FS.readFile("/w/pix/pix.pdf");
   },
   async checar({ xml, nomes, ignorar }) {
     gravar("/w/pasta", nomes.map((n) => [n, new Uint8Array(0)]));
