@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chelisplace Pedidos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%232b5fd9%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1>Chelisplace · pedidos</h1><span id="estado">Carregando o motor…</span></header>
+<main>
+<nav role="tablist">
+  <button role="tab" data-aba="orcamento" aria-selected="true">Orçamento</button>
+  <button role="tab" data-aba="checagem" aria-selected="false">Checagem</button>
+  <button role="tab" data-aba="montagem" aria-selected="false">Montagem</button>
+</nav>
+
+<section id="orcamento">
+  <h2>Orçamento</h2>
+  <div class="linha">
+    <div><label for="o-frentes">Frentes</label><input id="o-frentes" type="number" min="0" value="100"></div>
+    <div><label for="o-versos">Versos distintos</label><input id="o-versos" type="number" min="0" value="0"></div>
+    <div><label for="o-modo">Modo</label><select id="o-modo"><option value="normal">Normal</option><option value="foil">Foil</option></select></div>
+  </div>
+  <table id="o-tabela"></table>
+  <p class="suave">Cada verso distinto conta mais um slot. Custo e lucro são só para você: não envie esta tabela ao cliente.</p>
+</section>
+
+<section id="checagem" hidden>
+  <h2>Checagem do pedido</h2>
+  <p class="suave">Compara a pasta de imagens com o XML do MPC pelo ID do Drive. Nada é apagado.</p>
+  <label for="c-xml">XML do pedido</label>
+  <input id="c-xml" type="file" accept=".xml">
+  <button class="acao sec" id="c-pasta">Escolher pasta de imagens</button>
+  <span id="c-pasta-nome" class="suave"></span><br>
+  <button class="acao" id="c-rodar" disabled>Conferir</button>
+  <div id="c-resultado"></div>
+</section>
+
+<section id="montagem" hidden>
+  <h2>Montagem das páginas</h2>
+  <p class="suave">Imagens soltas na pasta formam o pedido; a subpasta <b>pares</b> vai para os últimos slots. Cada página é um PDF A3 com 18 cartas.</p>
+  <label for="m-cliente">Nome do cliente (aparece na lateral da página)</label>
+  <input id="m-cliente" type="text" placeholder="Cliente">
+  <br>
+  <button class="acao sec" id="m-pasta">Escolher pasta de imagens</button>
+  <span id="m-pasta-nome" class="suave"></span><br>
+  <div id="m-plano" class="suave"></div>
+  <button class="acao" id="m-rodar" disabled>Montar PDFs</button>
+  <div class="barra" id="m-barra" hidden><div></div></div>
+  <div id="m-status" class="suave"></div>
+  <div id="m-saida"></div>
+</section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
