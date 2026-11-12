@@ -14,8 +14,8 @@ import compare as C
 import deck_parse as D
 from build_review_artifact import uri, foot
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-CACHE = os.path.join(ROOT, "cache")
+ROOT = C.ROOT
+CACHE = C.CACHE
 MPC = "https://mpcfill.com"
 UA = {"User-Agent": "chelisplace-bot/0.1 (chris.c.chelis@gmail.com)"}
 TOP = 12            # finalistas por carta (recebem OCR e aparecem na página)
@@ -79,6 +79,9 @@ def search(name, ctype, src):
 
 def models():
     """Treina (ou lê do cache) os dois modelos; o cache vale enquanto gabaritos e compare.py não mudam."""
+    if C.MODELO:  # aplicativo: pesos prontos em modelo.json
+        d = json.load(open(C.MODELO, encoding="utf-8"))["modelos"]
+        return tuple((np.array(m[0]), np.array(m[1]), np.array(m[2]), float(m[3])) for m in d)
     import glob, hashlib
     h = hashlib.md5()
     for fp in sorted(glob.glob(os.path.join(ROOT, "order", "*", "gabarito.json")) + [os.path.join(ROOT, "testset", "gabarito.json"), os.path.join(ROOT, "scripts", "compare.py")]):
@@ -119,6 +122,7 @@ def slug(s):
 
 
 TRUST = set()
+PROGRESS = lambda fase, feito, total: None  # o aplicativo troca por uma função que mostra o andamento
 
 
 def trusted():
@@ -222,7 +226,10 @@ def main(lista, out):
     logf = open(os.path.join(out, "log.txt"), "a", encoding="utf-8")
     def log(m):
         print(m, flush=True); logf.write(m + "\n"); logf.flush()
-    entries = [r for r in (D.resolve(D.parse_line(l)) for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l))]
+    lines = [l for l in open(lista, encoding="utf-8") if l.strip() and D.parse_line(l)]
+    entries = []
+    for k, l in enumerate(lines):
+        PROGRESS("resolvendo", k, len(lines)); entries.append(D.resolve(D.parse_line(l)))
     src = sources(); cheap, full = models(); mem = memory()
     global TRUST; TRUST = trusted()
     mt = os.path.join(out, "model.txt")
@@ -232,6 +239,7 @@ def main(lista, out):
     units = []
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
     for i, e in enumerate(entries):
+        PROGRESS("candidatos", i, len(entries))
         if not e["card"] and e["name"] in refs:  # nome que o Scryfall não resolve, mas tenho a imagem da LigaMagic
             e = {**e, "card": {"name": e["name"], "set": "liga", "collector_number": "", "layout": "normal"}, "images": [refs[e["name"]]], "fixes": e["fixes"] + ["sem Scryfall: só a imagem da LigaMagic"]}
         if shard and i % int(shard.split("/")[1]) != int(shard.split("/")[0]):
@@ -256,13 +264,13 @@ def main(lista, out):
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
                 u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None, e["card"]["name"].split(" // ")[0] if fi == 0 and e["card"]["name"].split(" // ")[0] != e["name"].split(" // ")[0] else None)
-                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"]})
+                u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"], "ref_url": url if str(url).startswith("http") else None})
                 json.dump(u, open(up, "w", encoding="utf-8"), ensure_ascii=False)
             if fi == 0:
                 uj = json.load(open(up, encoding="utf-8")); last_front = {"uid": uid, "src": uj["cands"][0]["source"] if uj["cands"] else None}
             units.append(up)
     if not shard:
-        build_catalog(units, out)
+        PROGRESS("catalogo", len(entries), len(entries)); build_catalog(units, out)
 
 
 def fill_meta(unit_files):

@@ -57,6 +57,8 @@ def compute():
 
 
 def load():
+    if C.MODELO:  # aplicativo: calibração dentro do modelo.json
+        return json.load(open(C.MODELO, encoding="utf-8"))["calibracao"]
     path = os.path.join(CACHE, f"calib_{C.data_key()}.json")
     if os.path.exists(path):
         return json.load(open(path))

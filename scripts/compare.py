@@ -11,8 +11,9 @@ import json, os, re, sys
 import numpy as np
 from PIL import Image
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+ROOT = os.environ.get("CHELIS_HOME") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")  # CHELIS_HOME: pasta de dados do aplicativo
 TS, CACHE = os.path.join(ROOT, "testset"), os.path.join(ROOT, "cache")
+MODELO = os.environ.get("CHELIS_MODELO")  # aplicativo: caminho do modelo.json pronto (pesos + calibração); sem treino local
 W, H = 64, 88
 FEATS = ["inteira", "arte", "moldura", "borda", "rodape", "sem_rodape", "idioma", "simbolo"]
 
@@ -158,6 +159,8 @@ def cmd_ocr():
 
 def data_key():
     """Identifica o conjunto de decisões + o código das medidas: muda quando um gabarito ou este arquivo muda."""
+    if MODELO:
+        return json.load(open(MODELO, encoding="utf-8"))["key"]
     import glob, hashlib
     h = hashlib.md5()
     for fp in sorted(glob.glob(os.path.join(ROOT, "order", "*", "gabarito.json")) + [os.path.join(TS, "gabarito.json"), os.path.abspath(__file__)]):

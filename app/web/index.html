@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bot Chelisplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="bgart"></div>
+<div id="app">
+  <header>
+    <div class="tabs" id="tabs" role="tablist" aria-label="Pedidos"></div>
+    <div class="sp"></div>
+    <div class="seg" role="group" aria-label="Visualização">
+      <button id="vCar" aria-pressed="true">Carrossel</button>
+      <button id="vGrid" aria-pressed="false">Grade</button>
+      <button id="vTri" aria-pressed="false">Triagem</button>
+    </div>
+    <button class="btn" id="bUpl">Uploaders<span class="cnt" id="cntU">0</span></button>
+    <button class="btn" id="bXml">XML e imagens</button>
+    <button class="btn" id="bUso">Usos</button>
+  </header>
+  <section class="ov" id="ov" hidden></section>
+  <div id="confirm" class="confirm" hidden></div>
+  <div class="filters" id="filters" hidden>
+    <input type="search" id="q" placeholder="Buscar carta" aria-label="Buscar carta" autocomplete="off">
+    <div class="seg" role="group" aria-label="Mostrar"><button id="fAl" aria-pressed="true">Ver alertas</button><button id="fPe" aria-pressed="false">Pendentes</button><button id="fTo" aria-pressed="false">Ver todas</button></div>
+    <div class="chips" id="chips" role="group" aria-label="Confiança"></div>
+    <label class="meta" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="onlytrust"> só uploaders de confiança</label>
+    <span class="meta" id="resCount"></span>
+  </div>
+  <main id="main"><div class="empty">Carregando…</div></main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside id="drawer" aria-label="XML e imagens">
+  <header><h2>XML e imagens</h2><button class="btn" id="dClose">Fechar</button></header>
+  <div class="dlist" id="dBody"></div>
+</aside>
+
+<section class="modal" id="mNovo" role="dialog" aria-label="Novo pedido">
+  <header><h2>Novo pedido</h2><button class="btn" data-close>Fechar</button></header>
+  <div class="body">
+    <label class="box"><span class="meta">Nome do pedido (letras, números, - e _)</span><input type="text" id="nNome" placeholder="ex.: cliente-joao" maxlength="60"></label>
+    <label class="box"><span class="meta">Lista de cartas (uma por linha: quantidade, nome e, se tiver, (SET) número)</span><textarea id="nLista" placeholder="1 Sol Ring (C21) 263&#10;4 Lightning Bolt"></textarea></label>
+    <div class="box" id="nProg" hidden><div class="info-t" id="nFase"></div><div class="prog"><i id="nBar" style="width:0%"></i></div></div>
+    <div id="nErro" class="info-t" style="color:var(--danger)"></div>
+    <div><button class="btn pri" id="nGo">Processar pedido</button></div>
+  </div>
+</section>
+
+<section class="modal" id="mUpl" role="dialog" aria-label="Uploaders de confiança">
+  <header><h2>Uploaders de confiança</h2><button class="btn" data-close>Fechar</button></header>
+  <div class="body">
+    <p class="info-t" style="margin:0">Toque para marcar ou desmarcar. Os marcados ganham ★ nos candidatos, um pequeno bônus na nota do bot nos próximos pedidos e podem ser os únicos exibidos.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="search" id="uplq" placeholder="Buscar uploader" aria-label="Buscar uploader"><button class="btn" id="uplall"></button></div>
+    <div class="chips" id="uplchips"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="uplnew" placeholder="Uploader que não está na lista" aria-label="Nome do uploader"><button class="btn" id="upladd">Adicionar</button></div>
+  </div>
+</section>
+
+<section class="modal" id="mUso" role="dialog" aria-label="Usos">
+  <header><h2>Usos e atualização do bot</h2><button class="btn" data-close>Fechar</button></header>
+  <div class="body">
+    <div class="box"><h3>Exportar os usos</h3>
+      <p class="info-t" style="margin:0">Gera um arquivo com seus pedidos, decisões, uploaders e o tempo de uso. Mande esse arquivo para o Claude: ele treina o bot com as suas decisões e devolve um modelo novo.</p>
+      <div><a class="btn pri" id="usoDl" href="/api/usos" download style="display:inline-block;text-decoration:none">Exportar usos</a></div></div>
+    <div class="box"><h3>Importar atualização do bot</h3>
+      <p class="info-t" style="margin:0">Escolha o arquivo <b>modelo.json</b> que o Claude devolveu. Vale para os próximos pedidos, sem reinstalar.</p>
+      <input type="file" id="modFile" accept=".json"><div class="info-t" id="modMsg"></div></div>
+    <div class="box"><h3>Sobre</h3><div class="info-t" id="sobre"></div></div>
+  </div>
+</section>
+<div id="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
