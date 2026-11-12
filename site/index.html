@@ -10,6 +10,14 @@
 <body>
 <header><h1>Chelisplace · pedidos</h1><span id="estado">Carregando o motor…</span></header>
 <main>
+<details id="drive" class="conf">
+  <summary>Google Drive: <span id="drive-estado">desconectado</span></summary>
+  <p class="suave">Pasta de pedidos: <b>Novo Processo Proxies</b> no seu Drive. O login é feito pelo Google e o acesso fica só nesta página.</p>
+  <label for="drive-id">Client ID do Google (público, não é senha)</label>
+  <input id="drive-id" type="text" size="50" placeholder="1234-abc.apps.googleusercontent.com">
+  <br><button class="acao" id="drive-entrar">Entrar com Google</button><button class="acao sec" id="drive-sair" hidden>Sair</button>
+  <div id="drive-erro" class="alerta"></div>
+</details>
 <nav role="tablist">
   <button role="tab" data-aba="orcamento" aria-selected="true">Orçamento</button>
   <button role="tab" data-aba="checagem" aria-selected="false">Checagem</button>
@@ -32,6 +40,11 @@
   <p class="suave">Compara a pasta de imagens com o XML do MPC pelo ID do Drive. Nada é apagado.</p>
   <label for="c-xml">XML do pedido</label>
   <input id="c-xml" type="file" accept=".xml">
+  <div class="linha suave">
+    <label><input type="radio" name="fonte-c" value="pc" checked> Computador</label>
+    <label><input type="radio" name="fonte-c" value="drive"> Google Drive</label>
+  </div>
+  <div id="c-drive-lista"></div>
   <button class="acao sec" id="c-pasta">Escolher pasta de imagens</button>
   <span id="c-pasta-nome" class="suave"></span><br>
   <button class="acao" id="c-rodar" disabled>Conferir</button>
@@ -46,6 +59,11 @@
   <label for="m-xml">XML do pedido (opcional: define a ordem dos pares, cada frente seguida do verso)</label>
   <input id="m-xml" type="file" accept=".xml">
   <br>
+  <div class="linha suave">
+    <label><input type="radio" name="fonte-m" value="pc" checked> Computador</label>
+    <label><input type="radio" name="fonte-m" value="drive"> Google Drive</label>
+  </div>
+  <div id="m-drive-lista"></div>
   <button class="acao sec" id="m-pasta">Escolher pasta de imagens</button>
   <span id="m-pasta-nome" class="suave"></span><br>
   <div id="m-plano" class="suave"></div>
@@ -55,6 +73,7 @@
   <div id="m-saida"></div>
 </section>
 </main>
+<script src="drive.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
