@@ -209,12 +209,28 @@ def exact_print(front_uid, front_name):
     return None
 
 
-def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None, alt=None):
+def sem_referencia(uid, name, refp, ctype, src, alt, log):
+    """Scryfall fora do ar para esta carta: sem comparar com a referência. Mostra os candidatos de uploaders de confiança e de maior resolução, para você escolher à mão."""
+    cands = search(name, ctype, src) or (alt and search(alt, ctype, src)) or []
+    cands = sorted(cands, key=lambda c: (c["sourceName"] not in TRUST, -c["dpi"]))[:TOP]
+    log(f"  SEM REFERÊNCIA: {len(cands)} candidatos sem pontuação")
+    with cf.ThreadPoolExecutor(8) as ex:
+        list(ex.map(lambda c: fetch_img(c["mediumThumbnailUrl"], os.path.join(CACHE, f"mpc_{c['identifier']}.jpg")), cands))
+    rows = [{"n": i + 1, "id": c["identifier"], "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "ext": c["extension"], "t": c.get("cardType"), "q": c.get("searchq"),
+             "sc": -9.0 + (TRUST_BONUS if c["sourceName"] in TRUST else 0.0), "why": "sem referência"} for i, c in enumerate(cands)]
+    return {"id": uid, "name": name, "refp": refp, "cands": rows,
+            "prop": {"accept": [1] if rows else [], "near": [2, 3, 4], "conf": "nenhum",
+                     "note": "ALERTA: não consegui baixar a imagem de referência do Scryfall (fora do ar?); candidatos sem pontuação, de uploaders de confiança e maior resolução primeiro. Confira à mão ou reprocesse o pedido mais tarde."}}
+
+
+def process_unit(uid, name, ref_url, ctype, is_sld, src, cheap, full, log, mem_ids=(), prefer_src=None, alt=None, sem_ref=False):
     refp = os.path.join(CACHE, f"sf_{uid}.jpg")
     if os.path.exists(ref_url):  # referência local (ex.: imagem da página da LigaMagic)
         shutil.copy(ref_url, refp)
     elif not fetch_img(ref_url, refp):
-        raise RuntimeError("sem imagem de referência")
+        if not sem_ref:
+            raise RuntimeError("sem imagem de referência")
+        return sem_referencia(uid, name, refp, ctype, src, alt, log)
     ref = C.load(refp)
     cands = search(name, ctype, src) or (alt and search(alt, ctype, src)) or search(name, "TOKEN" if ctype == "CARD" else "CARD", src)  # alt: nome real do Scryfall quando a lista usa o nome alternativo
     log(f"  {len(cands)} candidatos")
@@ -287,7 +303,7 @@ def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unid
     refs = json.load(open(os.environ["REFS"], encoding="utf-8")) if os.environ.get("REFS") else {}
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
 
-    def entrada(i, e):
+    def entrada(i, e, sem_ref=False):
         ups = []
         if not e["card"] and e["name"] in refs:  # nome que o Scryfall não resolve, mas tenho a imagem da LigaMagic
             e = {**e, "card": {"name": e["name"], "set": "liga", "collector_number": "", "layout": "normal"}, "images": [refs[e["name"]]], "fixes": e["fixes"] + ["sem Scryfall: só a imagem da LigaMagic"]}
@@ -310,7 +326,7 @@ def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unid
             up = os.path.join(out, "units", uid + ".json")
             if not os.path.exists(up):
                 log(f"{uid}  ({e['qty']}x)")
-                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None, e["card"]["name"].split(" // ")[0] if fi == 0 and e["card"]["name"].split(" // ")[0] != e["name"].split(" // ")[0] else None)
+                u = process_unit(uid, names[min(fi, len(names) - 1)].split(" // ")[0], url, "TOKEN" if tokenish else "CARD", (not liga) and cset == "sld", src, cheap, full, log, [] if liga else mem.get((cset.lower(), str(ccn).lower(), fi), []), last_front["src"] if (fi == 1 and last_front) else None, e["card"]["name"].split(" // ")[0] if fi == 0 and e["card"]["name"].split(" // ")[0] != e["name"].split(" // ")[0] else None, sem_ref)
                 u.update({"qty": e["qty"], "entry": i, "face": fi, "set": "LIGA" if liga else cset.upper(), "cn": "" if liga else ccn, "fixes": [] if (liga or e["name"] in refs) else e["fixes"], "ref_url": url if str(url).startswith("http") else None})
                 json.dump(u, open(up + ".tmp", "w", encoding="utf-8"), ensure_ascii=False); os.replace(up + ".tmp", up)  # atômico: o app lê as prontas enquanto o resto processa
             if fi == 0:
@@ -319,15 +335,34 @@ def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unid
         return ups
 
     idxs = [i for i in range(len(entries)) if not (shard and i % int(shard.split("/")[1]) != int(shard.split("/")[0]))]
-    res, feitas = {}, 0
-    with cf.ThreadPoolExecutor(int(os.environ.get("CHELIS_TRABALHADORES", min(4, os.cpu_count() or 2)))) as ex:
+    res, feitas, adiadas = {}, 0, []
+    W = int(os.environ.get("CHELIS_TRABALHADORES", min(4, os.cpu_count() or 2)))
+    with cf.ThreadPoolExecutor(W) as ex:
         futs = {ex.submit(entrada, i, entries[i]): i for i in idxs}
         for f in cf.as_completed(futs):
             i = futs[f]
             try: res[i] = f.result()
+            except RuntimeError as err:
+                if "referência" in str(err): adiadas.append(i); log(f"  carta {i:03d} ({entries[i]['name']}): sem imagem de referência agora; tento de novo no fim")
+                else: log(f"ERRO na carta {i:03d} ({entries[i]['name']}): {err}"); res[i] = []; feitas += 1; PROGRESS("candidatos", feitas, len(idxs))
+                continue
             except Exception as err:  # uma carta com problema não derruba o pedido todo
                 log(f"ERRO na carta {i:03d} ({entries[i]['name']}): {type(err).__name__}: {err}"); res[i] = []
             feitas += 1; PROGRESS("candidatos", feitas, len(idxs))
+    if adiadas:  # o Scryfall pode ter ficado fora do ar por um momento: espera, tenta de novo e, se ainda falhar, deixa para conferir à mão
+        log(f"{len(adiadas)} cartas sem referência; aguardando 60 s para tentar de novo"); PROGRESS("tentando de novo", feitas, len(idxs)); time.sleep(60)
+        for sem_ref in (False, True):
+            ainda = []
+            with cf.ThreadPoolExecutor(W) as ex:
+                futs = {ex.submit(entrada, i, entries[i], sem_ref): i for i in adiadas}
+                for f in cf.as_completed(futs):
+                    i = futs[f]
+                    try: res[i] = f.result(); feitas += 1; PROGRESS("candidatos", feitas, len(idxs))
+                    except RuntimeError: ainda.append(i)
+                    except Exception as err:  # noqa: BLE001
+                        log(f"ERRO na carta {i:03d} ({entries[i]['name']}): {type(err).__name__}: {err}"); res[i] = []; feitas += 1; PROGRESS("candidatos", feitas, len(idxs))
+            adiadas = ainda
+            if not adiadas: break
     units = [u for i in sorted(res) for u in res[i]]
     if not shard and catalogo:
         PROGRESS("catalogo", len(entries), len(entries)); build_catalog(units, out)
