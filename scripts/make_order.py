@@ -4,7 +4,7 @@ Uso (venv com rapidocr): venv/bin/python scripts/make_order.py lista.txt order/<
 Retomável: cada carta resolvida fica em order/<nome>/units/<id>.json.
 Nada é decidido calado: o bot só PRÉ-SELECIONA; a conferência e o XML saem do artefato.
 """
-import base64, concurrent.futures as cf, http.client, io, json, os, re, shutil, ssl, sys, threading, time, urllib.error, urllib.parse, urllib.request
+import base64, concurrent.futures as cf, http.client as hc, io, json, os, re, shutil, ssl, sys, threading, time, urllib.error, urllib.parse, urllib.request
 import numpy as np
 from PIL import Image
 
@@ -49,11 +49,11 @@ def _conn(host):
         px = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
         if px:
             u = urllib.parse.urlparse(px)
-            c = http.client.HTTPSConnection(u.hostname, u.port, context=_ctx, timeout=60)
+            c = hc.HTTPSConnection(u.hostname, u.port, context=_ctx, timeout=60)
             auth = {"Proxy-Authorization": "Basic " + base64.b64encode(f"{urllib.parse.unquote(u.username or '')}:{urllib.parse.unquote(u.password or '')}".encode()).decode()} if u.username else None
             c.set_tunnel(host, 443, headers=auth)
         else:
-            c = http.client.HTTPSConnection(host, context=_ctx, timeout=60)
+            c = hc.HTTPSConnection(host, context=_ctx, timeout=60)
         d[host] = c
     return c
 
