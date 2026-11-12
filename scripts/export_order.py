@@ -36,9 +36,9 @@ def bulk_por_rajada(D):
     return out
 
 
-def montar(od, D, conferido=False):
-    """Grava gabarito.json e pedido.xml em `od`. D: id do par -> decisão. Devolve um resumo."""
-    cards = cartas(od)
+def montar(od, D, conferido=False, cards=None):
+    """Grava gabarito.json e pedido.xml em `od`. D: id do par -> decisão. cards: cartas já montadas (o aplicativo não grava catalog.json). Devolve um resumo."""
+    cards = cards if cards is not None else cartas(od)
     if conferido: BULK = set()
     elif any("via" in d for d in D.values()): BULK = {i for i, d in D.items() if d.get("via") == "lote" and not d.get("conferido")}  # aplicativo: a própria tela diz
     else: BULK = bulk_por_rajada(D)  # artefato: só dá para adivinhar pelo horário

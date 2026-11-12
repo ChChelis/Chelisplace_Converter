@@ -194,7 +194,8 @@ def uploaders():
 
 def gerar_xml(nome, conferido):
     d = pedido_dir(nome)
-    r = EX.montar(d, decisoes(nome), conferido)
+    cards, _ = M.build_catalog(unidades(d), d, leve=True)
+    r = EX.montar(d, decisoes(nome), conferido, cards)
     evento("xml_gerado", pedido=nome, usadas=r["usadas"], em_lote=r["em_lote"])
     return {k: v for k, v in r.items() if k != "xml"}
 
