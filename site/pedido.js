@@ -301,29 +301,39 @@ async function bytesDaMiniatura(url) {
   for (const t of tentativas) { try { const b = await t(); if (b && b.byteLength) return new Uint8Array(b); } catch {} }
   return null;
 }
-$("#f-pdf").onclick = async () => {
-  const av = $("#f-aviso"); av.textContent = "Montando o PDF…";
-  try {
-    await pronto;
-    const alts = pedido.alteracoes.filter((a) => a.titulo.trim() && a.itens.some((i) => i.texto.trim()))
-      .map((a) => ({ titulo: a.titulo, itens: a.itens.filter((i) => i.texto.trim()).map((i) => ({ texto: i.texto, pedido_img: urlPedido(i), usado_img: urlUsado(i) })) }));
-    const urls = [...new Set(alts.flatMap((a) => a.itens.flatMap((i) => [i.pedido_img, i.usado_img]).filter(Boolean)))];
-    const imagens = [];
-    for (const u of urls) { const b = await bytesDaMiniatura(u); if (b) imagens.push([u, b]); }
-    let matriz = null, codigo = null;
-    if ($("#p-chave").value.trim()) {
-      codigo = await chamar("pix_codigo", { chave: $("#p-chave").value, nome: $("#p-nome").value || "Chelisplace", cidade: $("#p-cidade").value || "Sao Paulo", valor: ultimoOrc ? valorFinal() : null });
-      const qr = qrcode(0, "M"); qr.addData(codigo); qr.make();
-      const n = qr.getModuleCount(); matriz = Array.from({ length: n }, (_, y) => Array.from({ length: n }, (_, x) => (qr.isDark(y, x) ? 1 : 0)));
-    }
-    const dados = { cliente: $("#f-cliente").value.trim() || "Pedido", conclusao: $("#f-conclusao").value.trim(), pago: ultimoOrc ? valorFinal() : 0, modo: pedido.modo, alteracoes: alts,
-      fontes: pedido.fontes.map((f) => ({ titulo: f.titulo, frentes: f.frentes.map((x) => x.nome), versos: f.versos.map((x) => x.nome) })) };
-    const bytes = await chamar("ficha_pdf", { dados, imagens, matriz, codigo });
-    const sem = urls.length - imagens.length;
-    av.textContent = sem ? `PDF pronto, mas ${sem} miniatura(s) não puderam ser baixadas (entre no Drive ou abra o bot).` : "PDF pronto." + (codigo ? "" : " Sem chave Pix: o PDF saiu sem QR.");
-    $("#p-saida").replaceChildren(baixar(new Blob([bytes], { type: "application/pdf" }), `Ficha ${dados.cliente}.pdf`));
-  } catch (e) { av.textContent = e.message; }
-};
+// PDF = a própria ficha (texto de cima, editado ou não) desenhada em A4, sem a parte confidencial, com o QR do Pix no fim
+async function gerarPdf(av) {
+  await pronto;
+  const itens = pedido.alteracoes.flatMap((a) => a.itens.filter((i) => i.texto.trim()));
+  const miniaturas = Object.fromEntries(itens.map((i) => [i.texto.trim(), [urlPedido(i), urlUsado(i)].filter(Boolean)]));
+  const urls = [...new Set(Object.values(miniaturas).flat())];
+  const imagens = [];
+  for (const u of urls) { const b = await bytesDaMiniatura(u); if (b) imagens.push([u, b]); }
+  let matriz = null;
+  const chave = $("#p-chave").value.trim();
+  if (chave) {
+    const codigo = await chamar("pix_codigo", { chave, nome: $("#p-nome").value || "Chelisplace", cidade: $("#p-cidade").value || "Sao Paulo", valor: ultimoOrc ? valorFinal() : null });
+    const qr = qrcode(0, "M"); qr.addData(codigo); qr.make();
+    const n = qr.getModuleCount(); matriz = Array.from({ length: n }, (_, y) => Array.from({ length: n }, (_, x) => (qr.isDark(y, x) ? 1 : 0)));
+  }
+  const md = chave ? fichaMd : fichaMd.replace(/### Pix\n.*\n?$/, "");  // sem chave, o PDF sai sem a parte do Pix
+  const bytes = await chamar("ficha_pdf", { md, imagens, miniaturas, matriz });
+  const sem = urls.length - imagens.length;
+  av.textContent = (sem ? `PDF pronto, mas ${sem} miniatura(s) não puderam ser baixadas (entre no Drive ou abra o bot). ` : "PDF pronto. ") + (chave ? "" : "Sem chave Pix: saiu sem QR.");
+  return bytes;
+}
+const nomeArq = () => `Pedido ${$("#f-cliente").value.trim() || "cliente"}`;
+const salvar = (blob, nome) => { const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: nome }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+const baixarMd = () => salvar(new Blob([fichaMd], { type: "text/markdown;charset=utf-8" }), nomeArq() + ".md");
+const botaoPdf = (fn) => async () => { const av = $("#f-aviso"); av.textContent = "Montando o PDF…"; try { await fn(av); } catch (e) { av.textContent = e.message; } };
+$("#f-md").onclick = baixarMd;
+$("#f-pdf").onclick = botaoPdf(async (av) => { salvar(new Blob([await gerarPdf(av)], { type: "application/pdf" }), nomeArq() + ".pdf"); });
+$("#f-tudo").onclick = botaoPdf(async (av) => {
+  const bytes = await gerarPdf(av);
+  baixarMd();
+  setTimeout(() => salvar(new Blob([bytes], { type: "application/pdf" }), nomeArq() + ".pdf"), 600);  // o navegador pode pedir licença para baixar dois arquivos
+  av.textContent += " Baixando o .md e o PDF (se o navegador perguntar, permita vários downloads).";
+});
 $("#f-copiar").textContent = "Copiar texto da ficha (Obsidian)";
 
 // ---------- imagens do XML direto para o Drive (cópia feita pelo próprio Drive, sem baixar nada) ----------

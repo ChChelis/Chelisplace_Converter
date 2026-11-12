@@ -57,3 +57,6 @@ Com o XML carregado e o login do Google feito, “Enviar as imagens para o Drive
 
 ### Orçamento: como funciona (atualizado)
 Cada linha da tabela é um **kit** (N slots por R$ X). O pedido usa o maior kit que couber, depois o seguinte; o que sobrar vai como **avulso** (R$/slot). Opção “calcular pelo menor kit”: avulso = preço ÷ slots do menor kit (18 por R$ 30 → R$ 1,6667). A conta aparece linha a linha, e o **valor cobrado** começa igual ao calculado (só mude se combinou outro; “Usar o calculado” volta). Cada etapa tem **← Voltar** e **Próximo →**.
+
+### PDF da ficha = a própria ficha (formato do Chelis)
+O PDF para o cliente é o texto da ficha (o da caixa de edição, editado ou não) desenhado em A4 no modelo do `Pedido_Gui_Torneio_Hashaton.pdf`: títulos em negrito, listas com número cinza, fonte Liberation Sans (`nucleo/fontes/`, copiada por `site/build.sh`/`build.ps1`). Fica de fora tudo de `#### Confidencial` e a linha “Valor do pedido”; o **QR do Pix** vai ao fim, depois da chave. Miniaturas (se houver) aparecem sob o item da alteração. Botões: **Baixar tudo** (`Pedido <Cliente>.md` + `Pedido <Cliente>.pdf`), **Só o .md**, **Só o PDF do cliente**.

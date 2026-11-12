@@ -11,6 +11,10 @@ async function iniciar(base) {
   for (const nome of lista) {
     py.FS.writeFile("/app/nucleo/" + nome, await (await fetch("nucleo/" + nome)).text());
   }
+  py.FS.mkdirTree("/app/nucleo/fontes");  // fontes do PDF da ficha (Liberation Sans)
+  for (const f of ["LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf"]) {
+    py.FS.writeFile("/app/nucleo/fontes/" + f, new Uint8Array(await (await fetch("nucleo/fontes/" + f)).arrayBuffer()));
+  }
   py.runPython("import sys; sys.path.insert(0, '/app')");
   py.runPython("from nucleo import web");
 }
@@ -44,9 +48,9 @@ const acoes = {
     py.globals.set("a", py.toPy(args));
     return py.runPython("web.pix_payload(**a)");
   },
-  async ficha_pdf({ dados, imagens, matriz, codigo }) {
+  async ficha_pdf({ md, imagens, miniaturas, matriz }) {
     gravar("/w/fpdf", []);
-    py.globals.set("a", [py.toPy(dados), py.toPy(imagens.map(([u, b]) => [u, b])), matriz ? py.toPy(matriz) : null, codigo || null, "/w/fpdf/ficha.pdf"]);
+    py.globals.set("a", [md, py.toPy(imagens), py.toPy(miniaturas), matriz ? py.toPy(matriz) : null, "/w/fpdf/ficha.pdf"]);
     py.runPython("web.ficha_pdf_arquivo(a[0], dict((k, bytes(v)) for k, v in a[1]), a[2], a[3], a[4])");
     return py.FS.readFile("/w/fpdf/ficha.pdf");
   },

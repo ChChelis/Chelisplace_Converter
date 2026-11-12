@@ -123,13 +123,14 @@ class TestPixFicha(unittest.TestCase):
         self.assertTrue(pdf.startswith(b"%PDF"))
 
     def test_ficha_pdf(self):
-        from PIL import Image
         import io
+        from PIL import Image
         b = io.BytesIO(); Image.new("RGB", (60, 80), "red").save(b, "PNG")
-        d = dict(cliente="Ana", fontes=[dict(titulo="XML", frentes=["A"] * 40, versos=[])], pago=135, conclusao="ok", modo="normal",
-                 alteracoes=[dict(titulo="Troca", itens=[dict(texto="x", pedido_img="u1", usado_img="u2")])])
-        pdf = ficha_pdf.gerar(d, {"u1": b.getvalue()}, [[1, 0], [0, 1]], "000201")
+        md, _ = ficha.gerar("Ana", "1", [dict(titulo="XML → X", frentes=["A"] * 60, versos=[])],
+                            [dict(titulo="Troca", itens=[dict(texto="Sol Ring")])], "Conclusão ã", "normal", None, "chave-pix")
+        pdf = ficha_pdf.gerar(md, {"u1": b.getvalue()}, {"Sol Ring": ["u1", "u2"]}, [[1, 0], [0, 1]])
         self.assertTrue(pdf.startswith(b"%PDF"))
+        self.assertGreater(pdf.count(b"/Type /Page\n") + pdf.count(b"/Type /Page "), 1)  # 60 itens passam de uma página
 
     def test_ficha(self):
         md, r = ficha.gerar("Ana", "1", [dict(titulo="XML", frentes=["A", "B"], versos=["V"])],

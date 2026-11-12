@@ -85,6 +85,6 @@ def pix_pdf(matriz, codigo, cliente, valor, saida):
     return saida
 
 
-def ficha_pdf_arquivo(dados, imagens, matriz, codigo, saida):
-    ficha_pdf.gerar(dados, dict(imagens), matriz, codigo, saida)
+def ficha_pdf_arquivo(md, imagens, miniaturas, matriz, saida):
+    ficha_pdf.gerar(md, dict(imagens), {k: list(v) for k, v in dict(miniaturas).items()}, matriz, saida)
     return saida

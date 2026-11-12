@@ -5,4 +5,5 @@ cd "$(dirname "$0")"
 rm -rf nucleo
 mkdir nucleo
 cp ../nucleo/*.py nucleo/
+cp -r ../nucleo/fontes nucleo/fontes
 ls nucleo/*.py | xargs -n1 basename > nucleo/lista.txt
