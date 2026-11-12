@@ -24,9 +24,10 @@ function lerXmlMpc(buf) {
     const saida = [];
     for (const c of doc.querySelectorAll(`${tag} > card`)) {
       const id = c.querySelector("id")?.textContent.trim();
+      const ext = ((c.querySelector("name")?.textContent || "").match(/\.(jpe?g|png|webp)$/i) || [".jpg"])[0].toLowerCase();
       const nome = (c.querySelector("name")?.textContent || c.querySelector("query")?.textContent || id || "").replace(/\.(jpe?g|png|webp)$/i, "").replace(/\s*\([^)]{20,}\)\s*$/, "").trim();
       const n = (c.querySelector("slots")?.textContent || "0").split(",").filter((x) => x.trim() !== "").length || 1;
-      for (let i = 0; i < n; i++) saida.push({ nome, id });
+      for (let i = 0; i < n; i++) saida.push({ nome, id, ext });
     }
     return saida;
   };
@@ -299,7 +300,46 @@ $("#f-pdf").onclick = async () => {
 };
 $("#f-copiar").textContent = "Copiar texto da ficha (Obsidian)";
 
+// ---------- imagens do XML direto para o Drive (cópia feita pelo próprio Drive, sem baixar nada) ----------
+function nomeNoDrive(c) { return `${c.nome.replace(/[\\/:*?"<>|]/g, "_")} (${c.id})${c.ext || ".jpg"}`; }
+function desenharEnvio() {
+  const alvo = $("#c-enviar");
+  const cartas = new Map();
+  for (const f of pedido.fontes) for (const c of [...f.frentes, ...f.versos]) if (c.id && !cartas.has(c.id)) cartas.set(c.id, c);
+  if (!cartas.size) { alvo.innerHTML = ""; return; }
+  const nomePedido = (sessao.pasta && sessao.pasta.nome) || ($("#f-cliente").value.trim()) || (pedido.fontes[0].titulo.replace(/\.xml$/i, "").replace(/ \(bot\)$/, ""));
+  alvo.innerHTML = `<div class="conf"><b>Imagens do XML (${cartas.size} arquivos distintos)</b><p class="suave">Se a pasta do pedido ainda não tem as imagens, a página pode copiá-las para o seu Drive, pelo próprio Drive (nada é baixado no seu computador). Requer o login do Google.</p>
+    <label for="c-env-nome">Pasta do pedido em “${esc(Drive.NOME_RAIZ)}”</label><input id="c-env-nome" type="text" size="36" value="${esc(nomePedido)}">
+    <br><button class="acao" id="c-env-ir">Enviar as imagens para o Drive</button><div id="c-env-saida"></div></div>`;
+  $("#c-env-ir").onclick = () => {
+    const nome = $("#c-env-nome").value.trim(), saida = $("#c-env-saida");
+    if (!nome) { saida.innerHTML = `<span class="alerta">Dê um nome à pasta do pedido.</span>`; return; }
+    if (!Drive.conectado()) { saida.innerHTML = `<span class="alerta">Entre com o Google no quadro “Google Drive” (no alto da página) primeiro.</span>`; return; }
+    confirmar(saida, `Criar (ou reaproveitar) a pasta “${nome}” dentro de “${Drive.NOME_RAIZ}” e copiar para ela ${cartas.size} imagem(ns)? Arquivos que já estiverem lá são pulados; nada é apagado.`, async () => {
+      const raizId = await Drive.raiz();
+      const existentes = (await Drive.listar(raizId, ` and mimeType='${Drive.PASTA}'`)).find((x) => x.name === nome);
+      const pastaId = existentes ? existentes.id : await Drive.criarPasta(nome, raizId);
+      const ja = new Set((await Drive.listar(pastaId)).map((x) => (x.name.match(/\(([A-Za-z0-9_-]{20,})\)\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
+      const falhas = []; let feitas = 0, puladas = 0;
+      const fila = [...cartas.values()];
+      const progresso = () => { saida.firstElementChild && (saida.firstElementChild.textContent = `Copiando… ${feitas + puladas + falhas.length}/${fila.length}`); };
+      await Promise.all(Array.from({ length: 4 }, async () => {
+        while (fila.length) {
+          const c = fila.shift();
+          if (ja.has(c.id)) { puladas++; continue; }
+          try { await Drive.copiar(c.id, nomeNoDrive(c), pastaId); feitas++; } catch (e) { falhas.push(`${c.nome}: ${e.message}`); }
+          progresso();
+        }
+      }));
+      sessao.pasta = await montarPastaDrive({ id: pastaId, name: nome });  // a etapa 4 já abre nesta pasta
+      carregarIgnorados(); atualizarRotulos();
+      return `${feitas} copiada(s), ${puladas} já estava(m) lá` + (falhas.length ? `, ${falhas.length} falharam (${falhas.slice(0, 3).join("; ")}${falhas.length > 3 ? "…" : ""}). Para essas, use o botão de baixar do bot.` : ". Pasta pronta: clique em Conferir.");
+    });
+  };
+}
+
 window.aoAbrirAba = (aba) => {
+  if (aba === "checagem") desenharEnvio();
   if (aba === "conferencia") procurarBot();
   if (aba === "ficha") { if (!$("#f-cliente").value && sessao.pasta) $("#f-cliente").value = sessao.pasta.nome; renderFicha(); }
 };
