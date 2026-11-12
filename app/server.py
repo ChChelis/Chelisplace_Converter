@@ -237,13 +237,11 @@ def baixar_imagens(nome, destino):
 
     def run():
         shutil.copy(xml_path, os.path.join(destino, "pedido.xml"))
-        usados = {}
         for i, (cid, nm) in enumerate(cards):
             nm = re.sub(r'[<>:"/\\|?*]', "_", nm or cid)
-            if nm.lower() in usados and usados[nm.lower()] != cid:  # mesmo nome, arte diferente
-                base, ext = os.path.splitext(nm); nm = f"{base} [{cid[:6]}]{ext}"
-            usados[nm.lower()] = cid
-            alvo = os.path.join(destino, nm)
+            base, ext = os.path.splitext(nm)
+            alvo = os.path.join(destino, f"{base} [{cid}]{ext}")  # o id do MPCFill no nome: dá para voltar do arquivo para o XML
+            nm = os.path.basename(alvo)
             job["feito"] = i
             if os.path.exists(alvo) and os.path.getsize(alvo) > 1000:
                 continue
