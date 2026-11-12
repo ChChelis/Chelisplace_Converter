@@ -21,6 +21,6 @@ Validado lado a lado com o Photoshop (pedido A, 108 slots): imagens com diferen�
 - **Pares** consecutivos no fim, cada frente seguida do verso, na ordem do XML (na página, o XML é opcional na aba Montagem; sem ele a ordem é alfabética).
 
 ## Ainda em aberto
-1. **Proporção das imagens:** o Photoshop mantém largura 816 e deixa a altura variar (1108–1140); o núcleo ainda força 816×1110. Decisão do Chelis pendente.
+1. **Proporção das imagens:** o Photoshop mantém largura 816 e deixa a altura variar (1108–1140); o núcleo força 816×1110 (todas as cartas com tamanho idêntico). **Decidido pelo Chelis (2026-11-12):** seguir com 816×1110 e comparar, em teste na gráfica, uma folha do núcleo com uma do processo antigo; ajustar depois se houver diferença.
 2. Perfil de cor RGB→CMYK: o PDF do Photoshop é CMYK sem perfil; o do núcleo é RGB.
 3. Fonte Consolas não existe no navegador.
