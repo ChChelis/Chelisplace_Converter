@@ -335,7 +335,8 @@ TIPOS = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=u
 
 
 # Páginas que podem falar com este motor local (a página única do site). Mais nada.
-ORIGENS = {"http://localhost:8780", "http://127.0.0.1:8780", "https://pedidos.chelisplace.com"}
+ORIGENS = {"http://localhost:8780", "http://127.0.0.1:8780", "https://pedidos.chelisplace.com",
+           "https://chelisplace-converter-pedidos.shrill-mountain-e326.workers.dev"}
 PORTA_PADRAO = 8781
 
 

@@ -43,6 +43,7 @@ Visual no estilo da Vitrine de Sets (escuro, acento âmbar). Seis passos em abas
 - **Conferência**: procura o **motor local do bot** em `http://127.0.0.1:8781` (`app/server.py`, agora com porta padrão 8781 e CORS só para `localhost:8780`, `pedidos.chelisplace.com` e `*.pages.dev`). Com o bot aberto: link para a conferência e botão “Usar o XML de <pedido>”, que entra como fonte. Sem o bot, segue com XML pronto.
 - **Cliente e ficha**: nome, telefone, alterações (título + cartas, com link/ID do Drive do que o cliente pediu e do que foi usado → miniaturas), conclusão. A ficha segue `docs/referencia_processo.md` §5 (`nucleo/ficha.py`) e é **copiada** para o Obsidian; as miniaturas são links `![|110](https://drive.google.com/thumbnail?id=…)`. “Copiar mensagem ao cliente” leva texto + miniaturas.
 - **Pix**: chave, nome e cidade ficam só no navegador (nunca no código). Gera o copia-e-cola (BR Code, `nucleo/pix.py`) e um **PDF com QR** (matriz do QR vem de `site/qrcode.min.js`, qrcode-generator 1.4.4, MIT).
+Endereço publicado: https://chelisplace-converter-pedidos.shrill-mountain-e326.workers.dev (Cloudflare Workers com arquivos estáticos, `wrangler.jsonc`; o domínio próprio exigiria mover o DNS ou usar Pages com CNAME).
 Pendente nesta etapa: testar o motor local com o Windows real; miniaturas escolhidas direto dos candidatos do bot (hoje por link/ID do Drive); Archidekt.
 
 ### Miniaturas vindas do bot (passo 3)
