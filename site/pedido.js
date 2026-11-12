@@ -265,6 +265,40 @@ $("#p-pdf").onclick = async () => {
   } catch (e) { av.textContent = e.message; }
 };
 
+// baixa a miniatura para o PDF: direto (Scryfall aceita), senão pelo Drive logado, senão pelo cache do bot
+async function bytesDaMiniatura(url) {
+  const id = (url.match(/[?&]id=([-\w]+)/) || [])[1];
+  const tentativas = [() => fetch(url).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject()))];
+  if (id && typeof Drive !== "undefined" && Drive.conectado()) tentativas.push(() => Drive.baixar(id));
+  if (id) tentativas.push(() => fetch(`${MOTOR}/img/mpc/${id}`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())));
+  for (const t of tentativas) { try { const b = await t(); if (b && b.byteLength) return new Uint8Array(b); } catch {} }
+  return null;
+}
+$("#f-pdf").onclick = async () => {
+  const av = $("#f-aviso"); av.textContent = "Montando o PDF…";
+  try {
+    await pronto;
+    const alts = pedido.alteracoes.filter((a) => a.titulo.trim() && a.itens.some((i) => i.texto.trim()))
+      .map((a) => ({ titulo: a.titulo, itens: a.itens.filter((i) => i.texto.trim()).map((i) => ({ texto: i.texto, pedido_img: urlPedido(i), usado_img: urlUsado(i) })) }));
+    const urls = [...new Set(alts.flatMap((a) => a.itens.flatMap((i) => [i.pedido_img, i.usado_img]).filter(Boolean)))];
+    const imagens = [];
+    for (const u of urls) { const b = await bytesDaMiniatura(u); if (b) imagens.push([u, b]); }
+    let matriz = null, codigo = null;
+    if ($("#p-chave").value.trim()) {
+      codigo = await chamar("pix_codigo", { chave: $("#p-chave").value, nome: $("#p-nome").value || "Chelisplace", cidade: $("#p-cidade").value || "Sao Paulo", valor: ultimoOrc ? valorFinal() : null });
+      const qr = qrcode(0, "M"); qr.addData(codigo); qr.make();
+      const n = qr.getModuleCount(); matriz = Array.from({ length: n }, (_, y) => Array.from({ length: n }, (_, x) => (qr.isDark(y, x) ? 1 : 0)));
+    }
+    const dados = { cliente: $("#f-cliente").value.trim() || "Pedido", conclusao: $("#f-conclusao").value.trim(), pago: ultimoOrc ? valorFinal() : 0, modo: pedido.modo, alteracoes: alts,
+      fontes: pedido.fontes.map((f) => ({ titulo: f.titulo, frentes: f.frentes.map((x) => x.nome), versos: f.versos.map((x) => x.nome) })) };
+    const bytes = await chamar("ficha_pdf", { dados, imagens, matriz, codigo });
+    const sem = urls.length - imagens.length;
+    av.textContent = sem ? `PDF pronto, mas ${sem} miniatura(s) não puderam ser baixadas (entre no Drive ou abra o bot).` : "PDF pronto." + (codigo ? "" : " Sem chave Pix: o PDF saiu sem QR.");
+    $("#p-saida").replaceChildren(baixar(new Blob([bytes], { type: "application/pdf" }), `Ficha ${dados.cliente}.pdf`));
+  } catch (e) { av.textContent = e.message; }
+};
+$("#f-copiar").textContent = "Copiar texto da ficha (Obsidian)";
+
 window.aoAbrirAba = (aba) => {
   if (aba === "conferencia") procurarBot();
   if (aba === "ficha") { if (!$("#f-cliente").value && sessao.pasta) $("#f-cliente").value = sessao.pasta.nome; renderFicha(); }

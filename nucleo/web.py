@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from . import checagem, ficha, imagem, montagem, orcamento, pix, xml_mpc
+from . import checagem, ficha, ficha_pdf, imagem, montagem, orcamento, pix, xml_mpc
 
 
 def orcar(frentes, versos, modo, precos=None):
@@ -82,4 +82,9 @@ def pix_payload(chave, nome, cidade, valor=None):
 
 def pix_pdf(matriz, codigo, cliente, valor, saida):
     pix.pdf_cobranca(matriz, codigo, cliente, valor, saida)
+    return saida
+
+
+def ficha_pdf_arquivo(dados, imagens, matriz, codigo, saida):
+    ficha_pdf.gerar(dados, dict(imagens), matriz, codigo, saida)
     return saida

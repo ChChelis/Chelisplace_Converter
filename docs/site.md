@@ -47,3 +47,6 @@ Pendente nesta etapa: testar o motor local com o Windows real; miniaturas escolh
 
 ### Miniaturas vindas do bot (passo 3)
 Com o bot aberto, “Cartas sem versão próxima de <pedido>” lê `/api/pedidos/<n>/catalogo` e `/decisoes` e lista as cartas com decisão “nenhum” ou aceitas com confiança “nenhum” (versos ignorados). Cada uma leva **miniatura do pedido** (imagem pequena do Scryfall por `set/número`; Liga sem edição fica sem) e **do usado** (miniatura do Drive pelo ID escolhido). “Levar para a ficha” cria a alteração “Cartas sem versão próxima” no passo 5, onde dá para editar. Na ficha, as miniaturas são links `![|110](url)`; os itens aceitam `pedido_img`/`usado_img` (URL) ou `pedido_id`/`usado_id` (Drive). Se o Obsidian não exibir esses links, o plano B é salvar as imagens como anexos no cofre.
+
+### PDF da ficha (substitui as miniaturas no texto)
+O texto copiado para o Obsidian é só texto (sem links de imagem). As miniaturas aparecem na **prévia da página** e no **PDF da ficha para o cliente** (`nucleo/ficha_pdf.py`: pedido, alterações com miniaturas, valor, QR do Pix; nada confidencial). A página baixa cada miniatura (direto, ou pelo Drive logado, ou pelo cache do bot) e avisa quantas não vieram.

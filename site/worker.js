@@ -44,6 +44,12 @@ const acoes = {
     py.globals.set("a", py.toPy(args));
     return py.runPython("web.pix_payload(**a)");
   },
+  async ficha_pdf({ dados, imagens, matriz, codigo }) {
+    gravar("/w/fpdf", []);
+    py.globals.set("a", [py.toPy(dados), py.toPy(imagens.map(([u, b]) => [u, b])), matriz ? py.toPy(matriz) : null, codigo || null, "/w/fpdf/ficha.pdf"]);
+    py.runPython("web.ficha_pdf_arquivo(a[0], dict((k, bytes(v)) for k, v in a[1]), a[2], a[3], a[4])");
+    return py.FS.readFile("/w/fpdf/ficha.pdf");
+  },
   async pix_pdf({ matriz, codigo, cliente, valor }) {
     gravar("/w/pix", []);
     py.globals.set("a", [py.toPy(matriz), codigo, cliente, valor, "/w/pix/pix.pdf"]);

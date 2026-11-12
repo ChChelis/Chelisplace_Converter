@@ -2,13 +2,6 @@
 from . import orcamento
 
 
-def _miniatura(url, largura=110):
-    return f"![|{largura}]({url})" if url else ""
-
-
-def drive_thumb(id_):
-    return f"https://drive.google.com/thumbnail?id={id_}&sz=w300" if id_ else ""
-
 
 def _lista(itens):
     """Itens numerados; cada item é um nome ou {nome, id}. Cópias repetidas ficam linha a linha."""
@@ -38,8 +31,7 @@ def gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_
             L.append(f"#### {a['titulo']}")
             linhas = []
             for i, it in enumerate(a["itens"], 1):
-                mini = " ".join(m for m in (_miniatura(it.get("pedido_img") or drive_thumb(it.get("pedido_id"))), _miniatura(it.get("usado_img") or drive_thumb(it.get("usado_id")))) if m)
-                linhas.append(f"{i}. {it['texto']}" + (f"\n   {mini}" if mini else ""))
+                linhas.append(f"{i}. {it['texto']}")  # texto puro: as miniaturas aparecem só na página e no PDF
             L.append("\n".join(linhas))
     if conclusao:
         L += ["#### Conclusão", conclusao]

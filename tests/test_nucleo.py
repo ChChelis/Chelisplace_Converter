@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from nucleo import checagem, ficha, imagem, montagem, orcamento, pix, xml_mpc
+from nucleo import checagem, ficha, ficha_pdf, imagem, montagem, orcamento, pix, xml_mpc
 
 A, B, C, V = ("a" * 33, "b" * 33, "c" * 33, "v" * 33)
 XML = f"""<order><details><quantity>4</quantity></details>
@@ -122,14 +122,20 @@ class TestPixFicha(unittest.TestCase):
         pdf = pix.pdf_cobranca([[1, 0], [0, 1]], "abc", "Ana", 10)
         self.assertTrue(pdf.startswith(b"%PDF"))
 
+    def test_ficha_pdf(self):
+        from PIL import Image
+        import io
+        b = io.BytesIO(); Image.new("RGB", (60, 80), "red").save(b, "PNG")
+        d = dict(cliente="Ana", fontes=[dict(titulo="XML", frentes=["A"] * 40, versos=[])], pago=135, conclusao="ok", modo="normal",
+                 alteracoes=[dict(titulo="Troca", itens=[dict(texto="x", pedido_img="u1", usado_img="u2")])])
+        pdf = ficha_pdf.gerar(d, {"u1": b.getvalue()}, [[1, 0], [0, 1]], "000201")
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
     def test_ficha(self):
         md, r = ficha.gerar("Ana", "1", [dict(titulo="XML", frentes=["A", "B"], versos=["V"])],
                             [dict(titulo="Troca", itens=[dict(texto="x", pedido_id="i1", usado_id="i2")])], "ok", "normal", None)
         self.assertIn("### Pedido: 3 slots", md)
-        self.assertIn("thumbnail?id=i2", md)
-        md2, _ = ficha.gerar("Ana", "1", [dict(titulo="X", frentes=["A"])],
-                             [dict(titulo="T", itens=[dict(texto="x", pedido_img="https://api.scryfall.com/cards/c21/263?format=image")])], "", "normal", None)
-        self.assertIn("![|110](https://api.scryfall.com/cards/c21/263?format=image)", md2)
+        self.assertNotIn("![", md)
         self.assertLess(md.index("#### Conclusão"), md.index("#### Confidencial"))
         self.assertLess(md.index("### Alterações"), md.index("#### Confidencial"))
 
