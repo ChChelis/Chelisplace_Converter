@@ -60,3 +60,6 @@ Cada linha da tabela é um **kit** (N slots por R$ X). O pedido usa o maior kit 
 
 ### PDF da ficha = a própria ficha (formato do Chelis)
 O PDF para o cliente é o texto da ficha (o da caixa de edição, editado ou não) desenhado em A4 no modelo do `Pedido_Gui_Torneio_Hashaton.pdf`: títulos em negrito, listas com número cinza, fonte Liberation Sans (`nucleo/fontes/`, copiada por `site/build.sh`/`build.ps1`). Fica de fora tudo de `#### Confidencial` e a linha “Valor do pedido”; o **QR do Pix** vai ao fim, depois da chave. Miniaturas (se houver) aparecem sob o item da alteração. Botões: **Baixar tudo** (`Pedido <Cliente>.md` + `Pedido <Cliente>.pdf`), **Só o .md**, **Só o PDF do cliente**.
+
+### Fluxo não linear (nov/2026)
+O bot (etapa 3) só é necessário quando a entrada foi **lista**. Com XML (do MPCFill ou do bot) ou imagens + decklist, a aba 3 aparece como “(não precisa)”, a página avisa e **Voltar/Próximo pulam a etapa**. “Usar o XML do bot” substitui a lista que o originou (uma fonte só).

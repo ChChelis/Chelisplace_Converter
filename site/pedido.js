@@ -45,8 +45,19 @@ function renderFontes() {
   c.innerHTML = pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span><button class="peq" data-rm="${i}">Remover</button></div>`).join("");
   c.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { pedido.fontes.splice(+b.dataset.rm, 1); renderFontes(); }));
   atualizarResumo();
+  atualizarPassos();
   preencherOrcamento();
   renderFicha();
+}
+// O bot só é necessário se algum pedido entrou como lista; XML (do MPCFill ou do bot) e imagens + decklist seguem direto.
+const precisaBot = () => pedido.fontes.some((f) => f.origem === "lista");
+const botDispensavel = () => pedido.fontes.length > 0 && !precisaBot();
+function atualizarPassos() {
+  const b = document.querySelector("#passos [data-aba=conferencia]");
+  if (!b) return;
+  const pular = botDispensavel();
+  b.classList.toggle("pulada", pular);
+  b.innerHTML = `<b>3</b> Conferência${pular ? ' <small>(não precisa)</small>' : ""}`;
 }
 const totais = () => ({
   frentes: pedido.fontes.reduce((n, f) => n + f.frentes.length, 0),
@@ -61,7 +72,7 @@ function atualizarResumo() {
 $("#e-lista-add").onclick = () => {
   const n = lerLista($("#e-lista").value);
   $("#e-erro").textContent = n.length ? "" : "Não achei nenhuma linha no formato “1 Nome” ou “2x Nome”.";
-  if (n.length) { addFonte({ titulo: "Lista colada", frentes: n, versos: [] }); $("#e-lista").value = ""; }
+  if (n.length) { addFonte({ titulo: "Lista colada", origem: "lista", frentes: n, versos: [] }); $("#e-lista").value = ""; }
 };
 $("#e-xml").onchange = async (e) => {
   const arq = e.target.files[0]; if (!arq) return;
@@ -70,14 +81,14 @@ $("#e-xml").onchange = async (e) => {
     const r = lerXmlMpc(buf);
     $("#e-erro").textContent = "";
     await receberXml(arq);  // a Checagem e a Montagem reaproveitam o mesmo XML
-    addFonte({ titulo: arq.name, ...r });
+    addFonte({ titulo: arq.name, origem: "xml", ...r });
   } catch (err) { $("#e-erro").textContent = err.message; }
 };
 $("#e-deck").onchange = async (e) => {
   const arq = e.target.files[0]; if (!arq) return;
   const n = lerLista(await arq.text());
   $("#e-erro").textContent = n.length ? "" : "A decklist está vazia ou fora do formato “2x Nome”.";
-  if (n.length) addFonte({ titulo: "Decklist: " + arq.name, frentes: n, versos: [] });
+  if (n.length) addFonte({ titulo: "Decklist: " + arq.name, origem: "deco", frentes: n, versos: [] });
 };
 
 // ---------- orçamento ----------
@@ -184,7 +195,8 @@ async function procurarBot() {
           if (!r.ok) throw new Error("Esse pedido ainda não tem XML: gere-o na conferência do bot.");
           const buf = await r.arrayBuffer();
           await receberXml(new File([buf], p.nome + ".xml"));
-          addFonte({ titulo: p.nome + " (bot)", ...lerXmlMpc(buf) });
+          pedido.fontes = pedido.fontes.filter((f) => f.origem !== "lista");  // o XML do bot substitui a lista que deu origem a ele
+          addFonte({ titulo: p.nome + " (bot)", origem: "bot", ...lerXmlMpc(buf) });
           b.textContent = "XML carregado ✓";
         } catch (e) { lista.insertAdjacentHTML("beforeend", `<p class="alerta">${esc(e.message)}</p>`); }
       };
@@ -399,7 +411,12 @@ function desenharEnvio() {
 
 window.aoAbrirAba = (aba) => {
   if (aba === "checagem") desenharEnvio();
-  if (aba === "conferencia") procurarBot();
+  if (aba === "conferencia") {
+    const av = $("#b-aviso");
+    av.innerHTML = botDispensavel() ? `<p class="ok">Seu pedido já veio de XML ou de imagens: <b>esta etapa não é necessária</b>. Siga para a etapa 4.</p>` :
+      precisaBot() ? `<p class="aviso">Seu pedido entrou como lista: o bot é necessário para achar as imagens e gerar o XML.</p>` : "";
+    procurarBot();
+  }
   if (aba === "ficha") { if (!$("#f-cliente").value && sessao.pasta) $("#f-cliente").value = sessao.pasta.nome; renderFicha(); }
 };
 renderFontes(); renderAlteracoes();
@@ -408,14 +425,14 @@ pronto.then(carregarPrecos);
 // ---------- Voltar / Próximo em cada etapa ----------
 (() => {
   const ordem = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];
-  const nomes = { entrada: "Entrada", orcamento: "Orçamento", conferencia: "Conferência", checagem: "Imagens", ficha: "Cliente e ficha", montagem: "Montagem" };
-  const ir = (aba) => { document.querySelector(`#passos [data-aba=${aba}]`).click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+    const ir = (aba) => { document.querySelector(`#passos [data-aba=${aba}]`).click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const vizinho = (i, d) => { let k = i + d; if (ordem[k] === "conferencia" && botDispensavel()) k += d; return ordem[k]; };
   ordem.forEach((id, i) => {
     const sec = document.getElementById(id), barra = document.createElement("div");
     barra.className = "linha passos-rodape";
-    if (i > 0) barra.insertAdjacentHTML("beforeend", `<button class="acao sec" data-ir="${ordem[i - 1]}">← ${nomes[ordem[i - 1]]}</button>`);
-    if (i < ordem.length - 1) barra.insertAdjacentHTML("beforeend", `<button class="acao" data-ir="${ordem[i + 1]}">Próximo: ${nomes[ordem[i + 1]]} →</button>`);
-    barra.querySelectorAll("button").forEach((b) => (b.onclick = () => ir(b.dataset.ir)));
+    if (i > 0) barra.insertAdjacentHTML("beforeend", `<button class="acao sec" data-d="-1">← Voltar</button>`);
+    if (i < ordem.length - 1) barra.insertAdjacentHTML("beforeend", `<button class="acao" data-d="1">Próximo →</button>`);
+    barra.querySelectorAll("button").forEach((b) => (b.onclick = () => ir(vizinho(i, +b.dataset.d))));
     sec.append(barra);
   });
 })();
