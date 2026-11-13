@@ -600,3 +600,5 @@
     var fn = $("#firstNew"); if (fn) fn.addEventListener("click", function () { openModal("mNovo"); });
   }).catch(function (e) { $("#main").innerHTML = '<div class="empty">Não consegui falar com o servidor local (' + esc(e.message) + ").</div>"; });
 })();
+
+;setInterval(function () { fetch('/api/estado').catch(function () {}); }, 20000); // mantém o bot aberto enquanto esta tela estiver aberta

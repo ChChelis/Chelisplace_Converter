@@ -150,6 +150,20 @@ $("#o-modo").addEventListener("change", () => { desenharPrecos(); orcar(); });
 
 // ---------- conferência (motor local do bot) ----------
 const MOTOR = "http://127.0.0.1:8781";
+const BOT_ZIP = "https://github.com/ChChelis/Chelisplace_Converter/releases/download/bot-latest/BotChelisplace-windows.zip";
+let pingBot = null;  // enquanto a página está aberta e o bot conectado, avisa o bot que ainda é usado (ele fecha sozinho sem uso)
+const manterBot = () => { if (!pingBot) pingBot = setInterval(() => fetch(MOTOR + "/api/estado").catch(() => {}), 20000); };
+async function abrirBot(alvo) {
+  // o bot registra o endereço chelisbot:// no Windows na primeira vez que roda; o navegador pergunta se pode abrir
+  const a = Object.assign(document.createElement("a"), { href: "chelisbot://abrir" });
+  document.body.append(a); a.click(); a.remove();
+  alvo.textContent = "Abrindo o bot… (se o navegador perguntar, permita abrir o aplicativo)";
+  for (let i = 0; i < 15; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try { await fetch(MOTOR + "/api/estado"); return procurarBot(); } catch {}
+  }
+  alvo.innerHTML = `<span class="aviso">O bot não abriu.</span> Se é a primeira vez, baixe e abra o programa uma vez pelo botão abaixo.`;
+}
 async function procurarBot() {
   const alvo = $("#b-estado"), lista = $("#b-pedidos");
   alvo.textContent = "Procurando o bot…"; lista.innerHTML = "";
@@ -157,6 +171,9 @@ async function procurarBot() {
     const est = await (await fetch(MOTOR + "/api/estado")).json();
     alvo.innerHTML = `<span class="ok">Bot conectado</span> <span class="suave">(versão ${esc(est.versao)})</span> <button class="peq" id="b-de-novo">Atualizar</button> <a href="${MOTOR}/" target="_blank" rel="noopener">Abrir a conferência do bot</a>`;
     $("#b-de-novo").onclick = procurarBot;
+    alvo.insertAdjacentHTML("beforeend", ` <button class="peq" id="b-sair">Fechar o bot</button>`);
+    $("#b-sair").onclick = async () => { try { await fetch(MOTOR + "/api/sair", { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } }); } catch {} clearInterval(pingBot); pingBot = null; setTimeout(procurarBot, 800); };
+    manterBot();
     const peds = await (await fetch(MOTOR + "/api/pedidos")).json();
     lista.innerHTML = peds.length ? "<h3>Pedidos do bot</h3>" : `<p class="suave">O bot ainda não tem pedidos. Abra-o e use “+ Novo pedido”.</p>`;
     for (const p of peds) {
@@ -177,8 +194,14 @@ async function procurarBot() {
       lista.append(av);
     }
   } catch {
-    alvo.innerHTML = `<span class="aviso">Bot não encontrado.</span> Abra o <b>BotChelisplace.exe</b> (ele usa a porta 8781) e clique em <button class="peq" id="b-de-novo">Procurar de novo</button>`;
+    clearInterval(pingBot); pingBot = null;
+    alvo.innerHTML = `<span class="aviso">Bot não encontrado.</span>
+      <button class="acao" id="b-abrir">Abrir o bot</button>
+      <a class="acao sec" style="text-decoration:none;display:inline-block" href="${BOT_ZIP}" id="b-baixar">Baixar o bot (Windows)</a>
+      <button class="peq" id="b-de-novo">Procurar de novo</button>
+      <p class="suave">Primeira vez: baixe o zip, extraia numa pasta e abra o <b>BotChelisplace.exe</b> uma vez (o Windows pode avisar que o programa é desconhecido: “Mais informações” → “Executar assim mesmo”). Depois disso, o botão <b>Abrir o bot</b> desta página basta. O bot abre minimizado e fecha sozinho quando você para de usar a página.</p>`;
     $("#b-de-novo").onclick = procurarBot;
+    $("#b-abrir").onclick = () => abrirBot(alvo);
   }
 }
 

@@ -22,3 +22,10 @@ Programa local para Windows: roda o bot inteiro no seu PC (lista → candidatos 
 - O executável é para Windows e é compilado pelo GitHub; a versão Linux foi testada aqui (`--selftest`, servidor, pipeline de 3 cartas), a de Windows ainda não.
 - O pipeline roda uma carta por vez (no repositório usávamos 4 processos); pedidos grandes demoram mais.
 - As fontes da interface vêm do Google Fonts; sem internet cai para fontes do sistema.
+
+## Baixar, abrir e fechar o bot pela página (nov/2026)
+- **Download:** a compilação (Actions → *Compilar o aplicativo*) agora também publica o zip como Release fixa `bot-latest`. A página (etapa 3) baixa de `https://github.com/ChChelis/Chelisplace_Converter/releases/download/bot-latest/BotChelisplace-windows.zip` (repositório público). Cada compilação substitui essa Release.
+- **Abrir pela página:** ao rodar, o `.exe` registra o endereço `chelisbot://` no Windows (HKCU, sem administrador). O botão “Abrir o bot” da página usa esse endereço (o navegador pergunta se pode abrir o app); abre com `cmd /c start /min`, ou seja, **minimizado**, e sem abrir a tela do bot no navegador (`--protocolo`). Na primeira vez é preciso abrir o `.exe` à mão uma vez, para o registro existir.
+- **Janela:** o console abre minimizado e fecha junto com o bot. (Se um dia quisermos sem janela nenhuma, é preciso trocar `console=True` por `False` no spec e um ícone na bandeja para sair.)
+- **Instância única:** ao iniciar, o bot pede ao que já estiver na porta 8781 para fechar (`POST /api/sair`, só aceito sem `Origin` ou de origens da página) e assume o lugar.
+- **Fecha sozinho:** sem nenhuma chamada `/api` por 2 minutos (a página aberta e a tela do bot fazem uma a cada 20 s) e sem trabalho rodando, o bot encerra. Há 5 minutos de folga depois de iniciar. Variáveis de teste: `CHELIS_OCIOSO`, `CHELIS_FOLGA` (segundos). Na página, “Fechar o bot” também encerra.

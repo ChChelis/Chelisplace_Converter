@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     tags: ["app-v*"]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: windows-latest
@@ -20,3 +22,10 @@ jobs:
         with:
           name: BotChelisplace-windows
           path: BotChelisplace-windows.zip
+      - name: Publicar o zip como Release (link fixo para a página baixar)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete bot-latest --yes --cleanup-tag || true
+          gh release create bot-latest BotChelisplace-windows.zip --title "Bot Chelisplace (última versão)" --notes "Gerado automaticamente a partir de ${{ github.sha }}." --target ${{ github.sha }}

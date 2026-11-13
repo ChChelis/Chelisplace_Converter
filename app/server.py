@@ -378,8 +378,18 @@ class H(BaseHTTPRequestHandler):
         return json.loads(self.rfile.read(n) or b"{}") if n else {}
 
     def tratar(self, metodo):
+        global ULTIMO
         u = urlparse(self.path); p = unquote(u.path); q = parse_qs(u.query)
+        if p.startswith("/api/"):
+            ULTIMO = time.time()  # a página (ou a tela do bot) aberta mantém o bot vivo
         try:
+            if p == "/api/sair" and metodo == "POST":
+                o = self.headers.get("Origin")
+                if o and o not in ORIGENS and not (o.startswith("https://") and o.endswith(".pages.dev")):
+                    return self.enviar(403, {"erro": "origem não permitida"})  # um site qualquer não pode fechar o bot
+                self.enviar(200, {"ok": True})
+                threading.Timer(0.4, lambda: os._exit(0)).start()
+                return
             if metodo == "GET" and not p.startswith(("/api/", "/img/")):
                 rel = "index.html" if p == "/" else p.lstrip("/")
                 alvo = os.path.normpath(os.path.join(WEB, rel))
@@ -461,6 +471,59 @@ class H(BaseHTTPRequestHandler):
     def do_DELETE(self): self.tratar("DELETE")
 
 
+ULTIMO = time.time() + float(os.environ.get("CHELIS_FOLGA", "300"))  # folga para a página abrir depois de o bot iniciar
+OCIOSO_S = float(os.environ.get("CHELIS_OCIOSO", "120"))
+
+
+def vigiar():
+    """Fecha o bot quando ninguém usa mais (nenhuma chamada /api por OCIOSO_S) e não há trabalho rodando."""
+    while True:
+        time.sleep(10)
+        ativo = any((j or {}).get("estado") in ("fila", "rodando") for j in list(JOBS.values()))
+        if not ativo and time.time() - ULTIMO > OCIOSO_S:
+            os._exit(0)
+
+
+def fechar_outro_bot(porta):
+    """Instância única: se já há um bot nesta porta, pede que ele feche (o novo assume) e espera a porta liberar."""
+    try:
+        req = urllib.request.Request(f"http://127.0.0.1:{porta}/api/sair", data=b"{}", method="POST", headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=2).read()
+    except Exception:  # noqa: BLE001
+        return
+    for _ in range(30):
+        time.sleep(0.2)
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{porta}/api/estado", timeout=1).read()
+        except Exception:  # noqa: BLE001
+            return
+
+
+def so_windows():
+    """No Windows: janela do console minimizada e o endereço chelisbot:// (a página abre o bot por ele)."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if hwnd:
+            ctypes.windll.user32.ShowWindow(hwnd, 7)  # SW_SHOWMINNOACTIVE: minimizada, sem roubar o foco
+    except Exception:  # noqa: BLE001
+        pass
+    if getattr(sys, "frozen", False):
+        try:
+            import winreg
+            exe = sys.executable
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\chelisbot") as k:
+                winreg.SetValue(k, "", winreg.REG_SZ, "URL:Bot Chelisplace")
+                winreg.SetValueEx(k, "URL Protocol", 0, winreg.REG_SZ, "")
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\chelisbot\shell\open\command") as k:
+                # "start /min": o bot abre minimizado; --protocolo: não abre a tela dele no navegador
+                winreg.SetValue(k, "", winreg.REG_SZ, f'cmd.exe /c start "" /min "{exe}" --protocolo')
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def selftest():
     """Usado pela compilação: confere que o OCR, o modelo e a interface vieram dentro do aplicativo."""
     from PIL import Image, ImageDraw
@@ -474,14 +537,18 @@ def main():
     if "--selftest" in sys.argv:
         return selftest()
     porta = int(sys.argv[sys.argv.index("--porta") + 1]) if "--porta" in sys.argv else PORTA_PADRAO
+    so_windows()
+    fechar_outro_bot(porta)
     try:
         srv = ThreadingHTTPServer(("127.0.0.1", porta), H)
     except OSError:  # porta ocupada: qualquer outra (a página só acha a padrão)
         srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
     print("Bot Chelisplace", VERSAO, "-", url, "- dados em", HOME, flush=True)
-    if "--sem-navegador" not in sys.argv:
+    if "--sem-navegador" not in sys.argv and "--protocolo" not in sys.argv:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+    if not DEV:
+        threading.Thread(target=vigiar, daemon=True).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
