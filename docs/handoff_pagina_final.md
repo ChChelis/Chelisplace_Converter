@@ -77,3 +77,9 @@ Recomendação: começar pela opção 1, na ordem do fluxo: **Lista/XML → Orç
 3. Orçamento: quais kits predefinidos e quais preços por slot ele quer editar? (Normal: 108 slots por R$ 135; foil: 180 por R$ 330; avulso 1,6667/2,44441; impressão R$ 14/página; colagem R$ 0,13/slot.) Quer preços diferentes por cliente?
 4. Obsidian: gerar o `.md` para ele salvar/colar, ou outro caminho? Como ele quer ver as miniaturas lá?
 5. O teste na gráfica (folha deste processo × processo antigo) já aconteceu? Mudou algo?
+
+## Atualização (13/11/2026): estado e o que saiu da lista de pendências
+- **Página única pronta e publicada** (Cloudflare Workers com arquivos estáticos, `wrangler.jsonc`; endereço `https://chelisplace-converter-pedidos.shrill-mountain-e326.workers.dev`). Login do Drive funcionando; bot local conectado (porta 8781).
+- **Resolvido, saiu das pendências:** o teste na gráfica (o Chelis já mandou um arquivo deste processo); a chave secreta do cliente OAuth (tratada pelo Chelis).
+- **Descartado pelo Chelis:** salvar pedido/ficha no navegador e botão “Abrir ficha .md”.
+- **Ainda em aberto:** domínio próprio `pedidos.chelisplace.com` (exige Pages com CNAME ou mover o DNS); intermediário do MPCFill; conferência dentro do site; ajustador de imagens; pasta `completar/`; Archidekt e tutorial; CMYK/fonte lateral; escopo `drive.file` para beta; testar no Drive real o envio de PDFs e a cópia das imagens do XML; recalibração do bot.
