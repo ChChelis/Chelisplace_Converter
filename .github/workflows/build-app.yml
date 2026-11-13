@@ -16,16 +16,17 @@ jobs:
       - run: pip install -r requirements-app.txt pyinstaller
       - run: pyinstaller app/build/chelis.spec --noconfirm
       - name: Teste rápido do aplicativo compilado
-        run: dist/BotChelisplace/BotChelisplace.exe --selftest
-      - run: Compress-Archive -Path dist/BotChelisplace -DestinationPath BotChelisplace-windows.zip
+        run: |
+          & "dist/Chelisplace_Simba (bot)/Chelisplace_Simba (bot).exe" --selftest
+      - run: Compress-Archive -LiteralPath "dist/Chelisplace_Simba (bot)" -DestinationPath Chelisplace_Simba_bot.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: BotChelisplace-windows
-          path: BotChelisplace-windows.zip
+          name: Chelisplace_Simba_bot
+          path: Chelisplace_Simba_bot.zip
       - name: Publicar o zip como Release (link fixo para a página baixar)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete bot-latest --yes --cleanup-tag || true
-          gh release create bot-latest BotChelisplace-windows.zip --title "Bot Chelisplace (última versão)" --notes "Gerado automaticamente a partir de ${{ github.sha }}." --target ${{ github.sha }}
+          gh release create bot-latest Chelisplace_Simba_bot.zip --title "Bot Chelisplace (última versão)" --notes "Gerado automaticamente a partir de ${{ github.sha }}." --target ${{ github.sha }}

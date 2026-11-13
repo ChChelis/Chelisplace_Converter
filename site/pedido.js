@@ -161,7 +161,7 @@ $("#o-modo").addEventListener("change", () => { desenharPrecos(); orcar(); });
 
 // ---------- conferência (motor local do bot) ----------
 const MOTOR = "http://127.0.0.1:8781";
-const BOT_ZIP = "https://github.com/ChChelis/Chelisplace_Converter/releases/download/bot-latest/BotChelisplace-windows.zip";
+const BOT_ZIP = "https://github.com/ChChelis/Chelisplace_Converter/releases/download/bot-latest/Chelisplace_Simba_bot.zip";
 let pingBot = null;  // enquanto a página está aberta e o bot conectado, avisa o bot que ainda é usado (ele fecha sozinho sem uso)
 const manterBot = () => { if (!pingBot) pingBot = setInterval(() => fetch(MOTOR + "/api/estado").catch(() => {}), 20000); };
 async function abrirBot(alvo) {
@@ -211,7 +211,7 @@ async function procurarBot() {
       <button class="acao" id="b-abrir">Abrir o bot</button>
       <a class="acao sec" style="text-decoration:none;display:inline-block" href="${BOT_ZIP}" id="b-baixar">Baixar o bot (Windows)</a>
       <button class="peq" id="b-de-novo">Procurar de novo</button>
-      <p class="suave">Primeira vez: baixe o zip, extraia numa pasta e abra o <b>BotChelisplace.exe</b> uma vez (o Windows pode avisar que o programa é desconhecido: “Mais informações” → “Executar assim mesmo”). Depois disso, o botão <b>Abrir o bot</b> desta página basta. O bot abre minimizado e fecha sozinho quando você para de usar a página.</p>`;
+      <p class="suave">Primeira vez: baixe o zip (<b>Chelisplace_Simba_bot.zip</b>), extraia — a pasta já sai como “Chelisplace_Simba (bot)” — e abra o <b>Chelisplace_Simba (bot).exe</b> uma vez (o Windows pode avisar que o programa é desconhecido: “Mais informações” → “Executar assim mesmo”). Depois disso, o botão <b>Abrir o bot</b> desta página basta. O bot abre minimizado e fecha sozinho quando você para de usar a página.</p>`;
     $("#b-de-novo").onclick = procurarBot;
     $("#b-abrir").onclick = () => abrirBot(alvo);
   }

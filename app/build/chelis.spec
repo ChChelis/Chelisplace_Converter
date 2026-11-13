@@ -10,5 +10,5 @@ hidden = collect_submodules("rapidocr_onnxruntime") + ["compare", "make_order", 
 
 a = Analysis([os.path.join(ROOT, "app", "server.py")], pathex=[os.path.join(ROOT, "scripts")], datas=datas, hiddenimports=hidden, excludes=["tkinter", "matplotlib", "scipy", "pandas"])
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="BotChelisplace", console=True)  # console=True: a janela mostra o endereço e os erros
-coll = COLLECT(exe, a.binaries, a.datas, name="BotChelisplace")
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="Chelisplace_Simba (bot)", console=True)  # console=True: a janela mostra o endereço e os erros
+coll = COLLECT(exe, a.binaries, a.datas, name="Chelisplace_Simba (bot)")

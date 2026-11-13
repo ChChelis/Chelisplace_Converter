@@ -3,7 +3,7 @@
 Programa local para Windows: roda o bot inteiro no seu PC (lista → candidatos do MPCFill → conferência → XML → imagens), com a interface no estilo da Vitrine de Sets (carrossel, grade e triagem). Os dados ficam em `%LOCALAPPDATA%\ChelisplaceBot`.
 
 ## Usar
-1. Baixe `BotChelisplace-windows.zip` (artefato da compilação no GitHub, aba Actions), extraia e abra `BotChelisplace.exe`. O navegador abre sozinho no endereço local.
+1. Baixe `Chelisplace_Simba_bot.zip` (artefato da compilação no GitHub, aba Actions), extraia e abra `Chelisplace_Simba (bot).exe` (dentro da pasta `Chelisplace_Simba (bot)`). O navegador abre sozinho no endereço local.
 2. **+ Novo pedido**: cole a lista (`1 Sol Ring (C21) 263`, uma por linha). O processamento mostra o andamento; 100 cartas levam algumas dezenas de minutos.
 3. Confira em **Carrossel** (teclado: setas, Enter aceita, N nenhum, D dúvida, Z desfaz), **Grade** ou **Triagem** (deslize: direita aceita, esquerda nenhum). **Ver alertas** mostra só o que merece olhar.
 4. **XML e imagens**: gera o XML, baixa o XML e as imagens do Drive para a pasta que você escolher (uma por vez, com pausa), monta a mensagem para o cliente.
@@ -24,7 +24,7 @@ Programa local para Windows: roda o bot inteiro no seu PC (lista → candidatos 
 - As fontes da interface vêm do Google Fonts; sem internet cai para fontes do sistema.
 
 ## Baixar, abrir e fechar o bot pela página (nov/2026)
-- **Download:** a compilação (Actions → *Compilar o aplicativo*) agora também publica o zip como Release fixa `bot-latest`. A página (etapa 3) baixa de `https://github.com/ChChelis/Chelisplace_Converter/releases/download/bot-latest/BotChelisplace-windows.zip` (repositório público). Cada compilação substitui essa Release.
+- **Download:** a compilação (Actions → *Compilar o aplicativo*) agora também publica o zip como Release fixa `bot-latest`. A página (etapa 3) baixa de `https://github.com/ChChelis/Chelisplace_Converter/releases/download/bot-latest/Chelisplace_Simba_bot.zip` (repositório público). Cada compilação substitui essa Release.
 - **Abrir pela página:** ao rodar, o `.exe` registra o endereço `chelisbot://` no Windows (HKCU, sem administrador). O botão “Abrir o bot” da página usa esse endereço (o navegador pergunta se pode abrir o app); abre com `cmd /c start /min`, ou seja, **minimizado**, e sem abrir a tela do bot no navegador (`--protocolo`). Na primeira vez é preciso abrir o `.exe` à mão uma vez, para o registro existir.
 - **Janela:** o console abre minimizado e fecha junto com o bot. (Se um dia quisermos sem janela nenhuma, é preciso trocar `console=True` por `False` no spec e um ícone na bandeja para sair.)
 - **Instância única:** ao iniciar, o bot pede ao que já estiver na porta 8781 para fechar (`POST /api/sair`, só aceito sem `Origin` ou de origens da página) e assume o lugar.
