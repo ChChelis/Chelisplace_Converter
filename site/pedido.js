@@ -31,7 +31,15 @@ function lerXmlMpc(buf) {
     }
     return saida;
   };
-  return { frentes: cartas("fronts"), versos: cartas("backs") };
+  const frentes = cartas("fronts"), todosVersos = cartas("backs");
+  // Verso padrão: o da tag <cardback> e o verso repetido em quase todo o pedido (ex.: “Back WUBRG” em 186 slots).
+  // Ele não conta como slot, não entra na ficha e sai da pasta no processo; só versos de dupla-face contam.
+  const cardback = (doc.querySelector("cardback")?.textContent || "").trim();
+  const porId = new Map();
+  for (const v of todosVersos) { const e = porId.get(v.id) || { nome: v.nome, qtd: 0 }; e.qtd++; porId.set(v.id, e); }
+  const padraoIds = new Set([...porId].filter(([id, e]) => id === cardback || e.qtd >= Math.max(5, frentes.length * 0.5)).map(([id]) => id));
+  return { frentes, versos: todosVersos.filter((v) => !padraoIds.has(v.id)),
+    versoPadrao: [...porId].filter(([id]) => padraoIds.has(id)).map(([, e]) => e) };
 }
 const assinatura = (f) => [...f.frentes, ...f.versos].map((c) => c.id || c.nome).join("|") + "#" + f.frentes.length;
 function addFonte(f) {
@@ -42,7 +50,7 @@ function addFonte(f) {
 }
 function renderFontes() {
   const c = $("#e-fontes");
-  c.innerHTML = pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span><button class="peq" data-rm="${i}">Remover</button></div>`).join("");
+  c.innerHTML = pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
   c.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { pedido.fontes.splice(+b.dataset.rm, 1); renderFontes(); }));
   atualizarResumo();
   atualizarPassos();

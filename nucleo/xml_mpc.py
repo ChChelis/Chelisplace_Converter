@@ -43,6 +43,17 @@ def ler(caminho):
                   (raiz.findtext("cardback") or "").strip(), det)
 
 
+def versos_padrao(pedido):
+    """IDs dos versos 'padrão': o da tag <cardback> e qualquer verso listado em <backs> que cubra a maior parte
+    do pedido (ex.: um 'Back WUBRG' repetido em quase todos os slots). Dupla-face (um verso por frente) não entra."""
+    ids = {pedido.verso_padrao} if pedido.verso_padrao else set()
+    total = sum(len(c.slots) for c in pedido.frentes)
+    for c in pedido.versos:
+        if len(c.slots) >= max(5, total * 0.5):
+            ids.add(c.id)
+    return ids
+
+
 def escrever(pedido, caminho):
     raiz = ET.Element("order")
     det = ET.SubElement(raiz, "details")

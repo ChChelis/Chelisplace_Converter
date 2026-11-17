@@ -63,3 +63,6 @@ O PDF para o cliente é o texto da ficha (o da caixa de edição, editado ou nã
 
 ### Fluxo não linear (nov/2026)
 O bot (etapa 3) só é necessário quando a entrada foi **lista**. Com XML (do MPCFill ou do bot) ou imagens + decklist, a aba 3 aparece como “(não precisa)”, a página avisa e **Voltar/Próximo pulam a etapa**. “Usar o XML do bot” substitui a lista que o originou (uma fonte só).
+
+### Verso padrão repetido no XML
+XMLs como o do iggor listam, em `<backs>`, um mesmo verso (ex.: “Back WUBRG”) em quase todos os slots. Isso é o **verso padrão** (sai da pasta no processo do Chelis) e **não conta como slot** nem entra na ficha. Regra, igual no núcleo (`xml_mpc.versos_padrao`) e na página: é padrão o ID da tag `<cardback>` e qualquer verso de `<backs>` que cubra pelo menos 5 slots **e** metade das frentes. Dupla-face (um verso por frente) continua contando +1. Afeta o orçamento (versos), a checagem (não exige cópias), os pares e a montagem. Exemplo: 191 frentes + 4 versos = 195 slots (não 381).

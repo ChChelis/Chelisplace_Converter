@@ -97,6 +97,27 @@ class TestOrcamento(unittest.TestCase):
         self.assertEqual((r["pago"], r["impressao"]), (330, 121.99))
 
 
+class TestVersoPadrao(Base):
+    def _xml(self):
+        fr = "".join(f"<card><id>{'F%02d' % i + 'x' * 22}</id><slots>{i}</slots><name>C{i}.png</name></card>" for i in range(10))
+        padrao = "<card><id>" + "P" * 25 + "</id><slots>" + ",".join(str(i) for i in range(10)) + "</slots><name>Back.png</name></card>"
+        dfc = "<card><id>" + "V" * 25 + "</id><slots>3</slots><name>Verso DFC.png</name></card>"
+        (self.d / "x.xml").write_text(f"<order><fronts>{fr}</fronts><backs>{padrao}{dfc}</backs><cardback>{'Z' * 25}</cardback></order>")
+        return xml_mpc.ler(self.d / "x.xml")
+
+    def test_detecta_o_verso_repetido(self):
+        ped = self._xml()
+        self.assertEqual(xml_mpc.versos_padrao(ped), {"Z" * 25, "P" * 25})
+
+    def test_nao_conta_nem_exige_o_padrao_mas_conta_o_dfc(self):
+        ped = self._xml()
+        exig, _ = checagem.exigido(ped)
+        self.assertNotIn("P" * 25, exig)
+        self.assertEqual(exig["V" * 25], 1)
+        self.assertEqual(sum(exig.values()), 11)  # 10 frentes + 1 verso de dupla-face
+        self.assertEqual(checagem.pares(ped), [("F03" + "x" * 22, "V" * 25)])
+
+
 class TestOrcamentoEditavel(unittest.TestCase):
     def test_kits_e_avulso_editados(self):
         p = dict(kits=[dict(slots=108, preco=135), dict(slots=36, preco=50)], avulso=2.0)

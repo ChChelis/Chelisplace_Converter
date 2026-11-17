@@ -45,13 +45,15 @@ def exigido(pedido):
     for c in pedido.frentes + pedido.versos:
         n[c.id] += len(c.slots)
         nomes.setdefault(c.id, c.nome)
-    n.pop(pedido.verso_padrao, None)  # verso padrão não entra na contagem
+    for i in xml_mpc.versos_padrao(pedido):
+        n.pop(i, None)  # verso padrão (tag <cardback> ou o verso repetido em quase todo o pedido) não entra na contagem
     return dict(n), nomes
 
 
 def pares(pedido):
     por_slot = {s: c.id for c in pedido.frentes for s in c.slots}
-    return [(por_slot[s], v.id) for v in pedido.versos for s in v.slots if s in por_slot]
+    padrao = xml_mpc.versos_padrao(pedido)
+    return [(por_slot[s], v.id) for v in pedido.versos if v.id not in padrao for s in v.slots if s in por_slot]
 
 
 def sem_ids(pedido, ignorar):
@@ -70,6 +72,7 @@ def analisar(pasta, pedido, ignorar=()):
     pedido = sem_ids(pedido, ignorar)
     pasta = Path(pasta)
     r = Resultado()
+    padrao = xml_mpc.versos_padrao(pedido)
     r.exigido, r.nomes = exigido(pedido)
     r.pares = pares(pedido)
     for f in sorted(pasta.iterdir()):
@@ -80,7 +83,7 @@ def analisar(pasta, pedido, ignorar=()):
             r.sem_id.append(f.name)
         elif i in ignorar:
             continue
-        elif i == pedido.verso_padrao:
+        elif i in padrao:
             r.verso_padrao.append(f.name)
         else:
             r.existentes.setdefault(i, []).append(f.name)
