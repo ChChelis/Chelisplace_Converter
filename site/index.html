@@ -28,6 +28,7 @@
   <button role="tab" data-aba="montagem" aria-selected="false"><b>6</b> Montagem</button>
 </nav>
 <div class="resumo" id="resumo"></div>
+<div id="nav-aviso" class="conf aviso" hidden></div>
 
 <section id="entrada">
   <h2>Entrada do pedido</h2>
@@ -61,6 +62,15 @@
   </details>
   <table id="o-tabela"></table>
   <div class="linha"><div><label for="o-pago">Valor cobrado do cliente (começa igual ao calculado; mude só se combinou outro)</label><input id="o-pago" type="number" min="0" step="1"><button class="peq" id="o-pago-auto">Usar o calculado</button></div></div>
+  <div class="conf conf-so-voce" id="o-desc">
+    <b class="aviso">Só para você · descontos possíveis</b>
+    <p class="suave">Para itens supervalorizados: duas formas de dar desconto, já com o lucro que sobra. Nada disso vai ao cliente.</p>
+    <div class="linha">
+      <div><label for="d-slot">Todos os slots a R$ (por slot)</label><input id="d-slot" type="number" min="0" step="0.01"></div>
+      <div><label for="d-pct">Ceder até (% do lucro)</label><input id="d-pct" type="number" min="0" max="100" step="1" value="10"></div>
+    </div>
+    <table id="d-tabela"></table>
+  </div>
   <p class="suave">Cada verso distinto conta mais um slot. Custo, colagem e lucro são só seus: não envie esta tabela ao cliente. Os preços ficam guardados neste navegador.</p>
 </section>
 
@@ -145,6 +155,7 @@
   <div class="barra" id="m-barra" hidden><div></div></div>
   <div id="m-status" class="suave"></div>
   <div id="m-saida"></div>
+  <div id="m-fim" class="conf" hidden><b class="ok">Pedido montado.</b> Quando terminar de baixar os PDFs, comece o próximo sem recarregar a página (o Google Drive continua conectado).<br><button class="acao" id="m-novo">Novo pedido</button><div id="m-novo-conf"></div></div>
 </section>
 </main>
 <script src="qrcode.min.js"></script>

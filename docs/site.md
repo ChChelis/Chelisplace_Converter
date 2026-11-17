@@ -69,3 +69,9 @@ XMLs como o do iggor listam, em `<backs>`, um mesmo verso (ex.: “Back WUBRG”
 
 ### Divisão automática do orçamento (kits)
 Prioridade: o maior kit que couber (quantos couberem), depois o próximo maior, e assim por diante. O que sobrar (menos que o menor kit) vira um **kit final separado do menor tamanho** (opção “o que sobrar vira um kit do menor tamanho”, ligada por padrão para quem tem kit de até 18 slots), cobrado pelo preço desse kit; sem a opção, é cobrado por slot avulso (`nucleo/orcamento.py`, campo `kit_final`). Exemplo com kits 108/R$135, 72/R$120 e 18/R$30 e 194 slots: 1 × 108 + 1 × 72 + 1 kit final de 18 (sobraram 14) = R$ 285, 11 páginas.
+
+### Etapas com bloqueio, descontos, Novo pedido (nov/2026)
+- **Não passa com pendência:** o **Próximo** fica desabilitado e diz o que falta; clicar numa aba à frente também é barrado com um aviso (voltar é livre). Pendências: 1 traga o pedido; 2 slots > 0 e valor cobrado; 3 (só para lista) usar o XML do bot; 4 pasta escolhida, cópia do Drive terminada e **Conferir** feito sem pendências (faltando, a duplicar, a mais, pares incompletos ou soltos; a conferência vale até a pasta mudar); 5 nome do cliente.
+- **Descontos (confidencial, etapa 2):** “todos os slots a R$ X” (padrão: o menor preço por slot da tabela, ex.: 1,25) e “ceder N% do lucro” (padrão 10%); mostra preço, desconto e lucro que sobra (avisa prejuízo) e **Aplicar** leva o valor ao campo cobrado.
+- **Botões sem uso ficam desabilitados** (ex.: enviar imagens para o Drive quando a pasta já tem tudo; Entrar com Google quando conectado; Usar o XML do bot depois de carregado; Usar o calculado sem edição).
+- **Novo pedido** (fim da montagem): zera pedido, ficha, pasta, XML e perguntas, mantendo o Google Drive conectado e as configurações.

@@ -168,8 +168,34 @@ async function orcar() {
     ["Valor cobrado do cliente" + (pago !== r.pago ? " (combinado)" : ""), `<b>${reais(pago)}</b>`],
     [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], ["Colagem", reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
   ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
+  desenharDescontos(r);
+  $("#o-pago-auto").disabled = !pagoEditado;
   renderFicha();
 }
+// Descontos possíveis (confidencial): (1) todos os slots a um preço fixo por slot; (2) ceder uma % do lucro.
+let descSlotEditado = false;
+function desenharDescontos(r) {
+  if (!r.slots) { $("#d-tabela").innerHTML = ""; return; }
+  const p = pedido.precos[pedido.modo];
+  if (!descSlotEditado) {  // começa no menor preço por slot que a tabela já pratica (o "primeiro nível", ex.: 135 ÷ 108 = 1,25)
+    const taxas = p.kits.filter((k) => k.slots > 0).map((k) => k.preco / k.slots);
+    $("#d-slot").value = taxas.length ? +Math.min(...taxas).toFixed(4) : "";
+  }
+  const slot = +$("#d-slot").value || 0, pct = Math.min(Math.max(+$("#d-pct").value || 0, 0), 100);
+  const custo = r.impressao + r.colagem, lucro = r.pago - custo;
+  const linhas = [
+    [`Todos os ${r.slots} slots a R$ ${fmt(slot)}`, Math.round(r.slots * slot)],
+    [`Ceder ${pct}% do lucro (R$ ${fmt(Math.max(lucro, 0) * pct / 100)})`, r.pago - Math.round(Math.max(lucro, 0) * pct / 100)],
+  ];
+  $("#d-tabela").innerHTML = `<tr><th>Opção</th><th class="n">Preço</th><th class="n">Desconto</th><th class="n">Lucro</th><th></th></tr>` + linhas.map(([rot, preco], i) => {
+    const desc = r.pago - preco, lu = preco - custo, igual = preco === valorFinal();
+    return `<tr><td>${rot}</td><td class="n">${reais(preco)}</td><td class="n">${desc > 0 ? "− " + reais(desc) : desc < 0 ? "+ " + reais(-desc) + " (acima da tabela)" : "—"}</td>
+      <td class="n ${lu < 0 ? "alerta" : ""}">${reais(lu)}${lu < 0 ? " (prejuízo)" : ""}</td><td><button class="peq" data-aplicar="${preco}" ${igual ? "disabled" : ""}>${igual ? "Aplicado" : "Aplicar"}</button></td></tr>`;
+  }).join("");
+  $("#d-tabela").querySelectorAll("[data-aplicar]").forEach((b) => (b.onclick = () => { $("#o-pago").value = b.dataset.aplicar; pagoEditado = true; orcar(); }));
+}
+$("#d-slot").addEventListener("input", () => { descSlotEditado = $("#d-slot").value !== ""; orcar(); });
+$("#d-pct").addEventListener("input", orcar);
 const valorFinal = () => ($("#o-pago").value !== "" ? +$("#o-pago").value : ultimoOrc ? ultimoOrc.pago : 0);
 $("#o-pago").addEventListener("input", () => { pagoEditado = $("#o-pago").value !== ""; orcar(); });
 $("#o-pago-auto").onclick = () => { pagoEditado = false; orcar(); };
@@ -214,7 +240,7 @@ async function procurarBot() {
           await receberXml(new File([buf], p.nome + ".xml"));
           pedido.fontes = pedido.fontes.filter((f) => f.origem !== "lista");  // o XML do bot substitui a lista que deu origem a ele
           addFonte({ titulo: p.nome + " (bot)", origem: "bot", ...lerXmlMpc(buf) });
-          b.textContent = "XML carregado ✓";
+          b.textContent = "XML carregado ✓"; b.disabled = true;
         } catch (e) { lista.insertAdjacentHTML("beforeend", `<p class="alerta">${esc(e.message)}</p>`); }
       };
       lista.append(b);
@@ -390,6 +416,7 @@ $("#f-copiar").textContent = "Copiar texto da ficha (Obsidian)";
 
 // ---------- imagens do XML direto para o Drive (cópia feita pelo próprio Drive, sem baixar nada) ----------
 function nomeNoDrive(c) { return `${c.nome.replace(/[\\/:*?"<>|]/g, "_")} (${c.id})${c.ext || ".jpg"}`; }
+let copiando = false;
 function desenharEnvio() {
   const alvo = $("#c-enviar");
   const cartas = new Map();
@@ -399,11 +426,19 @@ function desenharEnvio() {
   alvo.innerHTML = `<div class="conf"><b>Imagens do XML (${cartas.size} arquivos distintos)</b><p class="suave">Se a pasta do pedido ainda não tem as imagens, a página pode copiá-las para o seu Drive, pelo próprio Drive (nada é baixado no seu computador). Requer o login do Google.</p>
     <label for="c-env-nome">Pasta do pedido em “${esc(Drive.NOME_RAIZ)}”</label><input id="c-env-nome" type="text" size="36" value="${esc(nomePedido)}">
     <br><button class="acao" id="c-env-ir">Enviar as imagens para o Drive</button><div id="c-env-saida"></div></div>`;
+  // se a pasta escolhida já tem todas as imagens do XML, o botão não tem mais o que fazer
+  const p0 = sessao.pasta;
+  if (p0 && p0.drive) {
+    const tem = new Set([...p0.raiz, ...p0.pares].map((x) => (x.nome.match(/\(([A-Za-z0-9_-]{20,})\)\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
+    if ([...cartas.keys()].every((id) => tem.has(id))) { $("#c-env-ir").disabled = true; $("#c-env-ir").textContent = "Imagens já estão no Drive ✓"; }
+  }
   $("#c-env-ir").onclick = () => {
     const nome = $("#c-env-nome").value.trim(), saida = $("#c-env-saida");
     if (!nome) { saida.innerHTML = `<span class="alerta">Dê um nome à pasta do pedido.</span>`; return; }
     if (!Drive.conectado()) { saida.innerHTML = `<span class="alerta">Entre com o Google no quadro “Google Drive” (no alto da página) primeiro.</span>`; return; }
     confirmar(saida, `Criar (ou reaproveitar) a pasta “${nome}” dentro de “${Drive.NOME_RAIZ}” e copiar para ela ${cartas.size} imagem(ns)? Arquivos que já estiverem lá são pulados; nada é apagado.`, async () => {
+      copiando = true;
+      try {
       const raizId = await Drive.raiz();
       const existentes = (await Drive.listar(raizId, ` and mimeType='${Drive.PASTA}'`)).find((x) => x.name === nome);
       const pastaId = existentes ? existentes.id : await Drive.criarPasta(nome, raizId);
@@ -421,7 +456,9 @@ function desenharEnvio() {
       }));
       sessao.pasta = await montarPastaDrive({ id: pastaId, name: nome });  // a etapa 4 já abre nesta pasta
       carregarIgnorados(); atualizarRotulos();
+      $("#c-env-ir").disabled = true; $("#c-env-ir").textContent = "Imagens já estão no Drive ✓"; sessao.conferencia = null;
       return `${feitas} copiada(s), ${puladas} já estava(m) lá` + (falhas.length ? `, ${falhas.length} falharam (${falhas.slice(0, 3).join("; ")}${falhas.length > 3 ? "…" : ""}). Essas precisam ser baixadas pelo bot (tela “XML e imagens” dele) para a pasta do pedido.` : ". Pasta pronta: clique em Conferir.");
+      } finally { copiando = false; }
     });
   };
 }
@@ -439,17 +476,90 @@ window.aoAbrirAba = (aba) => {
 renderFontes(); renderAlteracoes();
 pronto.then(carregarPrecos);
 
+// ---------- Etapas: não passa para a próxima com pendência ----------
+const ORDEM = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];
+const NOMES = { entrada: "Entrada", orcamento: "Orçamento", conferencia: "Conferência", checagem: "Imagens", ficha: "Cliente e ficha", montagem: "Montagem" };
+function pendencias(etapa) {
+  const m = [];
+  if (etapa === "entrada" && !pedido.fontes.length) m.push("traga o pedido (lista, XML ou decklist)");
+  if (etapa === "orcamento") {
+    const t = totais();
+    if (!(t.frentes + t.versos)) m.push("o pedido não tem nenhum slot");
+    if (!(valorFinal() > 0)) m.push("o valor cobrado está vazio");
+  }
+  if (etapa === "conferencia" && precisaBot()) m.push("o pedido entrou como lista: gere o XML no bot e use “Usar o XML de …”");
+  if (etapa === "checagem") {
+    if (copiando) m.push("a cópia das imagens para o Drive ainda está em andamento");
+    if (!sessao.pasta) m.push("escolha a pasta do pedido (ou envie as imagens do XML para o Drive)");
+    else if (sessao.xml && !sessao.conferencia) m.push("clique em Conferir para checar as imagens");
+    else if (sessao.conferencia && sessao.conferencia.pendentes) {
+      const c = sessao.conferencia, itens = [];
+      if (c.faltando) itens.push(`${c.faltando} imagem(ns) faltando`);
+      if (c.a_duplicar) itens.push(`${c.a_duplicar} para duplicar`);
+      if (c.excesso) itens.push(`${c.excesso} cópia(s) a mais`);
+      if (c.pares_incompletos) itens.push(`${c.pares_incompletos} par(es) incompleto(s) (resolva ou use “Ignorar este par”)`);
+      if (c.soltos) itens.push("pares soltos para mover para pares/");
+      m.push("a conferência ainda tem pendências: " + itens.join(", "));
+    }
+  }
+  if (etapa === "ficha" && !$("#f-cliente").value.trim()) m.push("preencha o nome do cliente");
+  return m;
+}
+const etapasAtivas = () => ORDEM.filter((e) => !(e === "conferencia" && botDispensavel()));
+function podeAbrirAba(aba) {
+  const ate = ORDEM.indexOf(aba), atual = ORDEM.find((e) => !document.getElementById(e).hidden);
+  if (ate <= ORDEM.indexOf(atual)) return true;  // voltar é sempre livre
+  for (const e of etapasAtivas()) {
+    if (ORDEM.indexOf(e) >= ate) break;
+    const pend = pendencias(e);
+    if (pend.length) {
+      const av = $("#nav-aviso");
+      av.hidden = false; av.innerHTML = `<b>Termine a etapa “${NOMES[e]}” antes de seguir:</b> ${esc(pend.join("; "))}.`;
+      clearTimeout(podeAbrirAba.t); podeAbrirAba.t = setTimeout(() => (av.hidden = true), 7000);
+      return false;
+    }
+  }
+  $("#nav-aviso").hidden = true;
+  return true;
+}
+window.podeAbrirAba = podeAbrirAba;
+
 // ---------- Voltar / Próximo em cada etapa ----------
 (() => {
-  const ordem = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];
-    const ir = (aba) => { document.querySelector(`#passos [data-aba=${aba}]`).click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const vizinho = (i, d) => { let k = i + d; if (ordem[k] === "conferencia" && botDispensavel()) k += d; return ordem[k]; };
-  ordem.forEach((id, i) => {
+  const ir = (aba) => { document.querySelector(`#passos [data-aba=${aba}]`).click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const vizinho = (i, d) => { let k = i + d; if (ORDEM[k] === "conferencia" && botDispensavel()) k += d; return ORDEM[k]; };
+  ORDEM.forEach((id, i) => {
     const sec = document.getElementById(id), barra = document.createElement("div");
     barra.className = "linha passos-rodape";
     if (i > 0) barra.insertAdjacentHTML("beforeend", `<button class="acao sec" data-d="-1">← Voltar</button>`);
-    if (i < ordem.length - 1) barra.insertAdjacentHTML("beforeend", `<button class="acao" data-d="1">Próximo →</button>`);
+    if (i < ORDEM.length - 1) barra.insertAdjacentHTML("beforeend", `<button class="acao" data-d="1">Próximo →</button><span class="aviso motivo" style="align-self:center"></span>`);
     barra.querySelectorAll("button").forEach((b) => (b.onclick = () => ir(vizinho(i, +b.dataset.d))));
     sec.append(barra);
   });
+  // o botão Próximo fica desabilitado enquanto a etapa tiver pendência, e diz o motivo
+  const atualizarNav = () => {
+    ORDEM.forEach((id) => {
+      const barra = document.getElementById(id).querySelector(".passos-rodape"), prox = barra && barra.querySelector('[data-d="1"]');
+      if (!prox) return;
+      const pend = pendencias(id);
+      prox.disabled = pend.length > 0;
+      barra.querySelector(".motivo").textContent = pend.length ? "Falta: " + pend.join("; ") : "";
+    });
+  };
+  setInterval(atualizarNav, 400); atualizarNav();
 })();
+
+// ---------- Novo pedido: zera tudo menos o Google Drive e as configurações ----------
+function novoPedido() {
+  pedido.fontes = []; pedido.alteracoes = [];
+  sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
+  Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
+  clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null;
+  for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
+  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf"]) { const el = $(s); if (el) el.textContent = ""; }
+  $("#m-barra").hidden = true; $("#m-fim").hidden = true; $("#nav-aviso").hidden = true;
+  renderFontes(); renderAlteracoes(); fichaMd = ""; atualizarRotulos();
+  document.querySelector("#passos [data-aba=entrada]").click();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+$("#m-novo").onclick = () => confirmar($("#m-novo-conf"), "Começar um novo pedido? Isso limpa o pedido atual (cartas, ficha, pasta e XML escolhidos). Os PDFs já baixados não são afetados e o Google Drive continua conectado.", async () => { novoPedido(); return ""; });

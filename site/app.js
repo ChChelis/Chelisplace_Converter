@@ -29,6 +29,7 @@ const pronto = chamar("iniciar", null, null, { base: new URLSearchParams(locatio
 
 // ---------- abas ----------
 document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  if (window.podeAbrirAba && !window.podeAbrirAba(b.dataset.aba)) return;  // não deixa pular uma etapa que ainda tem pendência
   document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", x === b));
   document.querySelectorAll("main > section").forEach((s) => (s.hidden = s.id !== b.dataset.aba));
   if (b.dataset.aba === "montagem") prepararMontagem();
@@ -91,7 +92,7 @@ async function lerHandle(handle) {
 // ---------- Google Drive ----------
 const guardado = { ler: (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, gravar: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 $("#drive-id").value = guardado.ler("drive-client-id");
-const estadoDrive = (txt, conectado) => { $("#drive-estado").textContent = txt; $("#drive-sair").hidden = !conectado; };
+const estadoDrive = (txt, conectado) => { $("#drive-estado").textContent = txt; $("#drive-sair").hidden = !conectado; $("#drive-entrar").disabled = conectado; };
 $("#drive-entrar").addEventListener("click", async () => {
   const id = $("#drive-id").value.trim();
   $("#drive-erro").textContent = "";
@@ -153,7 +154,7 @@ function confirmar(onde, texto, fazer) {
 }
 
 // ---------- pedido em uso (compartilhado entre Checagem e Montagem) ----------
-const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set() };
+const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set(), conferencia: null };  // conferencia: resultado da última checagem (null = precisa conferir de novo)
 let clienteEditado = false;
 const chaveIgnorar = () => "ignorar:" + sessao.pasta.nome;
 function carregarIgnorados() { try { sessao.ignorar = new Set(JSON.parse(guardado.ler(chaveIgnorar()) || "[]")); } catch { sessao.ignorar = new Set(); } }
@@ -168,12 +169,14 @@ function atualizarRotulos() {
   $("#m-rodar").disabled = !(p && p.raiz.length && typeof MONT !== "undefined" && MONT.pronta);
 }
 async function receberXml(arq) {
+  sessao.conferencia = null;
   sessao.xml = arq ? await arq.arrayBuffer() : null; sessao.xmlNome = arq ? arq.name : "";
   atualizarRotulos();
   if (!$("#montagem").hidden) prepararMontagem();
 }
 async function receberPasta(alvoErro, prefixo) {
   try { sessao.pasta = await escolher(prefixo); } catch (e) { return falha(alvoErro, e); }
+  sessao.conferencia = null;
   carregarIgnorados();
   MONT.adicionadas = []; MONT.chaveExtras = "";  // outro pedido: as perguntas da montagem começam do zero
   if (!clienteEditado) $("#m-cliente").value = sessao.pasta.nome;
@@ -191,6 +194,7 @@ const lista = (itens, f) => (itens.length ? `<ul>${itens.map((i) => `<li>${f(i)}
 const botaoPeq = (rot, attr, ids) => `<button class="peq" ${attr}="${ids}">${rot}</button>`;
 
 async function conferir() {
+  sessao.conferencia = null;
   const alvo = $("#c-resultado");
   alvo.textContent = "Conferindo…";
   await pronto;
@@ -228,13 +232,16 @@ async function conferir() {
   if (r.faltantes_xml) botao("Baixar XML dos faltantes", () => baixar(new Blob([r.faltantes_xml], { type: "application/xml" }), `${pasta.nome}_faltantes.xml`).click(), true);
   if (pasta.podeGravar && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async () => {
     for (const [orig, dest] of r.duplicar) await pasta.copiar(orig, dest);
+    sessao.conferencia = null;  // a pasta mudou: precisa conferir de novo
     return `${r.duplicar.length} cópia(s) criada(s). Clique em Conferir para ver o resultado.`;
   }));
   // pares completos que ainda estão soltos na pasta do pedido: propõe a pasta pares/ sozinho, com confirmação
   const jaEmPares = new Set(pasta.pares.map((x) => x.nome));
   const soltos = r.pares.filter(([f, v]) => !(jaEmPares.has(f) && jaEmPares.has(v))).flat().filter((n) => !jaEmPares.has(n));
+  sessao.conferencia = { pendentes: r.faltando.length + r.a_duplicar.length + r.excesso.length + r.pares_incompletos.length + (soltos.length ? 1 : 0), faltando: r.faltando.length, a_duplicar: r.a_duplicar.length, excesso: r.excesso.length, pares_incompletos: r.pares_incompletos.length, soltos: soltos.length };
   const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async () => {
     await pasta.moverPares(soltos);
+    sessao.conferencia = null;
     return `${soltos.length} arquivo(s) movido(s) para pares/. Clique em Conferir para ver o resultado.`;
   });
   if (pasta.podeGravar && soltos.length) { botao(`Mover ${soltos.length / 2} par(es) para pares/`, moverPares, true); moverPares(); }
@@ -351,6 +358,7 @@ $("#m-rodar").addEventListener("click", async () => {
     const pdfs = await chamar("montar_pdfs", { cliente, xml: sessao.xml ? sessao.xml.slice(0) : null });
     prog.style.width = "100%";
     status.textContent = `${pdfs.length} PDF(s) prontos.`;
+    $("#m-fim").hidden = false;
     for (const [nome, bytes] of pdfs) saida.append(baixar(new Blob([bytes], { type: "application/pdf" }), nome));
     if (p.drive) {
       const b = Object.assign(document.createElement("button"), { className: "acao", textContent: "Salvar PDFs no Drive (pasta saida)" });

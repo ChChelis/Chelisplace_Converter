@@ -53,3 +53,6 @@ details summary{cursor:pointer}
 .passos-rodape button{margin-top:0}
 #passos button.pulada{opacity:.55;border-style:dashed}
 #passos button small{font-size:.75em;color:var(--suave)}
+.passos-rodape button:disabled{opacity:.4;cursor:not-allowed}
+.passos-rodape .motivo{font-size:.85rem;flex:1 1 100%}
+button.peq:disabled{opacity:.4;cursor:not-allowed}
