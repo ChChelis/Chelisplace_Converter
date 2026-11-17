@@ -38,8 +38,45 @@ function lerXmlMpc(buf) {
   const porId = new Map();
   for (const v of todosVersos) { const e = porId.get(v.id) || { nome: v.nome, qtd: 0 }; e.qtd++; porId.set(v.id, e); }
   const padraoIds = new Set([...porId].filter(([id, e]) => id === cardback || e.qtd >= Math.max(5, frentes.length * 0.5)).map(([id]) => id));
-  return { frentes, versos: todosVersos.filter((v) => !padraoIds.has(v.id)),
+  return { frentes, versos: todosVersos.filter((v) => !padraoIds.has(v.id)), xmlTexto: txt, padraoIds: [...padraoIds],
     versoPadrao: [...porId].filter(([id]) => padraoIds.has(id)).map(([, e]) => e) };
+}
+// Vários pedidos no mesmo pedido: a checagem e a montagem leem UM XML só, juntando os dos pedidos (slots em sequência).
+const xmlEsc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function xmlCombinado(fontes) {
+  const xmls = fontes.filter((f) => f.xmlTexto);
+  if (!xmls.length) return null;
+  if (xmls.length === 1) return xmls[0].xmlTexto;
+  let off = 0, fr = "", bk = "", total = 0; const cbs = [];
+  const carta = (c, add) => {
+    const q = (t) => c.querySelector(t)?.textContent || "";
+    const slots = q("slots").split(",").map((s) => s.trim()).filter((s) => s !== "").map((s) => +s + add);
+    return { id: q("id").trim(), slots, nome: q("name"), query: q("query") };
+  };
+  const xml = (c) => `<card><id>${xmlEsc(c.id)}</id><slots>${c.slots.join(",")}</slots><name>${xmlEsc(c.nome)}</name><query>${xmlEsc(c.query)}</query></card>`;
+  for (const f of xmls) {
+    const doc = new DOMParser().parseFromString(f.xmlTexto, "application/xml"), padrao = new Set(f.padraoIds || []);
+    let maior = -1;
+    for (const c of doc.querySelectorAll("fronts > card")) { const k = carta(c, off); fr += xml(k); total += k.slots.length; maior = Math.max(maior, ...k.slots.map((s) => s - off)); }
+    for (const c of doc.querySelectorAll("backs > card")) { const k = carta(c, off); if (padrao.has(k.id)) cbs.push(k.id); else bk += xml(k); }
+    for (const t of doc.querySelectorAll("cardback")) if (t.textContent.trim()) cbs.push(t.textContent.trim());
+    off += maior + 1;
+  }
+  return `<?xml version="1.0" encoding="utf-8"?><order><details><quantity>${total}</quantity></details><fronts>${fr}</fronts><backs>${bk}</backs>${[...new Set(cbs)].map((i) => `<cardback>${xmlEsc(i)}</cardback>`).join("")}</order>`;
+}
+let ultimoXmlTexto = "", xmlDeFontes = false;
+function sincronizarXml() {
+  const x = xmlCombinado(pedido.fontes), n = pedido.fontes.filter((f) => f.xmlTexto).length;
+  if (x === null) {  // nenhum pedido com XML: se o XML atual veio das fontes, solta
+    if (xmlDeFontes) { sessao.xml = null; sessao.xmlNome = ""; sessao.conferencia = null; ultimoXmlTexto = ""; xmlDeFontes = false; atualizarRotulos(); }
+    return;
+  }
+  if (x === ultimoXmlTexto) return;
+  ultimoXmlTexto = x; xmlDeFontes = true;
+  sessao.xml = new TextEncoder().encode(x).buffer;
+  sessao.xmlNome = n === 1 ? pedido.fontes.find((f) => f.xmlTexto).titulo : `${n} pedidos combinados`;
+  sessao.conferencia = null;  // o XML mudou: conferir de novo
+  atualizarRotulos();
 }
 const assinatura = (f) => [...f.frentes, ...f.versos].map((c) => c.id || c.nome).join("|") + "#" + f.frentes.length;
 function addFonte(f) {
@@ -49,8 +86,9 @@ function addFonte(f) {
   renderFontes();
 }
 function renderFontes() {
+  sincronizarXml();
   const c = $("#e-fontes");
-  c.innerHTML = pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
+  c.innerHTML = (pedido.fontes.length > 1 ? `<p class="ok">${pedido.fontes.length} pedidos juntos neste pedido: os slots são somados e os kits incompletos se completam (veja a economia no Orçamento).</p>` : "") + pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
   c.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { pedido.fontes.splice(+b.dataset.rm, 1); renderFontes(); }));
   atualizarResumo();
   atualizarPassos();
@@ -88,8 +126,7 @@ $("#e-xml").onchange = async (e) => {
     const buf = await arq.arrayBuffer();
     const r = lerXmlMpc(buf);
     $("#e-erro").textContent = "";
-    await receberXml(arq);  // a Checagem e a Montagem reaproveitam o mesmo XML
-    addFonte({ titulo: arq.name, origem: "xml", ...r });
+    addFonte({ titulo: arq.name, origem: "xml", ...r });  // a Checagem e a Montagem leem o XML combinado de todos os pedidos
   } catch (err) { $("#e-erro").textContent = err.message; }
 };
 $("#e-deck").onchange = async (e) => {
@@ -158,7 +195,7 @@ async function orcar() {
   if (!pagoEditado) $("#o-pago").value = r.pago;  // o valor cobrado começa igual ao calculado
   const pago = valorFinal();
   // divisão automática: primeiro os kits maiores, depois os menores; o que sobra vira um kit final, cobrado pelo preço avulso
-  const contas = [...r.usados.map((u) => `${u.qtd} × kit de ${u.slots} slots (${Math.ceil(u.slots / 18)} pág.) = ${reais(u.qtd * u.preco)}`),
+  const contas = [...r.usados.map((u) => `${u.qtd} × kit de ${u.slots} slots (${u.qtd * u.slots / 18} pág.) = ${reais(u.qtd * u.preco)}`),
     ...(r.kit_final ? [r.kit_final.kit
       ? `${r.kit_final.qtd} × kit final de ${r.kit_final.kit} slots (sobraram ${r.kit_final.slots}) = ${reais(r.kit_final.preco)}`
       : `${r.kit_final.slots} slots avulsos × R$ ${fmt(pr.avulso)} = ${reais(r.kit_final.preco)}`] : [])];
@@ -169,8 +206,25 @@ async function orcar() {
     [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], ["Colagem", reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
   ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
   desenharDescontos(r);
+  desenharJuntos(r);
   $("#o-pago-auto").disabled = !pagoEditado;
   renderFicha();
+}
+// Vários pedidos no mesmo pedido: quanto cada um custaria sozinho × todos juntos (kits incompletos se completam)
+let juntosSeq = 0;
+async function desenharJuntos(r) {
+  const el = $("#o-juntos"), seq = ++juntosSeq;
+  if (pedido.fontes.length < 2) { el.innerHTML = ""; return; }
+  const pr = precosEfetivos(pedido.modo), sep = [];
+  for (const f of pedido.fontes) {
+    const n = f.frentes.length + f.versos.length;
+    sep.push([f.titulo, n, (await chamar("orcar", { frentes: n, versos: 0, modo: pedido.modo, precos: pr })).pago]);
+    if (seq !== juntosSeq) return;  // chegou um cálculo mais novo
+  }
+  const soma = sep.reduce((s, x) => s + x[2], 0);
+  el.innerHTML = `<b>Pedidos juntos × separados</b><table>` + sep.map(([t, n, v]) => `<tr><td>${esc(t)} <span class="suave">(${n} slots)</span></td><td class="n">${reais(v)}</td></tr>`).join("") +
+    `<tr><td>Soma dos pedidos separados</td><td class="n">${reais(soma)}</td></tr><tr><td>Juntos (${r.slots} slots)</td><td class="n"><b>${reais(r.pago)}</b></td></tr>
+    <tr><td>Economia ao juntar</td><td class="n ${soma - r.pago > 0 ? "ok" : ""}">${reais(soma - r.pago)}</td></tr></table>`;
 }
 // Descontos possíveis (confidencial): (1) todos os slots a um preço fixo por slot; (2) ceder uma % do lucro.
 let descSlotEditado = false;
@@ -182,10 +236,11 @@ function desenharDescontos(r) {
     $("#d-slot").value = taxas.length ? +Math.min(...taxas).toFixed(4) : "";
   }
   const slot = +$("#d-slot").value || 0, pct = Math.min(Math.max(+$("#d-pct").value || 0, 0), 100);
+  const cede = Math.round(r.pago * pct / 100);  // a % é do valor do pedido (não do lucro: o lucro nunca aparece para o cliente)
   const custo = r.impressao + r.colagem, lucro = r.pago - custo;
   const linhas = [
     [`Todos os ${r.slots} slots a R$ ${fmt(slot)}`, Math.round(r.slots * slot)],
-    [`Ceder ${pct}% do lucro (R$ ${fmt(Math.max(lucro, 0) * pct / 100)})`, r.pago - Math.round(Math.max(lucro, 0) * pct / 100)],
+    [`Desconto de ${pct}% sobre o pedido (R$ ${fmt(r.pago * pct / 100)})`, r.pago - cede],
   ];
   $("#d-tabela").innerHTML = `<tr><th>Opção</th><th class="n">Preço</th><th class="n">Desconto</th><th class="n">Lucro</th><th></th></tr>` + linhas.map(([rot, preco], i) => {
     const desc = r.pago - preco, lu = preco - custo, igual = preco === valorFinal();
@@ -237,9 +292,12 @@ async function procurarBot() {
           const r = await fetch(`${MOTOR}/api/pedidos/${encodeURIComponent(p.nome)}/xml`);
           if (!r.ok) throw new Error("Esse pedido ainda não tem XML: gere-o na conferência do bot.");
           const buf = await r.arrayBuffer();
-          await receberXml(new File([buf], p.nome + ".xml"));
-          pedido.fontes = pedido.fontes.filter((f) => f.origem !== "lista");  // o XML do bot substitui a lista que deu origem a ele
-          addFonte({ titulo: p.nome + " (bot)", origem: "bot", ...lerXmlMpc(buf) });
+          const novo = lerXmlMpc(buf);
+          // o XML do bot substitui a lista que deu origem a ele (a de mesmo tamanho; senão, a primeira lista)
+          let k = pedido.fontes.findIndex((f) => f.origem === "lista" && f.frentes.length === novo.frentes.length);
+          if (k < 0) k = pedido.fontes.findIndex((f) => f.origem === "lista");
+          if (k >= 0) pedido.fontes.splice(k, 1);
+          addFonte({ titulo: p.nome + " (bot)", origem: "bot", ...novo });
           b.textContent = "XML carregado ✓"; b.disabled = true;
         } catch (e) { lista.insertAdjacentHTML("beforeend", `<p class="alerta">${esc(e.message)}</p>`); }
       };
@@ -643,7 +701,7 @@ function novoPedido() {
   pedido.fontes = []; pedido.alteracoes = [];
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
-  clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null;
+  clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
   for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf"]) { const el = $(s); if (el) el.textContent = ""; }
   $("#m-barra").hidden = true; $("#m-fim").hidden = true; $("#nav-aviso").hidden = true;

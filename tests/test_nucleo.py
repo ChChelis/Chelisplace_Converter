@@ -145,6 +145,13 @@ class TestVersoPadrao(Base):
         (self.d / "x.xml").write_text(f"<order><fronts>{fr}</fronts><backs>{padrao}{dfc}</backs><cardback>{'Z' * 25}</cardback></order>")
         return xml_mpc.ler(self.d / "x.xml")
 
+    def test_xml_com_varios_cardback(self):
+        (self.d / "m.xml").write_text("<order><fronts><card><id>" + "a" * 25 + "</id><slots>0</slots><name>A</name></card></fronts><backs/><cardback>" + "p" * 25 + "</cardback><cardback>" + "q" * 25 + "</cardback></order>")
+        ped = xml_mpc.ler(self.d / "m.xml")
+        self.assertEqual(xml_mpc.versos_padrao(ped), {"p" * 25, "q" * 25})
+        xml_mpc.escrever(ped, self.d / "m2.xml")
+        self.assertEqual(xml_mpc.versos_padrao(xml_mpc.ler(self.d / "m2.xml")), {"p" * 25, "q" * 25})
+
     def test_detecta_o_verso_repetido(self):
         ped = self._xml()
         self.assertEqual(xml_mpc.versos_padrao(ped), {"Z" * 25, "P" * 25})
@@ -212,7 +219,7 @@ class TestPixFicha(unittest.TestCase):
         md, r = ficha.gerar("X", "1", [dict(titulo="t", frentes=["A"] * 191, versos=["V"] * 3)], [], "", "normal", p, "chave", 285, dict(slot=1.25, pct=10))
         conf = md.split("#### Confidencial")[1]
         for trecho in ("1 × kit de 108 slots (6 pág.) = 135", "1 × kit de 72 slots (4 pág.) = 120", "1 × kit final de 18 slots (sobraram 14) = 30",
-                       "Valor da tabela = 285", "Todos os slots a 1,25: 194x1,25 = 243", "Ceder 10% do lucro (10,6 → 11): 274", "Lucro: 285-154-25 = 106"):
+                       "Valor da tabela = 285", "Todos os slots a 1,25: 194x1,25 = 243", "Desconto de 10% sobre o pedido (28,5 → 29): 256 (lucro 77)", "Lucro: 285-154-25 = 106"):
             self.assertIn(trecho, conf)
         md2, _ = ficha.gerar("X", "1", [dict(titulo="t", frentes=["A"] * 172)], [], "", "normal", p, "chave", 243, dict(slot=1.25, pct=10))
         self.assertIn("3 × kit de 18 slots (3 pág.) = 90", md2)
@@ -230,6 +237,17 @@ class TestPixFicha(unittest.TestCase):
         self.assertIn("Valor do pedido: 285 reais", vistos)
         self.assertNotIn("Confidencial", vistos)
         self.assertFalse(any("kit" in v or "Lucro" in v or "Descontos" in v for v in vistos))
+
+    def test_pedidos_juntos_completam_kits(self):
+        p = dict(kits=[dict(slots=108, preco=135), dict(slots=72, preco=120), dict(slots=18, preco=30)], avulso=30 / 18, resto_em_kit=True)
+        md, r = ficha.gerar("Renato", "1", [dict(titulo="Chris novas", frentes=["A"] * 171, versos=["V"]), dict(titulo="iggor", frentes=["B"] * 191, versos=["V"] * 3)],
+                            [], "", "normal", p, "k", None, dict(slot=1.25, pct=10))
+        self.assertEqual(r["pago"], 495)
+        conf = md.split("#### Confidencial")[1]
+        self.assertIn("Chris novas (172 slots) sozinho = 255", conf)
+        self.assertIn("iggor (194 slots) sozinho = 285", conf)
+        self.assertIn("Soma separados = 540; juntos (366 slots) = 495; economia = 45", conf)
+        self.assertIn("3 × kit de 108 slots (18 pág.) = 405", conf)
 
     def test_ficha(self):
         md, r = ficha.gerar("Ana", "1", [dict(titulo="XML", frentes=["A", "B"], versos=["V"])],

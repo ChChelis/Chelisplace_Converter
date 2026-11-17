@@ -19,6 +19,7 @@ class Pedido:
     versos: list = field(default_factory=list)
     verso_padrao: str = ""
     detalhes: dict = field(default_factory=dict)
+    extras_padrao: list = field(default_factory=list)  # outros versos padrão (vários pedidos combinados num XML só)
 
 
 def _cartas(no):
@@ -39,14 +40,15 @@ def ler(caminho):
         raise ValueError("XML com DOCTYPE/ENTITY recusado")
     raiz = ET.fromstring(dados)
     det = {c.tag: (c.text or "").strip() for c in (raiz.find("details") if raiz.find("details") is not None else [])}
+    cbs = [(c.text or "").strip() for c in raiz.findall("cardback") if (c.text or "").strip()]
     return Pedido(_cartas(raiz.find("fronts")), _cartas(raiz.find("backs")),
-                  (raiz.findtext("cardback") or "").strip(), det)
+                  cbs[0] if cbs else "", det, cbs[1:])
 
 
 def versos_padrao(pedido):
     """IDs dos versos 'padrão': o da tag <cardback> e qualquer verso listado em <backs> que cubra a maior parte
     do pedido (ex.: um 'Back WUBRG' repetido em quase todos os slots). Dupla-face (um verso por frente) não entra."""
-    ids = {pedido.verso_padrao} if pedido.verso_padrao else set()
+    ids = ({pedido.verso_padrao} if pedido.verso_padrao else set()) | set(pedido.extras_padrao)
     total = sum(len(c.slots) for c in pedido.frentes)
     for c in pedido.versos:
         if len(c.slots) >= max(5, total * 0.5):
@@ -67,6 +69,7 @@ def escrever(pedido, caminho):
             ET.SubElement(e, "slots").text = ",".join(str(s) for s in c.slots)
             ET.SubElement(e, "name").text = c.nome
             ET.SubElement(e, "query").text = c.query
-    ET.SubElement(raiz, "cardback").text = pedido.verso_padrao
+    for cb in [pedido.verso_padrao] + list(pedido.extras_padrao):
+        ET.SubElement(raiz, "cardback").text = cb
     ET.indent(raiz)
     ET.ElementTree(raiz).write(caminho, encoding="utf-8", xml_declaration=True)

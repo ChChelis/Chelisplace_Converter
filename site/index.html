@@ -32,7 +32,7 @@
 
 <section id="entrada">
   <h2>Entrada do pedido</h2>
-  <p class="suave">Traga o pedido de qualquer um dos jeitos; dá para somar mais de uma fonte. Nada sai do seu computador.</p>
+  <p class="suave">Traga o pedido de qualquer um dos jeitos. <b>Dá para trazer mais de um pedido (do mesmo cliente) no mesmo pedido</b>: repita a entrada quantas vezes precisar; os slots são somados e os kits incompletos se completam. Nada sai do seu computador.</p>
   <div class="linha">
     <div class="cartao"><h3>Lista colada</h3><p class="suave">Moxfield, Liga ou Archidekt em texto: <code>1 Sol Ring (C21) 263</code> ou <code>2x Sol Ring</code>.</p>
       <textarea id="e-lista" rows="6" placeholder="1 Sol Ring (C21) 263&#10;4 Island"></textarea>
@@ -60,14 +60,15 @@
     <div class="linha" id="o-campos"></div>
     <button class="peq" id="o-restaurar">Voltar aos preços de fábrica</button>
   </details>
+  <div id="o-juntos" class="conf"></div>
   <table id="o-tabela"></table>
   <div class="linha"><div><label for="o-pago">Valor cobrado do cliente (começa igual ao calculado; mude só se combinou outro)</label><input id="o-pago" type="number" min="0" step="1"><button class="peq" id="o-pago-auto">Usar o calculado</button></div></div>
   <div class="conf conf-so-voce" id="o-desc">
     <b class="aviso">Só para você · descontos possíveis</b>
-    <p class="suave">Para itens supervalorizados: duas formas de dar desconto, já com o lucro que sobra. Nada disso vai ao cliente.</p>
+    <p class="suave">Para itens supervalorizados: duas formas de dar desconto, já com o lucro que sobra (o % é sobre o valor do pedido, não sobre o lucro). Nada disso vai ao cliente.</p>
     <div class="linha">
       <div><label for="d-slot">Todos os slots a R$ (por slot)</label><input id="d-slot" type="number" min="0" step="0.01"></div>
-      <div><label for="d-pct">Ceder até (% do lucro)</label><input id="d-pct" type="number" min="0" max="100" step="1" value="10"></div>
+      <div><label for="d-pct">Desconto de (% sobre o pedido)</label><input id="d-pct" type="number" min="0" max="100" step="1" value="10"></div>
     </div>
     <table id="d-tabela"></table>
   </div>

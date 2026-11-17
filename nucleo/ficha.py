@@ -14,7 +14,7 @@ def _n(x):
     return str(int(x)) if x == int(x) else f"{x:.4f}".rstrip("0").rstrip(".").replace(".", ",")
 
 
-def raciocinio(r, p, slots, descontos, pago):
+def raciocinio(r, p, slots, descontos, pago, partes=None, modo="normal", precos=None):
     """Linhas (confidenciais) que explicam o preço: divisão em kits, descontos possíveis e custo."""
     L = ["Como o valor foi calculado", f"\t- {slots} slots = {r['paginas']} páginas"]
     for u in r["usados"]:
@@ -26,6 +26,12 @@ def raciocinio(r, p, slots, descontos, pago):
         else:
             L.append(f"\t- {kf['slots']} slots avulsos × {_n(p['avulso'])} = {_n(kf['preco'])}")
     L.append(f"\t- Valor da tabela = {_n(r['pago'])}")
+    if partes and len(partes) > 1:  # vários pedidos juntos: kits incompletos se completam
+        sep = [(t, orcamento.calcular(n, 0, modo, precos)["pago"]) for t, n in partes]
+        soma = sum(v for _, v in sep)
+        L.append("Pedidos separados × juntos")
+        L += [f"\t- {t} ({n} slots) sozinho = {_n(v)}" for (t, n), (_, v) in zip(partes, sep)]
+        L.append(f"\t- Soma separados = {_n(soma)}; juntos ({slots} slots) = {_n(r['pago'])}; economia = {_n(soma - r['pago'])}")
     if pago != r["pago"]:
         L.append(f"\t- Valor cobrado = {_n(pago)} ({'desconto de ' + _n(r['pago'] - pago) if pago < r['pago'] else 'acréscimo de ' + _n(pago - r['pago'])} sobre a tabela)")
     custo = r["impressao"] + r["colagem"]
@@ -38,8 +44,8 @@ def raciocinio(r, p, slots, descontos, pago):
         preco = orcamento.inteiro(slots * taxa)
         L.append("Descontos possíveis (sobre o valor da tabela)")
         L.append(f"\t- Todos os slots a {_n(round(taxa, 4))}: {slots}x{_n(round(taxa, 4))} = {_n(preco)} (desconto de {_n(r['pago'] - preco)}; lucro {_n(preco - custo)})")
-        cede = orcamento.inteiro(max(lucro_tab, 0) * pct / 100)
-        L.append(f"\t- Ceder {_n(pct)}% do lucro ({_n(round(max(lucro_tab, 0) * pct / 100, 2))} → {_n(cede)}): {_n(r['pago'] - cede)} (desconto de {_n(cede)}; lucro {_n(lucro_tab - cede)})")
+        cede = orcamento.inteiro(r["pago"] * pct / 100)  # a % é do valor do pedido (não do lucro: o cliente nunca vê o lucro)
+        L.append(f"\t- Desconto de {_n(pct)}% sobre o pedido ({_n(round(r['pago'] * pct / 100, 2))} → {_n(cede)}): {_n(r['pago'] - cede)} (lucro {_n(lucro_tab - cede)})")
     return L
 
 
@@ -81,7 +87,8 @@ def gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_
         imp = _n(r["impressao"])
     lucro = pago - r["impressao"] - r["colagem"]
     L += [f"### Valor do pedido: {_n(pago)} reais", "#### Confidencial", f"Pago = {_n(pago)}"]
-    L += raciocinio(r, p, n_orc, descontos, pago)
+    partes = [(f["titulo"], len(f.get("frentes", [])) + len(f.get("versos", []))) for f in fontes]
+    L += raciocinio(r, p, n_orc, descontos, pago, partes if slots_orc is None or slots_orc == slots else None, modo, precos)
     L += ["Custo", f"\t- Impressão: {imp}", f"\t- Colagem: {n_orc}x{_n(col)} = {_n(r['colagem'])}",
           "\t- Bulk: 0", f"\t- Lucro: {_n(pago)}-{_n(r['impressao'])}-{_n(r['colagem'])} = {_n(lucro)}",
           "### Pix", chave_pix]
