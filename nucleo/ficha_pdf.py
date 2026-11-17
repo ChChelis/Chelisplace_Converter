@@ -1,6 +1,6 @@
 """PDF da ficha para o cliente: o próprio Markdown da ficha (nucleo/ficha.py) desenhado em A4, igual ao modelo do Chelis.
 
-Para no `#### Confidencial` e não mostra a linha 'Valor do pedido'; o QR do Pix vai ao fim. Miniaturas são opcionais,
+Pula o bloco `#### Confidencial` (custo, colagem, lucro e o raciocínio do preço); mostra o valor do pedido; o QR do Pix vai ao fim. Miniaturas são opcionais,
 penduradas nos itens de Alterações pelo texto do item."""
 import io
 import re
@@ -106,7 +106,7 @@ def gerar(md, imagens=None, miniaturas=None, matriz=None, saida=None):
             continue
         if pulando and re.match(r"^###\s", t):
             pulando = False
-        if pulando or not t.strip() or t.startswith("### Valor do pedido"):
+        if pulando or not t.strip():
             continue
         m = re.match(r"^(#{3,5})\s+(.*)$", t)
         if m:

@@ -71,8 +71,8 @@ def montar(pasta_raiz, pasta_pares, pasta_saida, cliente, xml_path=None, pasta_e
     return json.dumps([str(p) for p in pdfs])
 
 
-def gerar_ficha(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_pix, pago=None):
-    md, r = ficha.gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_pix or "<CHAVE_PIX>", pago)
+def gerar_ficha(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_pix, pago=None, descontos=None, slots_orc=None):
+    md, r = ficha.gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_pix or "<CHAVE_PIX>", pago, descontos, slots_orc)
     return json.dumps(dict(markdown=md, orcamento=r))
 
 

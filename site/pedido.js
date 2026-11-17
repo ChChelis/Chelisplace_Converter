@@ -334,8 +334,9 @@ async function renderFicha() {
     const r = await chamar("ficha", {
       cliente: $("#f-cliente").value.trim() || "<CLIENTE>", telefone: $("#f-tel").value.trim() || "<TELEFONE>",
       fontes: pedido.fontes.map((f) => ({ titulo: f.titulo, frentes: f.frentes.map((x) => x.nome), versos: f.versos.map((x) => x.nome) })),
-      alteracoes: alts, conclusao: $("#f-conclusao").value.trim(), modo: pedido.modo, precos: pedido.precos[pedido.modo],
+      alteracoes: alts, conclusao: $("#f-conclusao").value.trim(), modo: pedido.modo, precos: precosEfetivos(pedido.modo),
       chave_pix: $("#p-chave").value.trim() || "<CHAVE_PIX>", pago: ultimoOrc ? valorFinal() : null,
+      descontos: { slot: +$("#d-slot").value || null, pct: $("#d-pct").value === "" ? 10 : +$("#d-pct").value }, slots_orc: ultimoOrc ? ultimoOrc.slots : null,
     });
     if (!fichaManual) { fichaMd = r.markdown; $("#f-previa").value = fichaMd; }
   } catch (e) { if (!fichaManual) $("#f-previa").value = "Erro: " + e.message; }

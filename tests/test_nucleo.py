@@ -207,6 +207,30 @@ class TestPixFicha(unittest.TestCase):
         self.assertTrue(pdf.startswith(b"%PDF"))
         self.assertGreater(pdf.count(b"/Type /Page\n") + pdf.count(b"/Type /Page "), 1)  # 60 itens passam de uma página
 
+    def test_ficha_com_raciocinio_do_preco_e_pdf_com_valor(self):
+        p = dict(kits=[dict(slots=108, preco=135), dict(slots=72, preco=120), dict(slots=18, preco=30)], avulso=30 / 18, resto_em_kit=True)
+        md, r = ficha.gerar("X", "1", [dict(titulo="t", frentes=["A"] * 191, versos=["V"] * 3)], [], "", "normal", p, "chave", 285, dict(slot=1.25, pct=10))
+        conf = md.split("#### Confidencial")[1]
+        for trecho in ("1 × kit de 108 slots (6 pág.) = 135", "1 × kit de 72 slots (4 pág.) = 120", "1 × kit final de 18 slots (sobraram 14) = 30",
+                       "Valor da tabela = 285", "Todos os slots a 1,25: 194x1,25 = 243", "Ceder 10% do lucro (10,6 → 11): 274", "Lucro: 285-154-25 = 106"):
+            self.assertIn(trecho, conf)
+        md2, _ = ficha.gerar("X", "1", [dict(titulo="t", frentes=["A"] * 172)], [], "", "normal", p, "chave", 243, dict(slot=1.25, pct=10))
+        self.assertIn("3 × kit de 18 slots (3 pág.) = 90", md2)
+        self.assertIn("Valor cobrado = 243 (desconto de 12 sobre a tabela)", md2)
+        # o PDF mostra o valor, mas nada do bloco confidencial
+        import re, io
+        from nucleo import ficha_pdf
+        vistos = []
+        orig = ficha_pdf._Folha.linha
+        ficha_pdf._Folha.linha = lambda self, texto, *a, **k: (vistos.append(texto), orig(self, texto, *a, **k))[1]
+        try:
+            ficha_pdf.gerar(md, {}, {}, [[1, 0], [0, 1]])
+        finally:
+            ficha_pdf._Folha.linha = orig
+        self.assertIn("Valor do pedido: 285 reais", vistos)
+        self.assertNotIn("Confidencial", vistos)
+        self.assertFalse(any("kit" in v or "Lucro" in v or "Descontos" in v for v in vistos))
+
     def test_ficha(self):
         md, r = ficha.gerar("Ana", "1", [dict(titulo="XML", frentes=["A", "B"], versos=["V"])],
                             [dict(titulo="Troca", itens=[dict(texto="x", pedido_id="i1", usado_id="i2")])], "ok", "normal", None)
