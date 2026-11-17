@@ -66,3 +66,6 @@ O bot (etapa 3) só é necessário quando a entrada foi **lista**. Com XML (do M
 
 ### Verso padrão repetido no XML
 XMLs como o do iggor listam, em `<backs>`, um mesmo verso (ex.: “Back WUBRG”) em quase todos os slots. Isso é o **verso padrão** (sai da pasta no processo do Chelis) e **não conta como slot** nem entra na ficha. Regra, igual no núcleo (`xml_mpc.versos_padrao`) e na página: é padrão o ID da tag `<cardback>` e qualquer verso de `<backs>` que cubra pelo menos 5 slots **e** metade das frentes. Dupla-face (um verso por frente) continua contando +1. Afeta o orçamento (versos), a checagem (não exige cópias), os pares e a montagem. Exemplo: 191 frentes + 4 versos = 195 slots (não 381).
+
+### Divisão automática do orçamento (kits)
+Prioridade: o maior kit que couber (quantos couberem), depois o próximo maior, e assim por diante; o que sobrar vira um **kit final** com os slots restantes, cobrado pelo preço avulso (`nucleo/orcamento.py`, campo `kit_final`). Exemplo com kits 108/R$135, 72/R$120 e 18/R$30 e 194 slots: 1 × 108 + 1 × 72 + kit final de 14 slots (R$ 23) = R$ 278, 11 páginas.

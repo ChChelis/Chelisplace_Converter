@@ -124,6 +124,16 @@ class TestOrcamentoEditavel(unittest.TestCase):
         r = orcamento.calcular(150, 0, "normal", p)  # 1 kit de 108 + 1 de 36 + 6 avulsos
         self.assertEqual((r["kits"], r["resto"], r["pago"]), (2, 6, 135 + 50 + 12))
 
+    def test_divisao_automatica_com_kit_final(self):
+        p = dict(kits=[dict(slots=18, preco=30), dict(slots=108, preco=135), dict(slots=72, preco=120)], avulso=30 / 18)
+        r = orcamento.calcular(194, 0, "normal", p)  # 108 + 72 + 14 que sobram
+        self.assertEqual([(u["slots"], u["qtd"]) for u in r["usados"]], [(108, 1), (72, 1)])
+        self.assertEqual(r["kit_final"], dict(slots=14, preco=23))
+        self.assertEqual(r["pago"], 135 + 120 + 23)
+        self.assertEqual(r["paginas"], 11)
+        r2 = orcamento.calcular(90, 0, "normal", p)  # 72 + 18, nada sobra
+        self.assertEqual((r2["kit_final"], r2["pago"]), (None, 150))
+
     def test_padrao_nao_muda(self):
         self.assertEqual(orcamento.calcular(120, 0, "normal", orcamento.padrao()), orcamento.calcular(120))
 

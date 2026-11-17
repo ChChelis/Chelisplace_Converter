@@ -151,11 +151,12 @@ async function orcar() {
   const r = ultimoOrc;
   if (!pagoEditado) $("#o-pago").value = r.pago;  // o valor cobrado começa igual ao calculado
   const pago = valorFinal();
-  const contas = [...r.usados.map((u) => `${u.qtd} × kit de ${u.slots} slots (R$ ${fmt(u.preco)}) = ${reais(u.qtd * u.preco)}`),
-    ...(r.resto ? [`${r.resto} slot(s) avulso(s) × R$ ${fmt(pr.avulso)} = ${reais(r.resto * pr.avulso)}`] : [])];
+  // divisão automática: primeiro os kits maiores, depois os menores; o que sobra vira um kit final, cobrado pelo preço avulso
+  const contas = [...r.usados.map((u) => `${u.qtd} × kit de ${u.slots} slots (${Math.ceil(u.slots / 18)} pág.) = ${reais(u.qtd * u.preco)}`),
+    ...(r.kit_final ? [`1 × kit final de ${r.kit_final.slots} slots (${r.kit_final.slots} × R$ ${fmt(pr.avulso)}) = ${reais(r.kit_final.preco)}`] : [])];
   $("#o-tabela").innerHTML = [
     ["Slots (frentes + versos)", r.slots], ["Páginas A3", r.paginas],
-    ["Como o valor foi calculado", contas.length ? contas.join("<br>") + `<br><span class="suave">arredondado: ${reais(r.pago)}</span>` : "—"],
+    ["Como o valor foi calculado", contas.length ? contas.join("<br>") + `<br><span class="suave">total: ${reais(r.pago)}</span>` : "—"],
     ["Valor cobrado do cliente" + (pago !== r.pago ? " (combinado)" : ""), `<b>${reais(pago)}</b>`],
     [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], ["Colagem", reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
   ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
