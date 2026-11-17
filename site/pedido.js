@@ -93,8 +93,8 @@ function renderFontes() {
   const c = $("#e-fontes");
   const mais = pedido.fontes.length > 0;
   $("#e-t-lista").textContent = mais ? "Adicionar outra lista" : "Lista colada";
-  $("#e-t-xml").textContent = mais ? "Adicionar outro XML do MPCFill" : "XML do MPCFill";
-  $("#e-t-deck").textContent = mais ? "Adicionar outra decklist" : "Imagens + decklist";
+  $("#e-t-xml").textContent = mais ? "Adicionar outro(s) XML do MPCFill" : "XML do MPCFill";
+  $("#e-t-deck").textContent = mais ? "Adicionar outra(s) decklist(s)" : "Imagens + decklist";
   $("#e-mais").innerHTML = mais ? `<p class="aviso">Já há ${pedido.fontes.length} pedido(s) neste pedido. Usar qualquer uma das entradas de novo <b>adiciona outro pedido</b> (não substitui o que já está aí). Para tirar um, use Remover.</p>` : "";
   c.innerHTML = (pedido.fontes.length > 1 ? `<p class="ok">${pedido.fontes.length} pedidos juntos neste pedido: os slots são somados e os kits incompletos se completam (veja a economia no Orçamento).</p>` : "") + pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
   c.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { pedido.fontes.splice(+b.dataset.rm, 1); renderFontes(); }));
@@ -128,22 +128,31 @@ $("#e-lista-add").onclick = () => {
   $("#e-erro").textContent = n.length ? "" : "Não achei nenhuma linha no formato “1 Nome” ou “2x Nome”.";
   if (n.length) { addFonte({ titulo: "Lista colada", origem: "lista", frentes: n, versos: [] }); $("#e-lista").value = ""; }
 };
+// As duas entradas aceitam vários arquivos de uma vez (cada um vira um pedido dentro do mesmo pedido)
 $("#e-xml").onchange = async (e) => {
-  const arq = e.target.files[0]; if (!arq) return;
+  const arqs = Array.from(e.target.files); if (!arqs.length) return;
   e.target.value = "";  // o nome do arquivo fica na lista de pedidos; assim dá para adicionar outro sem confusão
-  try {
-    const buf = await arq.arrayBuffer();
-    const r = lerXmlMpc(buf);
-    $("#e-erro").textContent = "";
-    addFonte({ titulo: arq.name, origem: "xml", ...r });  // a Checagem e a Montagem leem o XML combinado de todos os pedidos
-  } catch (err) { $("#e-erro").textContent = err.message; }
+  const erros = [];
+  $("#e-erro").textContent = "";
+  for (const arq of arqs) {
+    try {
+      const r = lerXmlMpc(await arq.arrayBuffer());
+      addFonte({ titulo: arq.name, origem: "xml", ...r });  // a Checagem e a Montagem leem o XML combinado de todos os pedidos
+    } catch (err) { erros.push(`${arq.name}: ${err.message}`); }
+  }
+  if (erros.length) $("#e-erro").textContent = erros.join(" · ");  // senão, mantém o aviso de “já estava na lista”, se houve
 };
 $("#e-deck").onchange = async (e) => {
-  const arq = e.target.files[0]; if (!arq) return;
+  const arqs = Array.from(e.target.files); if (!arqs.length) return;
   e.target.value = "";
-  const n = lerLista(await arq.text());
-  $("#e-erro").textContent = n.length ? "" : "A decklist está vazia ou fora do formato “2x Nome”.";
-  if (n.length) addFonte({ titulo: "Decklist: " + arq.name, origem: "deco", frentes: n, versos: [] });
+  const erros = [];
+  $("#e-erro").textContent = "";
+  for (const arq of arqs) {
+    const n = lerLista(await arq.text());
+    if (n.length) addFonte({ titulo: "Decklist: " + arq.name, origem: "deco", frentes: n, versos: [] });
+    else erros.push(`${arq.name}: vazia ou fora do formato “2x Nome”`);
+  }
+  if (erros.length) $("#e-erro").textContent = erros.join(" · ");
 };
 
 // ---------- orçamento ----------
