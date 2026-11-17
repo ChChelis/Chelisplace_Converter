@@ -88,3 +88,6 @@ O `.md` (Obsidian) agora traz, dentro de `#### Confidencial`, o raciocínio do p
 
 ### Progresso e entradas repetidas
 Criar cópias, mover pares e copiar imagens para o Drive mostram **andamento** (“Criando cópia 3 de 10…”, barra e contagem de copiadas/já existentes). Depois que já há um pedido, as entradas da etapa 1 passam a se chamar “Adicionar outra lista / outro XML / outra decklist” e um aviso diz que usar de novo **adiciona** outro pedido (não substitui); o campo do arquivo é limpo após ler.
+
+### Tabela de preços × divisão do pedido
+O painel “Tabela de preços” (kits e preços) é preenchido **uma vez** e vale para todos os pedidos; o pedido é dividido sozinho (maior kit primeiro, depois os menores, o resto vira kit final do menor tamanho). A coluna **Neste pedido** mostra quantos de cada kit foram usados (ex.: 44 slots → kit de 18: 2 × = R$ 60 + 1 kit final (sobraram 8) = R$ 30 → R$ 90; kits de 108 e 72: não usados).

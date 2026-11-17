@@ -174,9 +174,9 @@ function precosEfetivos(modo) {
 }
 function desenharPrecos() {
   const modo = $("#o-modo").value, p = pedido.precos[modo];
-  $("#o-kits").innerHTML = `<tr><th>Kit (slots)</th><th>Preço (R$)</th><th class="suave">Equivale a</th><th></th></tr>` + p.kits.map((k, i) =>
+  $("#o-kits").innerHTML = `<tr><th>Kit (slots)</th><th>Preço (R$)</th><th class="suave">Equivale a</th><th class="suave">Neste pedido</th><th></th></tr>` + p.kits.map((k, i) =>
     `<tr><td><input type="number" min="1" data-k="${i}" data-c="slots" value="${k.slots}"></td><td><input type="number" min="0" step="0.01" data-k="${i}" data-c="preco" value="${k.preco}"></td>
-     <td class="suave" id="o-eq-${i}"></td><td><button class="peq" data-krm="${i}">Remover</button></td></tr>`).join("");
+     <td class="suave" id="o-eq-${i}"></td><td id="o-uso-${i}"></td><td><button class="peq" data-krm="${i}">Remover</button></td></tr>`).join("") + `<tr><td colspan="5" class="suave" id="o-uso-resto"></td></tr>`;
   const campo = (id, rot, v, extra = "") => `<div><label>${rot}</label><input type="number" min="0" step="0.0001" data-p="${id}" value="${v}" ${extra}></div>`;
   const ef = precosEfetivos(modo), auto = p.avulso_auto === true;
   $("#o-campos").innerHTML = `<div><label>Preço por slot avulso (R$)</label><input type="number" min="0" step="0.0001" data-p="avulso" value="${+ef.avulso.toFixed(4)}" ${auto ? "disabled" : ""}>
@@ -215,10 +215,24 @@ async function orcar() {
     ["Valor cobrado do cliente" + (pago !== r.pago ? " (combinado)" : ""), `<b>${reais(pago)}</b>`],
     [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], ["Colagem", reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
   ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
+  preencherUso(r, pr);
   desenharDescontos(r);
   desenharJuntos(r);
   $("#o-pago-auto").disabled = !pagoEditado;
   renderFicha();
+}
+// Coluna "Neste pedido": liga a tabela de preços à divisão do pedido (quantos de cada kit foram usados)
+function preencherUso(r, pr) {
+  const kits = pedido.precos[pedido.modo].kits, kf = r.kit_final;
+  kits.forEach((k, i) => {
+    const el = $("#o-uso-" + i); if (!el) return;
+    const u = r.usados.find((x) => x.slots === k.slots), partes = [];
+    if (u) partes.push(`${u.qtd} × = ${reais(u.qtd * u.preco)}`);
+    if (kf && kf.kit === k.slots) partes.push(`+ 1 kit final (sobraram ${kf.slots}) = ${reais(kf.preco)}`);
+    el.innerHTML = partes.length ? `<b>${partes.join("<br>")}</b>` : `<span class="suave">não usado</span>`;
+  });
+  const resto = $("#o-uso-resto");
+  if (resto) resto.textContent = kf && !kf.kit ? `Sobraram ${kf.slots} slots, cobrados pelo preço avulso: ${reais(kf.preco)}.` : "";
 }
 // Vários pedidos no mesmo pedido: quanto cada um custaria sozinho × todos juntos (kits incompletos se completam)
 let juntosSeq = 0;

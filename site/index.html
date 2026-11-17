@@ -55,7 +55,8 @@
     <div><label for="o-versos">Versos distintos</label><input id="o-versos" type="number" min="0" value="0"></div>
     <div><label for="o-modo">Modo</label><select id="o-modo"><option value="normal">Normal</option><option value="foil">Foil</option></select></div>
   </div>
-  <details class="conf" id="o-precos" open><summary>Kits e preços (valem para este modo)</summary>
+  <details class="conf" id="o-precos" open><summary>Tabela de preços: kits e preços (valem para este modo)</summary>
+    <p class="suave">Esta é a sua tabela de preços: você preenche uma vez e <b>não precisa mexer por pedido</b>. O pedido é dividido sozinho com ela: primeiro o maior kit que couber, depois os menores, e o que sobrar vira um kit final do menor tamanho. A coluna <b>Neste pedido</b> mostra como o pedido atual foi dividido (a conta completa está logo abaixo, em “Como o valor foi calculado”).</p>
     <table id="o-kits"></table>
     <button class="peq" id="o-kit-add">+ kit</button>
     <div class="linha" id="o-campos"></div>
