@@ -152,6 +152,17 @@ class TestVersoPadrao(Base):
         xml_mpc.escrever(ped, self.d / "m2.xml")
         self.assertEqual(xml_mpc.versos_padrao(xml_mpc.ler(self.d / "m2.xml")), {"p" * 25, "q" * 25})
 
+    def test_verso_compartilhado_por_poucas_cartas_diferentes(self):
+        # 33 frentes; um verso em 14 delas (cartas diferentes) = verso padrão, mesmo sem chegar à metade do pedido
+        fr = "".join(f"<card><id>{'F%02d' % i + 'x' * 22}</id><slots>{i}</slots><name>C{i}</name></card>" for i in list(range(20)) + list(range(26, 33)))
+        fr += "<card><id>" + "D" * 25 + "</id><slots>20,21,22,23,24,25</slots><name>DFC</name></card>"  # a mesma carta, 6 cópias
+        pad = "<card><id>" + "P" * 25 + "</id><slots>" + ",".join(str(i) for i in range(14)) + "</slots><name>Proxy Playtest Copy.jpg</name></card>"
+        dfc = "<card><id>" + "V" * 25 + "</id><slots>20,21,22,23,24,25</slots><name>DFC x6</name></card>"  # 6 cópias da MESMA carta: não é padrão
+        (self.d / "c.xml").write_text(f"<order><fronts>{fr}</fronts><backs>{pad}{dfc}</backs><cardback>{'Z' * 25}</cardback></order>")
+        ped = xml_mpc.ler(self.d / "c.xml")
+        self.assertIn("P" * 25, xml_mpc.versos_padrao(ped))
+        self.assertNotIn("V" * 25, xml_mpc.versos_padrao(ped))
+
     def test_detecta_o_verso_repetido(self):
         ped = self._xml()
         self.assertEqual(xml_mpc.versos_padrao(ped), {"Z" * 25, "P" * 25})

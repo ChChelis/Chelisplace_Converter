@@ -34,14 +34,15 @@
   <h2>Entrada do pedido</h2>
   <p class="suave">Traga o pedido de qualquer um dos jeitos. <b>Dá para trazer mais de um pedido (do mesmo cliente) no mesmo pedido</b>: repita a entrada quantas vezes precisar; os slots são somados e os kits incompletos se completam. Nada sai do seu computador.</p>
   <div class="linha">
-    <div class="cartao"><h3>Lista colada</h3><p class="suave">Moxfield, Liga ou Archidekt em texto: <code>1 Sol Ring (C21) 263</code> ou <code>2x Sol Ring</code>.</p>
+    <div class="cartao"><h3 id="e-t-lista">Lista colada</h3><p class="suave">Moxfield, Liga ou Archidekt em texto: <code>1 Sol Ring (C21) 263</code> ou <code>2x Sol Ring</code>.</p>
       <textarea id="e-lista" rows="6" placeholder="1 Sol Ring (C21) 263&#10;4 Island"></textarea>
       <button class="acao" id="e-lista-add">Usar esta lista</button></div>
-    <div class="cartao"><h3>XML do MPCFill</h3><p class="suave">O XML pronto, já com as imagens escolhidas.</p>
+    <div class="cartao"><h3 id="e-t-xml">XML do MPCFill</h3><p class="suave">O XML pronto, já com as imagens escolhidas.</p>
       <input id="e-xml" type="file" accept=".xml"></div>
-    <div class="cartao"><h3>Imagens + decklist</h3><p class="suave">Modelo “deco”: <code>decklist.txt</code> (<code>2x Nome</code>); as imagens vêm na etapa 4.</p>
+    <div class="cartao"><h3 id="e-t-deck">Imagens + decklist</h3><p class="suave">Modelo “deco”: <code>decklist.txt</code> (<code>2x Nome</code>); as imagens vêm na etapa 4.</p>
       <input id="e-deck" type="file" accept=".txt"></div>
   </div>
+  <div id="e-mais"></div>
   <div id="e-fontes"></div>
   <div id="e-erro" class="alerta"></div>
 </section>

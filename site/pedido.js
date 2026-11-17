@@ -26,8 +26,8 @@ function lerXmlMpc(buf) {
       const id = c.querySelector("id")?.textContent.trim();
       const ext = ((c.querySelector("name")?.textContent || "").match(/\.(jpe?g|png|webp)$/i) || [".jpg"])[0].toLowerCase();
       const nome = (c.querySelector("name")?.textContent || c.querySelector("query")?.textContent || id || "").replace(/\.(jpe?g|png|webp)$/i, "").replace(/\s*\([^)]{20,}\)\s*$/, "").replace(/(\w)_s\b/g, "$1's").trim();
-      const n = (c.querySelector("slots")?.textContent || "0").split(",").filter((x) => x.trim() !== "").length || 1;
-      for (let i = 0; i < n; i++) saida.push({ nome, id, ext });
+      const slots = (c.querySelector("slots")?.textContent || "0").split(",").map((x) => x.trim()).filter((x) => x !== "");
+      for (const s of (slots.length ? slots : ["0"])) saida.push({ nome, id, ext, slot: +s });
     }
     return saida;
   };
@@ -35,9 +35,12 @@ function lerXmlMpc(buf) {
   // Verso padrão: o da tag <cardback> e o verso repetido em quase todo o pedido (ex.: “Back WUBRG” em 186 slots).
   // Ele não conta como slot, não entra na ficha e sai da pasta no processo; só versos de dupla-face contam.
   const cardback = (doc.querySelector("cardback")?.textContent || "").trim();
+  // É padrão (compartilhado) o verso da tag <cardback>, o verso que está em 3+ cartas DIFERENTES (verso de dupla-face é de uma carta só,
+  // mesmo com várias cópias) e o que cobre 5+ slots e metade do pedido. Igual a nucleo/xml_mpc.py (versos_padrao).
+  const frentePorSlot = new Map(frentes.map((f) => [f.slot, f.id]));
   const porId = new Map();
-  for (const v of todosVersos) { const e = porId.get(v.id) || { nome: v.nome, qtd: 0 }; e.qtd++; porId.set(v.id, e); }
-  const padraoIds = new Set([...porId].filter(([id, e]) => id === cardback || e.qtd >= Math.max(5, frentes.length * 0.5)).map(([id]) => id));
+  for (const v of todosVersos) { const e = porId.get(v.id) || { nome: v.nome, qtd: 0, frentes: new Set() }; e.qtd++; if (frentePorSlot.has(v.slot)) e.frentes.add(frentePorSlot.get(v.slot)); porId.set(v.id, e); }
+  const padraoIds = new Set([...porId].filter(([id, e]) => id === cardback || e.frentes.size >= 3 || e.qtd >= Math.max(5, frentes.length * 0.5)).map(([id]) => id));
   return { frentes, versos: todosVersos.filter((v) => !padraoIds.has(v.id)), xmlTexto: txt, padraoIds: [...padraoIds],
     versoPadrao: [...porId].filter(([id]) => padraoIds.has(id)).map(([, e]) => e) };
 }
@@ -88,6 +91,11 @@ function addFonte(f) {
 function renderFontes() {
   sincronizarXml();
   const c = $("#e-fontes");
+  const mais = pedido.fontes.length > 0;
+  $("#e-t-lista").textContent = mais ? "Adicionar outra lista" : "Lista colada";
+  $("#e-t-xml").textContent = mais ? "Adicionar outro XML do MPCFill" : "XML do MPCFill";
+  $("#e-t-deck").textContent = mais ? "Adicionar outra decklist" : "Imagens + decklist";
+  $("#e-mais").innerHTML = mais ? `<p class="aviso">Já há ${pedido.fontes.length} pedido(s) neste pedido. Usar qualquer uma das entradas de novo <b>adiciona outro pedido</b> (não substitui o que já está aí). Para tirar um, use Remover.</p>` : "";
   c.innerHTML = (pedido.fontes.length > 1 ? `<p class="ok">${pedido.fontes.length} pedidos juntos neste pedido: os slots são somados e os kits incompletos se completam (veja a economia no Orçamento).</p>` : "") + pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
   c.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { pedido.fontes.splice(+b.dataset.rm, 1); renderFontes(); }));
   atualizarResumo();
@@ -122,6 +130,7 @@ $("#e-lista-add").onclick = () => {
 };
 $("#e-xml").onchange = async (e) => {
   const arq = e.target.files[0]; if (!arq) return;
+  e.target.value = "";  // o nome do arquivo fica na lista de pedidos; assim dá para adicionar outro sem confusão
   try {
     const buf = await arq.arrayBuffer();
     const r = lerXmlMpc(buf);
@@ -131,6 +140,7 @@ $("#e-xml").onchange = async (e) => {
 };
 $("#e-deck").onchange = async (e) => {
   const arq = e.target.files[0]; if (!arq) return;
+  e.target.value = "";
   const n = lerLista(await arq.text());
   $("#e-erro").textContent = n.length ? "" : "A decklist está vazia ou fora do formato “2x Nome”.";
   if (n.length) addFonte({ titulo: "Decklist: " + arq.name, origem: "deco", frentes: n, versos: [] });
@@ -495,7 +505,7 @@ function desenharEnvio() {
     const nome = $("#c-env-nome").value.trim(), saida = $("#c-env-saida");
     if (!nome) { saida.innerHTML = `<span class="alerta">Dê um nome à pasta do pedido.</span>`; return; }
     if (!Drive.conectado()) { saida.innerHTML = `<span class="alerta">Entre com o Google no quadro “Google Drive” (no alto da página) primeiro.</span>`; return; }
-    confirmar(saida, `Criar (ou reaproveitar) a pasta “${nome}” dentro de “${Drive.NOME_RAIZ}” e copiar para ela ${cartas.size} imagem(ns)? Arquivos que já estiverem lá são pulados; nada é apagado.`, async () => {
+    confirmar(saida, `Criar (ou reaproveitar) a pasta “${nome}” dentro de “${Drive.NOME_RAIZ}” e copiar para ela ${cartas.size} imagem(ns)? Arquivos que já estiverem lá são pulados; nada é apagado.`, async (atualizar) => {
       copiando = true;
       try {
       const raizId = await Drive.raiz();
@@ -504,11 +514,13 @@ function desenharEnvio() {
       const ja = new Set((await Drive.listar(pastaId)).map((x) => (x.name.match(/\(([A-Za-z0-9_-]{20,})\)\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
       const falhas = []; let feitas = 0, puladas = 0;
       const fila = [...cartas.values()];
-      const progresso = () => { saida.firstElementChild && (saida.firstElementChild.textContent = `Copiando… ${feitas + puladas + falhas.length}/${fila.length}`); };
+      const totalCopias = fila.length;
+      atualizar("Preparando a pasta no Drive…", 0.02);
+      const progresso = () => { const k = feitas + puladas + falhas.length; atualizar(`Copiando imagens: ${k} de ${totalCopias}… (${feitas} copiadas, ${puladas} já estavam lá${falhas.length ? `, ${falhas.length} com erro` : ""})`, k / totalCopias); };
       await Promise.all(Array.from({ length: 4 }, async () => {
         while (fila.length) {
           const c = fila.shift();
-          if (ja.has(c.id)) { puladas++; continue; }
+          if (ja.has(c.id)) { puladas++; progresso(); continue; }
           try { await Drive.copiar(c.id, nomeNoDrive(c), pastaId); feitas++; } catch (e) { falhas.push(`${c.nome}: ${e.message}`); }
           progresso();
         }

@@ -87,9 +87,11 @@ async function lerHandle(handle) {
         const w = await (await handle.getFileHandle(dest, { create: true })).createWritable();
         await w.write(f); await w.close();
       },
-      async moverPares(nomes) {
+      async moverPares(nomes, prog) {
         const dir = await handle.getDirectoryHandle("pares", { create: true });
+        let k = 0;
         for (const nome of nomes) {
+          if (prog) prog(++k, nomes.length);
           let origem; try { origem = await handle.getFileHandle(nome); } catch { continue; }
           const w = await (await dir.getFileHandle(nome, { create: true })).createWritable();
           await w.write(await origem.getFile()); await w.close();
@@ -146,9 +148,10 @@ async function montarPastaDrive(ped) {
       await Drive.enviar(nomeNovo, new Blob([bytes], { type: "image/png" }), it ? it.parentId : ped.id, "image/png");
     },
     async copiar(orig, dest) { await Drive.copiar(raiz.find((x) => x.nome === orig).id, dest, ped.id); },
-    async moverPares(nomes) {
+    async moverPares(nomes, prog) {
       const dir = await Drive.criarPasta("pares", ped.id);
-      for (const nome of nomes) { const it = raiz.find((x) => x.nome === nome); if (it) await Drive.mover(it.id, dir, ped.id); }
+      let k = 0;
+      for (const nome of nomes) { if (prog) prog(++k, nomes.length); const it = raiz.find((x) => x.nome === nome); if (it) await Drive.mover(it.id, dir, ped.id); }
     },
   };
 }
@@ -156,7 +159,7 @@ async function montarPastaDrive(ped) {
 const escolher = (p) => document.querySelector(`input[name=fonte-${p}]:checked`).value === "drive" ? pastaDoDrive($(`#${p}-drive-lista`)) : pastaDoComputador();
 function falha(el, e) { if (e.message !== "cancelado" && e.name !== "AbortError") el.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
 
-// confirmação dentro da página (sem pop-ups nativos)
+// confirmação dentro da página (sem pop-ups nativos). `fazer(atualizar)` pode chamar atualizar("texto", fracao 0..1) para mostrar andamento.
 function confirmar(onde, texto, fazer) {
   const c = document.createElement("div");
   c.className = "conf";
@@ -164,7 +167,12 @@ function confirmar(onde, texto, fazer) {
   const sim = Object.assign(document.createElement("button"), { className: "acao", textContent: "Sim, fazer" });
   const nao = Object.assign(document.createElement("button"), { className: "acao sec", textContent: "Cancelar" });
   nao.onclick = () => c.remove();
-  sim.onclick = async () => { sim.disabled = nao.disabled = true; try { c.innerHTML = esc(await fazer()); } catch (e) { c.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; } };
+  sim.onclick = async () => {
+    sim.disabled = nao.disabled = true;
+    c.innerHTML = `<div class="aviso">Trabalhando… (não feche a página)</div><div class="barra"><div style="width:2%"></div></div>`;
+    const atualizar = (t, fr) => { c.firstElementChild.textContent = t; if (fr != null) c.querySelector(".barra > div").style.width = Math.max(2, Math.round(fr * 100)) + "%"; };
+    try { c.innerHTML = esc(await fazer(atualizar)); } catch (e) { c.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
+  };
   c.append(sim, nao);
   onde.append(c);
 }
@@ -246,8 +254,9 @@ async function conferir() {
   const acoes = $("#c-acoes");
   const botao = (texto, fn, sec) => { const b = Object.assign(document.createElement("button"), { className: "acao" + (sec ? " sec" : ""), textContent: texto }); b.onclick = fn; acoes.append(b); };
   if (r.faltantes_xml) botao("Baixar XML dos faltantes", () => baixar(new Blob([r.faltantes_xml], { type: "application/xml" }), `${pasta.nome}_faltantes.xml`).click(), true);
-  if (pasta.podeGravar && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async () => {
-    for (const [orig, dest] of r.duplicar) await pasta.copiar(orig, dest);
+  if (pasta.podeGravar && r.duplicar.length) botao(`Criar ${r.duplicar.length} cópia(s)`, () => confirmar(acoes, `Criar ${r.duplicar.length} arquivo(s) novos na pasta? Nenhum arquivo existente é alterado.`, async (atualizar) => {
+    let k = 0;
+    for (const [orig, dest] of r.duplicar) { atualizar(`Criando cópia ${k + 1} de ${r.duplicar.length}…`, k / r.duplicar.length); await pasta.copiar(orig, dest); k++; }
     sessao.conferencia = null;  // a pasta mudou: precisa conferir de novo
     return `${r.duplicar.length} cópia(s) criada(s). Clique em Conferir para ver o resultado.`;
   }));
@@ -255,8 +264,8 @@ async function conferir() {
   const jaEmPares = new Set(pasta.pares.map((x) => x.nome));
   const soltos = r.pares.filter(([f, v]) => !(jaEmPares.has(f) && jaEmPares.has(v))).flat().filter((n) => !jaEmPares.has(n));
   sessao.conferencia = { pendentes: r.faltando.length + r.a_duplicar.length + r.excesso.length + r.pares_incompletos.length + (soltos.length ? 1 : 0), faltando: r.faltando.length, a_duplicar: r.a_duplicar.length, excesso: r.excesso.length, pares_incompletos: r.pares_incompletos.length, soltos: soltos.length };
-  const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async () => {
-    await pasta.moverPares(soltos);
+  const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async (atualizar) => {
+    await pasta.moverPares(soltos, (k, n) => atualizar(`Movendo arquivo ${k} de ${n} para pares/…`, (k - 1) / n));
     sessao.conferencia = null;
     return `${soltos.length} arquivo(s) movido(s) para pares/. Clique em Conferir para ver o resultado.`;
   });

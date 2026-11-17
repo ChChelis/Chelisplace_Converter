@@ -46,12 +46,15 @@ def ler(caminho):
 
 
 def versos_padrao(pedido):
-    """IDs dos versos 'padrão': o da tag <cardback> e qualquer verso listado em <backs> que cubra a maior parte
-    do pedido (ex.: um 'Back WUBRG' repetido em quase todos os slots). Dupla-face (um verso por frente) não entra."""
+    """IDs dos versos 'padrão' (compartilhados), que não contam como slot: o da tag <cardback> e todo verso de <backs> que
+    (a) está em 3 ou mais cartas DIFERENTES (um verso de dupla-face é de uma carta só, mesmo com várias cópias) ou
+    (b) cobre pelo menos 5 slots e metade do pedido. Ex.: 'Back WUBRG' em quase todos os slots; 'Proxy Playtest Copy' em 14 de 33."""
     ids = ({pedido.verso_padrao} if pedido.verso_padrao else set()) | set(pedido.extras_padrao)
     total = sum(len(c.slots) for c in pedido.frentes)
+    por_slot = {s: f.id for f in pedido.frentes for s in f.slots}
     for c in pedido.versos:
-        if len(c.slots) >= max(5, total * 0.5):
+        frentes_distintas = {por_slot[s] for s in c.slots if s in por_slot}
+        if len(frentes_distintas) >= 3 or len(c.slots) >= max(5, total * 0.5):
             ids.add(c.id)
     return ids
 
