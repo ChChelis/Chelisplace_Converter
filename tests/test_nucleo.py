@@ -128,8 +128,12 @@ class TestOrcamentoEditavel(unittest.TestCase):
         p = dict(kits=[dict(slots=18, preco=30), dict(slots=108, preco=135), dict(slots=72, preco=120)], avulso=30 / 18)
         r = orcamento.calcular(194, 0, "normal", p)  # 108 + 72 + 14 que sobram
         self.assertEqual([(u["slots"], u["qtd"]) for u in r["usados"]], [(108, 1), (72, 1)])
-        self.assertEqual(r["kit_final"], dict(slots=14, preco=23))
+        self.assertEqual(r["kit_final"], dict(slots=14, kit=None, qtd=1, preco=23))  # sem a opção, o resto sai pelo avulso
         self.assertEqual(r["pago"], 135 + 120 + 23)
+        r3 = orcamento.calcular(194, 0, "normal", {**p, "resto_em_kit": True})  # com a opção, vira 1 kit de 18
+        self.assertEqual(r3["kit_final"], dict(slots=14, kit=18, qtd=1, preco=30))
+        self.assertEqual((r3["pago"], r3["paginas"]), (135 + 120 + 30, 11))
+        self.assertEqual(orcamento.calcular(109, 0, "normal", {**p, "resto_em_kit": True})["pago"], 135 + 30)  # sobrou 1 slot → kit de 18
         self.assertEqual(r["paginas"], 11)
         r2 = orcamento.calcular(90, 0, "normal", p)  # 72 + 18, nada sobra
         self.assertEqual((r2["kit_final"], r2["pago"]), (None, 150))

@@ -105,6 +105,10 @@ async function carregarPrecos() {
   pedido.padrao = await chamar("orcamento_padrao");
   const salvo = lerJson("precos", {});
   pedido.precos = { normal: { ...pedido.padrao.normal, ...(salvo.normal || {}) }, foil: { ...pedido.padrao.foil, ...(salvo.foil || {}) } };
+  for (const m of ["normal", "foil"]) {  // quem tem um kit de até 18 slots quer o resto como kit fechado, a menos que já tenha escolhido
+    const q = pedido.precos[m];
+    if (q.resto_em_kit === undefined) q.resto_em_kit = !!menorKit(q) && menorKit(q).slots <= 18;
+  }
   desenharPrecos();
   orcar();
 }
@@ -129,7 +133,8 @@ function desenharPrecos() {
   const campo = (id, rot, v, extra = "") => `<div><label>${rot}</label><input type="number" min="0" step="0.0001" data-p="${id}" value="${v}" ${extra}></div>`;
   const ef = precosEfetivos(modo), auto = p.avulso_auto === true;
   $("#o-campos").innerHTML = `<div><label>Preço por slot avulso (R$)</label><input type="number" min="0" step="0.0001" data-p="avulso" value="${+ef.avulso.toFixed(4)}" ${auto ? "disabled" : ""}>
-      <label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="o-avulso-auto" ${auto ? "checked" : ""}> calcular pelo menor kit</label></div>` +
+      <label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="o-avulso-auto" ${auto ? "checked" : ""}> calcular pelo menor kit</label>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="o-resto-kit" ${p.resto_em_kit ? "checked" : ""}> o que sobrar vira um kit do menor tamanho</label></div>` +
     campo("colagem", "Colagem por slot (R$)", p.colagem) +
     (p.impressao_pagina !== undefined ? campo("impressao_pagina", "Impressão por página (R$)", p.impressao_pagina)
       : campo("impressao_kit", "Impressão por kit foil (R$)", p.impressao_kit) + campo("impressao_pagina_extra", "Página extra foil (R$)", p.impressao_pagina_extra));
@@ -138,6 +143,7 @@ function desenharPrecos() {
   $("#o-kits").querySelectorAll("input").forEach((el) => (el.oninput = () => { p.kits[+el.dataset.k][el.dataset.c] = +el.value; salvarPrecos(); eq(); const av = $("#o-campos [data-p=avulso]"); if (p.avulso_auto === true) av.value = +precosEfetivos(modo).avulso.toFixed(4); orcar(); }));
   $("#o-kits").querySelectorAll("[data-krm]").forEach((b) => (b.onclick = () => { p.kits.splice(+b.dataset.krm, 1); salvarPrecos(); desenharPrecos(); orcar(); }));
   $("#o-campos").querySelectorAll("input[data-p]").forEach((el) => (el.oninput = () => { p[el.dataset.p] = +el.value; salvarPrecos(); orcar(); }));
+  $("#o-resto-kit").onchange = (e) => { p.resto_em_kit = e.target.checked; salvarPrecos(); orcar(); };
   $("#o-avulso-auto").onchange = (e) => { p.avulso_auto = e.target.checked; if (!e.target.checked) p.avulso = +precosEfetivos(modo).avulso.toFixed(4); salvarPrecos(); desenharPrecos(); orcar(); };
 }
 $("#o-kit-add").onclick = () => { pedido.precos[$("#o-modo").value].kits.push({ slots: 18, preco: 30 }); salvarPrecos(); desenharPrecos(); orcar(); };
@@ -153,7 +159,9 @@ async function orcar() {
   const pago = valorFinal();
   // divisão automática: primeiro os kits maiores, depois os menores; o que sobra vira um kit final, cobrado pelo preço avulso
   const contas = [...r.usados.map((u) => `${u.qtd} × kit de ${u.slots} slots (${Math.ceil(u.slots / 18)} pág.) = ${reais(u.qtd * u.preco)}`),
-    ...(r.kit_final ? [`1 × kit final de ${r.kit_final.slots} slots (${r.kit_final.slots} × R$ ${fmt(pr.avulso)}) = ${reais(r.kit_final.preco)}`] : [])];
+    ...(r.kit_final ? [r.kit_final.kit
+      ? `${r.kit_final.qtd} × kit final de ${r.kit_final.kit} slots (sobraram ${r.kit_final.slots}) = ${reais(r.kit_final.preco)}`
+      : `${r.kit_final.slots} slots avulsos × R$ ${fmt(pr.avulso)} = ${reais(r.kit_final.preco)}`] : [])];
   $("#o-tabela").innerHTML = [
     ["Slots (frentes + versos)", r.slots], ["Páginas A3", r.paginas],
     ["Como o valor foi calculado", contas.length ? contas.join("<br>") + `<br><span class="suave">total: ${reais(r.pago)}</span>` : "—"],

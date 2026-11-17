@@ -46,8 +46,15 @@ def calcular(frentes, versos=0, modo="normal", precos=None):
             kits += n
             pago += n * float(k["preco"])
             usados.append(dict(slots=int(k["slots"]), qtd=n, preco=float(k["preco"])))
-    final = inteiro(resto * float(p["avulso"]))  # o que sobra vira um "kit final" (menos de uma página fechada), cobrado pelo avulso
-    pago = inteiro(pago) + final
+    kit_final = None
+    if resto and p.get("resto_em_kit") and kits_def:
+        # o que sobra vira um kit fechado do MENOR tamanho (ex.: sobraram 14 → 1 kit de 18), cobrado pelo preço dele
+        menor = kits_def[-1]
+        qtd = math.ceil(resto / int(menor["slots"]))
+        kit_final = dict(slots=resto, kit=int(menor["slots"]), qtd=qtd, preco=inteiro(qtd * float(menor["preco"])))
+    elif resto:
+        kit_final = dict(slots=resto, kit=None, qtd=1, preco=inteiro(resto * float(p["avulso"])))  # sem kit menor: cobra por slot avulso
+    pago = inteiro(pago) + (kit_final["preco"] if kit_final else 0)
     if modo == "normal":
         impressao = paginas * float(p["impressao_pagina"])
     else:
@@ -55,7 +62,6 @@ def calcular(frentes, versos=0, modo="normal", precos=None):
         n_kits_base = sum(u["qtd"] for u in usados)
         impressao = n_kits_base * float(p["impressao_kit"]) + max(paginas - pag_kits, 0) * float(p["impressao_pagina_extra"])
     colagem = inteiro(slots * float(p["colagem"]))
-    kit_final = dict(slots=resto, preco=final) if resto else None
     return dict(slots=slots, paginas=paginas, kits=kits, usados=usados, kit_final=kit_final, resto=resto, pago=pago,
                 impressao=round(impressao, 2), colagem=colagem,
                 lucro=round(pago - impressao - colagem, 2))
