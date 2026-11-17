@@ -88,3 +88,21 @@ def pix_pdf(matriz, codigo, cliente, valor, saida):
 def ficha_pdf_arquivo(md, imagens, miniaturas, matriz, saida):
     ficha_pdf.gerar(md, dict(imagens), {k: list(v) for k, v in dict(miniaturas).items()}, matriz, saida)
     return saida
+
+
+def sangria_arquivo(entrada, modo, saida, previa):
+    """Corrige a sangria de uma imagem (precisa de numpy/scipy) e grava o PNG corrigido e a prévia antes/depois."""
+    from . import sangria
+    img = sangria.corrigir(entrada, modo)
+    sangria.salvar(img, saida)
+    Path(previa).write_bytes(sangria.previa(entrada, img))
+    return saida
+
+
+def zipar(pasta, saida):
+    """ZIP com os arquivos de uma pasta (para baixar as imagens corrigidas quando a pasta do pedido não aceita gravação)."""
+    import zipfile
+    with zipfile.ZipFile(saida, "w", zipfile.ZIP_STORED) as z:
+        for f in sorted(Path(pasta).iterdir()):
+            z.write(f, f.name)
+    return saida

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from nucleo import checagem, ficha, ficha_pdf, imagem, montagem, orcamento, pix, xml_mpc
+from nucleo import checagem, ficha, ficha_pdf, sangria, imagem, montagem, orcamento, pix, xml_mpc
 
 A, B, C, V = ("a" * 33, "b" * 33, "c" * 33, "v" * 33)
 XML = f"""<order><details><quantity>4</quantity></details>
@@ -95,6 +95,46 @@ class TestOrcamento(unittest.TestCase):
     def test_foil(self):
         r = orcamento.calcular(180, modo="foil")
         self.assertEqual((r["pago"], r["impressao"]), (330, 121.99))
+
+
+class TestSangria(Base):
+    def _carta(self, nome, canto_transp=True, caixa=True):
+        import numpy as np
+        a = np.zeros((140, 100, 4), np.uint8); a[:, :, :3] = (30, 90, 160); a[:, :, 3] = 255
+        a[:, :, :3][:6, :6] = (250, 250, 250)  # RGB claro escondido no canto
+        if canto_transp:
+            a[:6, :6, 3] = 0; a[-6:, -6:, 3] = 0   # cantos externos transparentes
+        if caixa:
+            a[60:80, 20:80, :3] = 0; a[60:80, 20:80, 3] = 120  # caixa semitransparente interna
+        Image.fromarray(a, "RGBA").save(self.d / nome)
+        return self.d / nome
+
+    def test_borda_preenche_cantos_e_mantem_transparencia_interna(self):
+        img = sangria.corrigir(self._carta("a.png"))
+        self.assertEqual(img.size, (816, 1110))
+        self.assertEqual(img.getpixel((0, 0))[3], 255)                 # canto externo opaco
+        self.assertNotEqual(img.getpixel((40, 40))[:3], (250, 250, 250))  # sem cinza/branco escondido
+        meio = img.getpixel((408, 555))
+        self.assertTrue(any(x < 255 for x in [meio[3]]) or meio[3] == 255)
+        interno = img.getpixel((36 + 372, 35 + 520))  # dentro da caixa (60..80 de 140 ≈ 445..594 de 1040)
+        self.assertLess(interno[3], 255)
+
+    def test_branco_e_preto(self):
+        b = sangria.corrigir(self._carta("b.png"), "branco")
+        self.assertEqual(b.getpixel((0, 0)), (255, 255, 255, 255))
+        self.assertEqual(b.getpixel((815, 1109)), (255, 255, 255, 255))   # sangria branca (constante)
+        p = sangria.corrigir(self._carta("c.png", canto_transp=False, caixa=False), "preto")
+        self.assertEqual(p.size, (816, 1110))
+
+    def test_salvar_com_dpi_e_previa(self):
+        img = sangria.corrigir(self._carta("d.png"))
+        saida = sangria.salvar(img, self.d / "o" / "d.png")
+        with Image.open(saida) as im:
+            self.assertEqual((im.size, im.mode), ((816, 1110), "RGBA"))
+            self.assertAlmostEqual(im.info["dpi"][0], 299.9994, delta=0.01)
+        self.assertTrue(sangria.previa((self.d / "d.png").read_bytes(), img).startswith(b"\x89PNG"))
+        with self.assertRaises(ValueError):
+            sangria.corrigir(self.d / "d.png", "azul")
 
 
 class TestVersoPadrao(Base):

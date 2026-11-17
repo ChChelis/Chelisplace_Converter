@@ -63,14 +63,25 @@ async function lerHandle(handle) {
   {
     const raiz = [], pares = [];
     for await (const [nome, h] of handle.entries()) {
-      if (h.kind === "file" && IMG.test(nome)) raiz.push({ nome, ler: () => h.getFile() });
+      if (h.kind === "file" && IMG.test(nome)) raiz.push({ nome, em: "raiz", ler: () => h.getFile() });
       if (h.kind === "directory" && nome.toLowerCase() === "pares") {
-        for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && IMG.test(n2)) pares.push({ nome: n2, ler: () => h2.getFile() });
+        for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && IMG.test(n2)) pares.push({ nome: n2, em: "pares", ler: () => h2.getFile() });
       }
     }
     return {
       nome: handle.name, handle, raiz, pares, podeGravar: true,
       recarregar: () => lerHandle(handle),
+      // guarda a original em originais_sem_sangria/ e coloca a corrigida no lugar dela (ou só adiciona, se não havia original)
+      async inserirCorrigida(item, nomeNovo, bytes) {
+        const dir = item && item.em === "pares" ? await handle.getDirectoryHandle("pares") : handle;
+        if (item) {
+          const backup = await handle.getDirectoryHandle("originais_sem_sangria", { create: true });
+          const f = await (await dir.getFileHandle(item.nome)).getFile();
+          const wb = await (await backup.getFileHandle(item.nome, { create: true })).createWritable(); await wb.write(f); await wb.close();
+          if (item.nome !== nomeNovo) await dir.removeEntry(item.nome);
+        }
+        const w = await (await dir.getFileHandle(nomeNovo, { create: true })).createWritable(); await w.write(bytes); await w.close();
+      },
       async copiar(orig, dest) {
         const f = await (await handle.getFileHandle(orig)).getFile();
         const w = await (await handle.getFileHandle(dest, { create: true })).createWritable();
@@ -122,13 +133,18 @@ async function pastaDoDrive(listaEl) {
 async function montarPastaDrive(ped) {
   const filhos = await Drive.listar(ped.id);
   const imagem = (f) => f.mimeType.startsWith("image/") || IMG.test(f.name);
-  const item = (f) => ({ id: f.id, nome: f.name, ler: async () => new File([await Drive.baixar(f.id)], f.name) });
-  const raiz = filhos.filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map(item);
+  const item = (f, parentId, em) => ({ id: f.id, nome: f.name, parentId, em, ler: async () => new File([await Drive.baixar(f.id)], f.name) });
+  const raiz = filhos.filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map((f) => item(f, ped.id, "raiz"));
   const dirPares = filhos.find((f) => f.mimeType === Drive.PASTA && f.name.toLowerCase() === "pares");
-  const pares = dirPares ? (await Drive.listar(dirPares.id)).filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map(item) : [];
+  const pares = dirPares ? (await Drive.listar(dirPares.id)).filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map((f) => item(f, dirPares.id, "pares")) : [];
   return {
     nome: ped.name, drive: { id: ped.id }, raiz, pares, podeGravar: true,
     recarregar: () => montarPastaDrive(ped),
+    // move a original para originais_sem_sangria/ (nada é apagado) e envia a corrigida para o mesmo lugar
+    async inserirCorrigida(it, nomeNovo, bytes) {
+      if (it) { const backup = await Drive.criarPasta("originais_sem_sangria", ped.id); await Drive.mover(it.id, backup, it.parentId); }
+      await Drive.enviar(nomeNovo, new Blob([bytes], { type: "image/png" }), it ? it.parentId : ped.id, "image/png");
+    },
     async copiar(orig, dest) { await Drive.copiar(raiz.find((x) => x.nome === orig).id, dest, ped.id); },
     async moverPares(nomes) {
       const dir = await Drive.criarPasta("pares", ped.id);

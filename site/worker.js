@@ -54,6 +54,21 @@ const acoes = {
     py.runPython("web.ficha_pdf_arquivo(a[0], dict((k, bytes(v)) for k, v in a[1]), a[2], a[3], a[4])");
     return py.FS.readFile("/w/fpdf/ficha.pdf");
   },
+  // Correção de sangria: numpy e scipy só são baixados na primeira vez que o recurso é usado
+  async sangria_um({ nome, bytes, modo }) {
+    if (!acoes._sg) { await py.loadPackage(["numpy", "scipy"]); acoes._sg = true; }
+    for (const d of ["/w/sg_in", "/w/sg_out"]) { limpar(d); py.FS.mkdirTree(d); }
+    py.FS.writeFile("/w/sg_in/entrada", new Uint8Array(bytes));
+    py.globals.set("a", ["/w/sg_in/entrada", modo, "/w/sg_out/saida.png", "/w/sg_out/previa.png"]);
+    py.runPython("web.sangria_arquivo(*a)");
+    return { saida: py.FS.readFile("/w/sg_out/saida.png"), previa: py.FS.readFile("/w/sg_out/previa.png") };
+  },
+  async zipar({ arquivos }) {
+    gravar("/w/zip_in", arquivos);
+    py.globals.set("a", ["/w/zip_in", "/w/zip.zip"]);
+    py.runPython("web.zipar(*a)");
+    return py.FS.readFile("/w/zip.zip");
+  },
   async pix_pdf({ matriz, codigo, cliente, valor }) {
     gravar("/w/pix", []);
     py.globals.set("a", [py.toPy(matriz), codigo, cliente, valor, "/w/pix/pix.pdf"]);
