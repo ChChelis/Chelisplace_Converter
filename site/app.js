@@ -45,15 +45,16 @@ async function pastaDoComputador() {
     const inp = document.createElement("input");
     inp.type = "file"; inp.webkitdirectory = true;
     inp.onchange = () => {
-      const raiz = [], pares = [];
+      const raiz = [], pares = [], completar = [];
       for (const f of inp.files) {
         const partes = f.webkitRelativePath.split("/");
         if (!IMG.test(f.name)) continue;
         const item = { nome: f.name, ler: async () => f };
         if (partes.length === 2) raiz.push(item);
         else if (partes.length === 3 && partes[1].toLowerCase() === "pares") pares.push(item);
+        else if (partes.length >= 3 && partes[1].toLowerCase() === "completar") completar.push({ ...item, em: "completar" });
       }
-      inp.files.length ? res({ nome: (inp.files[0].webkitRelativePath || "").split("/")[0], handle: null, raiz, pares, podeGravar: false }) : rej(new Error("cancelado"));
+      inp.files.length ? res({ nome: (inp.files[0].webkitRelativePath || "").split("/")[0], handle: null, raiz, pares, completar, podeGravar: false }) : rej(new Error("cancelado"));
     };
     inp.click();
   });
@@ -61,15 +62,22 @@ async function pastaDoComputador() {
 
 async function lerHandle(handle) {
   {
-    const raiz = [], pares = [];
+    const raiz = [], pares = [], completar = [];
+    const varrer = async (dir, nivel) => {  // completar/ pode ter subpastas (uma por loja, por exemplo)
+      for await (const [n, h] of dir.entries()) {
+        if (h.kind === "file" && IMG.test(n)) completar.push({ nome: n, em: "completar", ler: () => h.getFile() });
+        else if (h.kind === "directory" && nivel < 3) await varrer(h, nivel + 1);
+      }
+    };
     for await (const [nome, h] of handle.entries()) {
+      if (h.kind === "directory" && nome.toLowerCase() === "completar") await varrer(h, 1);
       if (h.kind === "file" && IMG.test(nome)) raiz.push({ nome, em: "raiz", ler: () => h.getFile() });
       if (h.kind === "directory" && nome.toLowerCase() === "pares") {
         for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && IMG.test(n2)) pares.push({ nome: n2, em: "pares", ler: () => h2.getFile() });
       }
     }
     return {
-      nome: handle.name, handle, raiz, pares, podeGravar: true,
+      nome: handle.name, handle, raiz, pares, completar, podeGravar: true,
       recarregar: () => lerHandle(handle),
       // guarda a original em originais_sem_sangria/ e coloca a corrigida no lugar dela (ou só adiciona, se não havia original)
       async inserirCorrigida(item, nomeNovo, bytes) {
@@ -139,8 +147,17 @@ async function montarPastaDrive(ped) {
   const raiz = filhos.filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map((f) => item(f, ped.id, "raiz"));
   const dirPares = filhos.find((f) => f.mimeType === Drive.PASTA && f.name.toLowerCase() === "pares");
   const pares = dirPares ? (await Drive.listar(dirPares.id)).filter((f) => f.mimeType !== Drive.PASTA && imagem(f)).map((f) => item(f, dirPares.id, "pares")) : [];
+  const dirCompletar = filhos.find((f) => f.mimeType === Drive.PASTA && f.name.toLowerCase() === "completar");
+  const completar = [];
+  const varrer = async (pasta, nivel) => {
+    for (const f of await Drive.listar(pasta)) {
+      if (f.mimeType === Drive.PASTA) { if (nivel < 3) await varrer(f.id, nivel + 1); }
+      else if (imagem(f)) completar.push(item(f, pasta, "completar"));
+    }
+  };
+  if (dirCompletar) await varrer(dirCompletar.id, 1);
   return {
-    nome: ped.name, drive: { id: ped.id }, raiz, pares, podeGravar: true,
+    nome: ped.name, drive: { id: ped.id }, raiz, pares, completar, podeGravar: true,
     recarregar: () => montarPastaDrive(ped),
     // move a original para originais_sem_sangria/ (nada é apagado) e envia a corrigida para o mesmo lugar
     async inserirCorrigida(it, nomeNovo, bytes) {
@@ -178,7 +195,8 @@ function confirmar(onde, texto, fazer) {
 }
 
 // ---------- pedido em uso (compartilhado entre Checagem e Montagem) ----------
-const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set(), conferencia: null };  // conferencia: resultado da última checagem (null = precisa conferir de novo)
+const chaveExtras = (itens) => itens.map((x) => x.nome).sort().join("|");  // identifica um conjunto de imagens extras
+const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set(), conferencia: null, extrasDecisao: null };  // conferencia: resultado da última checagem (null = precisa conferir de novo)
 let clienteEditado = false;
 const chaveIgnorar = () => "ignorar:" + sessao.pasta.nome;
 function carregarIgnorados() { try { sessao.ignorar = new Set(JSON.parse(guardado.ler(chaveIgnorar()) || "[]")); } catch { sessao.ignorar = new Set(); } }
@@ -186,7 +204,7 @@ const salvarIgnorados = () => guardado.gravar(chaveIgnorar(), JSON.stringify([..
 
 function atualizarRotulos() {
   const p = sessao.pasta;
-  const txt = p ? `${p.nome}: ${p.raiz.length + p.pares.length} imagens${p.pares.length ? ` (${p.pares.length} em pares/)` : ""}` : "";
+  const txt = p ? `${p.nome}: ${p.raiz.length + p.pares.length + (p.completar || []).length} imagens${p.pares.length ? ` (${p.pares.length} em pares/)` : ""}${(p.completar || []).length ? ` (${p.completar.length} em completar/)` : ""}` : "";
   $("#c-pasta-nome").textContent = txt; $("#m-pasta-nome").textContent = txt;
   $("#c-xml-nome").textContent = $("#m-xml-nome").textContent = sessao.xmlNome;
   $("#c-rodar").disabled = !(p && sessao.xml);
@@ -226,7 +244,7 @@ async function conferir() {
     if (sessao.pasta.recarregar) { sessao.pasta = await sessao.pasta.recarregar(); atualizarRotulos(); }  // lê a pasta de novo, sem escolher outra vez
   } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
   const pasta = sessao.pasta;
-  const nomes = [...pasta.raiz, ...pasta.pares].map((x) => x.nome);
+  const nomes = [...pasta.raiz, ...pasta.pares].map((x) => x.nome);  // completar/ é tratada à parte (extras)
   let r;
   try { r = await chamar("checar", { xml: sessao.xml.slice(0), nomes, ignorar: [...sessao.ignorar] }); } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
   const secao = (t, cls, itens, f) => (itens.length ? `<h3 class="${cls}">${t} (${itens.length})</h3>${lista(itens, f)}` : "");
@@ -237,8 +255,9 @@ async function conferir() {
     secao("Faltando baixar", "alerta", r.faltando, ([n, q]) => `${esc(n)} × ${q}`) +
     secao("A duplicar (o XML pede mais cópias)", "aviso", r.a_duplicar, ([n, q]) => `${esc(n)}: faltam ${q} cópia(s)`) +
     secao("Cópias a mais", "aviso", r.excesso, ([n, q]) => `${esc(n)}: ${q} a mais`) +
-    secao("Fora da lista do XML", "aviso", r.fora_da_lista, esc) +
-    secao("Sem ID no nome", "aviso", r.sem_id, esc) +
+    secao("Fora da lista do XML (extras)", "aviso", r.fora_da_lista, esc) +
+    secao("Sem ID no nome (extras)", "aviso", r.sem_id, esc) +
+    ((pasta.completar || []).length ? secao("Na pasta completar/ (extras)", "aviso", pasta.completar, (x) => esc(x.nome)) : "") +
     secao("Verso padrão na pasta (não entra na montagem)", "suave", r.verso_padrao, esc) +
     secao("Pares dupla face incompletos", "alerta", r.pares_incompletos, ([f, v, idf, idv]) => `${esc(f)} / ${esc(v)} ${botaoPeq("Ignorar este par", "data-ign", idf + "," + idv)}`) + todos +
     secao("Pares ignorados", "suave", r.pares_ignorados, ([f, v, idf, idv]) => `${esc(f)} / ${esc(v)} ${botaoPeq("Voltar a considerar", "data-des", idf + "," + idv)}`) +
@@ -263,7 +282,11 @@ async function conferir() {
   // pares completos que ainda estão soltos na pasta do pedido: propõe a pasta pares/ sozinho, com confirmação
   const jaEmPares = new Set(pasta.pares.map((x) => x.nome));
   const soltos = r.pares.filter(([f, v]) => !(jaEmPares.has(f) && jaEmPares.has(v))).flat().filter((n) => !jaEmPares.has(n));
-  sessao.conferencia = { pendentes: r.faltando.length + r.a_duplicar.length + r.excesso.length + r.pares_incompletos.length + (soltos.length ? 1 : 0), faltando: r.faltando.length, a_duplicar: r.a_duplicar.length, excesso: r.excesso.length, pares_incompletos: r.pares_incompletos.length, soltos: soltos.length };
+  // Imagens fora do pedido (soltas sem ID/fora do XML, e tudo em completar/): mudam o total depois do orçamento, então pedem decisão
+  const fora = new Set([...r.fora_da_lista, ...r.sem_id]);
+  const extrasItens = [...pasta.raiz.filter((x) => fora.has(x.nome)), ...(pasta.completar || [])];
+  const extrasPendentes = window.desenharExtras ? await window.desenharExtras(extrasItens) : 0;
+  sessao.conferencia = { extrasPendentes, pendentes: r.faltando.length + r.a_duplicar.length + r.excesso.length + r.pares_incompletos.length + (soltos.length ? 1 : 0), faltando: r.faltando.length, a_duplicar: r.a_duplicar.length, excesso: r.excesso.length, pares_incompletos: r.pares_incompletos.length, soltos: soltos.length };
   const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async (atualizar) => {
     await pasta.moverPares(soltos, (k, n) => atualizar(`Movendo arquivo ${k} de ${n} para pares/…`, (k - 1) / n));
     sessao.conferencia = null;
@@ -292,20 +315,22 @@ async function prepararMontagem() {
   if (!p) { plano.innerHTML = ""; MONT.pronta = false; return atualizarRotulos(); }
   if (!clienteEditado) $("#m-cliente").value = p.nome;
   await pronto;
-  let raizXml = p.raiz, extras = [], padrao = [], faltando = 0, ignorados = 0;
+  let raizXml = p.raiz, extras = [...(p.completar || [])], padrao = [], faltando = 0, ignorados = 0;
   if (sessao.xml) {
     try {
       const r = await chamar("checar", { xml: sessao.xml.slice(0), nomes: [...p.raiz, ...p.pares].map((x) => x.nome), ignorar: [...sessao.ignorar] });
       const fora = new Set([...r.fora_da_lista, ...r.sem_id]), pad = new Set(r.verso_padrao);
-      extras = p.raiz.filter((x) => fora.has(x.nome));
+      extras = [...p.raiz.filter((x) => fora.has(x.nome)), ...(p.completar || [])];
       padrao = p.raiz.filter((x) => pad.has(x.nome));
       raizXml = p.raiz.filter((x) => !fora.has(x.nome) && !pad.has(x.nome));
       faltando = r.faltando.length; ignorados = r.pares_ignorados.length;
     } catch (e) { plano.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; MONT.pronta = false; return; }
   }
   // decisão sobre extras vale para este conjunto de arquivos; se mudar, pergunta de novo
-  const chave = extras.map((x) => x.nome).join("|");
+  const chave = chaveExtras(extras);
   if (chave !== MONT.chaveExtras) { MONT.chaveExtras = chave; MONT.incluirExtras = extras.length ? null : false; }
+  const dec = sessao.extrasDecisao;  // já decidido na etapa 4 (Conferir), junto com o orçamento: não pergunta de novo
+  if (extras.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
   if (!extras.length) MONT.incluirExtras = false;  // nada a perguntar
   const extrasUsados = MONT.incluirExtras ? extras : [];
   const nExtras = extrasUsados.length + MONT.adicionadas.length;

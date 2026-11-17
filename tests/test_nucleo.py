@@ -126,6 +126,15 @@ class TestSangria(Base):
         p = sangria.corrigir(self._carta("c.png", canto_transp=False, caixa=False), "preto")
         self.assertEqual(p.size, (816, 1110))
 
+    def test_gerar_os_tres_modos_com_miniaturas(self):
+        saida = self.d / "modos"
+        saida.mkdir()
+        sangria.gerar_modos(self._carta("e.png"), saida)
+        for nome in ("borda.png", "branco.png", "preto.png", "prev_borda.png", "prev_branco.png", "prev_preto.png", "prev_original.png"):
+            self.assertTrue((saida / nome).exists(), nome)
+        with Image.open(saida / "branco.png") as im:
+            self.assertEqual(im.size, (816, 1110))
+
     def test_salvar_com_dpi_e_previa(self):
         img = sangria.corrigir(self._carta("d.png"))
         saida = sangria.salvar(img, self.d / "o" / "d.png")

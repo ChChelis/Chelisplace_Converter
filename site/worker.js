@@ -55,13 +55,16 @@ const acoes = {
     return py.FS.readFile("/w/fpdf/ficha.pdf");
   },
   // Correção de sangria: numpy e scipy só são baixados na primeira vez que o recurso é usado
-  async sangria_um({ nome, bytes, modo }) {
+  async sangria_um({ nome, bytes }) {
     if (!acoes._sg) { await py.loadPackage(["numpy", "scipy"]); acoes._sg = true; }
     for (const d of ["/w/sg_in", "/w/sg_out"]) { limpar(d); py.FS.mkdirTree(d); }
     py.FS.writeFile("/w/sg_in/entrada", new Uint8Array(bytes));
-    py.globals.set("a", ["/w/sg_in/entrada", modo, "/w/sg_out/saida.png", "/w/sg_out/previa.png"]);
-    py.runPython("web.sangria_arquivo(*a)");
-    return { saida: py.FS.readFile("/w/sg_out/saida.png"), previa: py.FS.readFile("/w/sg_out/previa.png") };
+    py.globals.set("a", ["/w/sg_in/entrada", "/w/sg_out"]);
+    py.runPython("web.sangria_modos(*a)");
+    const ler = (n) => py.FS.readFile("/w/sg_out/" + n);
+    const r = { original: ler("prev_original.png"), modos: {} };
+    for (const m of ["borda", "branco", "preto"]) r.modos[m] = { saida: ler(m + ".png"), previa: ler("prev_" + m + ".png") };
+    return r;
   },
   async zipar({ arquivos }) {
     gravar("/w/zip_in", arquivos);

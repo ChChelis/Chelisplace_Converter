@@ -106,3 +106,10 @@ def zipar(pasta, saida):
         for f in sorted(Path(pasta).iterdir()):
             z.write(f, f.name)
     return saida
+
+
+def sangria_modos(entrada, pasta_saida):
+    """Os três modos da correção de sangria (precisa de numpy/scipy)."""
+    from . import sangria
+    sangria.gerar_modos(entrada, pasta_saida)
+    return pasta_saida

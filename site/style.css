@@ -57,3 +57,8 @@ details summary{cursor:pointer}
 .passos-rodape .motivo{font-size:.85rem;flex:1 1 100%}
 button.peq:disabled{opacity:.4;cursor:not-allowed}
 #o-juntos:empty{display:none}
+.sg-opcoes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+.sg-op{display:block;border:1px solid var(--linha);border-radius:10px;padding:6px;cursor:pointer;margin:0;font-size:.8rem;color:var(--texto)}
+.sg-op.sel{border-color:var(--acento);box-shadow:0 0 0 1px var(--acento) inset}
+.sg-op img{width:100%;height:auto;border-radius:6px;display:block;margin-top:4px}
+@media (max-width:640px){.sg-opcoes{grid-template-columns:repeat(2,minmax(0,1fr))}}

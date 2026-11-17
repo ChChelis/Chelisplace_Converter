@@ -129,3 +129,34 @@ def previa(origem, corrigida):
     buf = io.BytesIO()
     folha.save(buf, "PNG")
     return buf.getvalue()
+
+
+def miniatura(img, largura=240):
+    """Miniatura de uma imagem RGBA 816x1110 (transparência em xadrez) com zoom 4x do canto superior esquerdo e do inferior direito."""
+    f = _xadrez(img.size)
+    f.paste(img, mask=img.getchannel("A"))
+    alt = int(largura * CH / CW)
+    carta = f.resize((largura, alt), Image.LANCZOS)
+    rec, meio = 40, largura // 2
+    tl = f.crop((0, 0, rec, rec)).resize((meio, meio), Image.NEAREST)
+    br = f.crop((CW - rec, CH - rec, CW, CH)).resize((meio, meio), Image.NEAREST)
+    folha = Image.new("RGB", (largura, alt + meio + 4), "white")
+    folha.paste(carta, (0, 0))
+    folha.paste(tl, (0, alt + 4))
+    folha.paste(br, (meio, alt + 4))
+    buf = io.BytesIO()
+    folha.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def gerar_modos(origem, pasta_saida):
+    """Gera os três modos (borda, branco, preto) para escolher olhando a miniatura de cada um, e a miniatura da original.
+    Grava <modo>.png (a imagem final), prev_<modo>.png e prev_original.png em `pasta_saida`."""
+    pasta_saida = Path(pasta_saida)
+    with Image.open(io.BytesIO(origem) if isinstance(origem, (bytes, bytearray)) else origem) as im:
+        original = im.convert("RGBA").resize((CW, CH), Image.LANCZOS)
+    (pasta_saida / "prev_original.png").write_bytes(miniatura(original))
+    for modo in MODOS:
+        img = corrigir(origem, modo)
+        salvar(img, pasta_saida / f"{modo}.png")
+        (pasta_saida / f"prev_{modo}.png").write_bytes(miniatura(img))

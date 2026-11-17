@@ -561,6 +561,54 @@ window.aoAbrirAba = (aba) => {
 renderFontes(); renderAlteracoes();
 pronto.then(carregarPrecos);
 
+// ---------- Imagens extras (fora do pedido): completar/ e soltas sem ID ----------
+// Elas mudam o total de slots depois do orçamento: a Conferência pede uma decisão e, se incluir, o pedido, o orçamento e a ficha são atualizados.
+const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(/\s*\([A-Za-z0-9_-]{20,}\)\s*$/, "").trim();
+async function desenharExtras(itens) {
+  const el = $("#c-extras"), chave = chaveExtras(itens);
+  const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
+  if (!itens.length) {
+    pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
+    sessao.extrasDecisao = null; el.innerHTML = ""; renderFontes(); return 0;
+  }
+  const dec = sessao.extrasDecisao && sessao.extrasDecisao.chave === chave ? sessao.extrasDecisao.valor : (noPedido ? "incluir" : null);
+  const lista = `<ul>${itens.slice(0, 12).map((x) => `<li>${esc(x.nome)} <span class="suave">${x.em === "completar" ? "(completar/)" : "(solta na pasta)"}</span></li>`).join("")}${itens.length > 12 ? `<li class="suave">… e mais ${itens.length - 12}</li>` : ""}</ul>`;
+  if (dec === "incluir") {
+    el.innerHTML = `<div class="conf"><b class="ok">${itens.length} imagem(ns) extra(s) incluída(s) no pedido</b> (“Cartas para completar”, ${itens.length} slots; já está no orçamento e na ficha). <button class="peq" id="x-desfazer">Desfazer</button> <button class="peq" id="x-orc">Rever o orçamento</button></div>`;
+    $("#x-desfazer").onclick = () => { pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar"); sessao.extrasDecisao = { chave, valor: "nao" }; renderFontes(); conferir(); };
+    $("#x-orc").onclick = () => document.querySelector("#passos [data-aba=orcamento]").click();
+    return 0;
+  }
+  if (dec === "nao") {
+    el.innerHTML = `<div class="conf"><b>${itens.length} imagem(ns) extra(s) não entram no pedido.</b> <button class="peq" id="x-mudar">Mudar</button></div>`;
+    $("#x-mudar").onclick = () => { sessao.extrasDecisao = null; conferir(); };
+    return 0;
+  }
+  // ainda sem decisão: mostra o que muda no total e no valor
+  await pronto;
+  const t = totais(), pr = precosEfetivos(pedido.modo), slotsAtual = t.frentes + t.versos;
+  const antes = (await chamar("orcar", { frentes: slotsAtual, versos: 0, modo: pedido.modo, precos: pr })).pago;
+  const depois = (await chamar("orcar", { frentes: slotsAtual + itens.length, versos: 0, modo: pedido.modo, precos: pr })).pago;
+  el.innerHTML = `<div class="conf conf-so-voce"><b class="aviso">${itens.length} imagem(ns) fora do pedido na pasta</b>${lista}
+    <p>Elas não estavam no pedido quando o orçamento foi feito. Se entrarem, o pedido passa de <b>${slotsAtual}</b> para <b>${slotsAtual + itens.length} slots</b> e o valor da tabela de <b>${reais(antes)}</b> para <b>${reais(depois)}</b> (cobrado hoje: ${reais(valorFinal())}).</p>
+    <button class="acao" id="x-inc-atualiza">Incluir e atualizar o valor</button>
+    <button class="acao sec" id="x-inc-mantem">Incluir e manter o valor atual</button>
+    <button class="acao sec" id="x-nao">Não incluir</button></div>`;
+  const incluir = (atualizarValor) => {
+    if (!atualizarValor) { $("#o-pago").value = valorFinal(); pagoEditado = true; }  // congela o valor combinado
+    else pagoEditado = false;
+    pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");
+    pedido.fontes.push({ titulo: "Cartas para completar", origem: "completar", extrasChave: chave, frentes: itens.map((x) => ({ nome: nomeLimpo(x.nome) })), versos: [] });
+    sessao.extrasDecisao = { chave, valor: "incluir" };
+    renderFontes(); conferir();
+  };
+  $("#x-inc-atualiza").onclick = () => incluir(true);
+  $("#x-inc-mantem").onclick = () => incluir(false);
+  $("#x-nao").onclick = () => { sessao.extrasDecisao = { chave, valor: "nao" }; conferir(); };
+  return itens.length;
+}
+window.desenharExtras = desenharExtras;
+
 // ---------- Correção de sangria (botão separado; processo do HANDOFF_SANGRIA) ----------
 // 816x1110 RGBA, carta 744x1040 centralizada, 299.9994 dpi; modos por imagem: borda (padrão), branco, preto. Nunca sobrescreve sem guardar a original.
 const SG = { itens: [], mostrarComId: false, rodando: false };
@@ -576,37 +624,46 @@ function sgAtualizarLista() {
   }
   SG.itens = [...daPasta, ...SG.itens.filter((i) => i.novo)];
 }
+const sgSaida = (i) => (i.opcoes ? i.opcoes[i.modo].saida : null);  // bytes da opção escolhida
+const NOMES_MODO = { borda: "Borda estendida", branco: "Branco", preto: "Preto" };
 function sgDesenhar() {
   const box = $("#sg"); box.hidden = false;
-  const prontas = SG.itens.filter((i) => i.saida && i.incluir);
-  const opcoes = (m) => [["borda", "Borda estendida (padrão)"], ["branco", "Branco"], ["preto", "Preto"]].map(([v, t]) => `<option value="${v}" ${m === v ? "selected" : ""}>${t}</option>`).join("");
+  const prontas = SG.itens.filter((i) => i.opcoes && i.incluir);
+  const pendentes = SG.itens.filter((i) => i.incluir && !i.opcoes);
+  const driveOk = typeof Drive !== "undefined" && Drive.conectado();
   box.innerHTML = `<b>Correção de sangria</b>
-    <p class="suave">Corrige cantos transparentes e cria a sangria (canvas 816×1110, carta 744×1040, 300 dpi). Escolha o modo de cada imagem e confira o antes/depois: <b>borda</b> estende a borda (padrão); <b>branco</b> e <b>preto</b> são para imagens apontadas com sujeira nos cantos. Transparência interna (caixas de texto) é preservada. A original nunca é sobrescrita sem ser guardada.</p>
+    <p class="suave">Corrige cantos transparentes e cria a sangria (canvas 816×1110, carta 744×1040, 300 dpi). Para cada imagem a página gera <b>as três opções</b>: veja como fica cada uma (miniatura com zoom nos cantos) e <b>clique na que quer</b>. <b>Borda</b> estende a borda (padrão); <b>branco</b> e <b>preto</b> são para imagens com sujeira nos cantos. Transparência interna (caixas de texto) é preservada.</p>
     <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sg-comid" ${SG.mostrarComId ? "checked" : ""}> mostrar também as imagens com ID do MPCFill</label>
     <input id="sg-add" type="file" accept="image/*" multiple> <span class="suave">adicionar imagens do computador</span>
     ${SG.itens.length ? "" : `<p class="aviso">Nenhuma imagem sem ID na pasta. Adicione imagens do computador ou marque a caixa acima.</p>`}
-    ${SG.itens.map((i, n) => `<div class="alt"><label style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" data-sg-inc="${n}" ${i.incluir ? "checked" : ""}> <b>${esc(i.nome)}</b>${i.novo ? ' <span class="suave">(do computador)</span>' : ""}</label>
-      <div class="item"><select data-sg-modo="${n}">${opcoes(i.modo)}</select>
-      <span class="${i.erro ? "alerta" : "suave"}">${i.erro ? esc(i.erro) : i.processando ? "corrigindo…" : i.saida ? "corrigida ✓ (mude o modo para refazer)" : "aguardando"}</span></div>
-      ${i.previaUrl ? `<details open><summary class="suave">Antes (esquerda) × depois (direita); abaixo, zoom dos cantos</summary><img src="${i.previaUrl}" alt="antes e depois" style="max-width:100%;height:auto;border-radius:6px"></details>` : ""}</div>`).join("")}
-    <button class="acao" id="sg-rodar" ${SG.rodando || !SG.itens.some((i) => i.incluir && !i.saida) ? "disabled" : ""}>Corrigir selecionadas</button>
+    ${SG.itens.map((i, n) => `<div class="alt"><label style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" data-sg-inc="${n}" ${i.incluir ? "checked" : ""}> <b>${esc(i.nome)}</b>${i.novo ? ' <span class="suave">(do computador)</span>' : ""}
+        <span class="${i.erro ? "alerta" : "suave"}">${i.erro ? esc(i.erro) : i.processando ? "gerando as 3 opções…" : i.opcoes ? "" : "aguardando"}</span></label>
+      ${i.opcoes ? `<div class="sg-opcoes"><div class="sg-op"><div class="suave">Original</div><img src="${i.urls.original}" alt="original"></div>${["borda", "branco", "preto"].map((m) => `<label class="sg-op ${i.modo === m ? "sel" : ""}"><div><input type="radio" name="sg-m${n}" data-sg-modo="${n}" value="${m}" ${i.modo === m ? "checked" : ""}> <b>${NOMES_MODO[m]}</b>${m === "borda" ? " <span class='suave'>(padrão)</span>" : ""}</div><img src="${i.urls[m]}" alt="${m}"></label>`).join("")}</div>` : ""}</div>`).join("")}
+    <button class="acao" id="sg-rodar" ${SG.rodando || !pendentes.length ? "disabled" : ""}>Ver como fica (3 opções)</button>
     <button class="acao sec" id="sg-fechar-painel" ${SG.rodando ? "disabled" : ""}>Fechar</button>
     <span id="sg-status" class="suave"></span>
-    ${prontas.length ? `<div class="conf"><b>Inserir as ${prontas.length} imagem(ns) corrigida(s) no pedido?</b>
-      <p class="suave">${sessao.pasta && sessao.pasta.podeGravar ? `Inserir: a original vai para a subpasta <code>originais_sem_sangria</code> (nada é apagado) e a corrigida (PNG) ocupa o lugar dela${SG.itens.some((i) => i.novo && i.saida) ? "; as do computador entram como novas" : ""}. Depois é preciso conferir de novo.` : "Esta pasta não aceita gravação neste navegador (use Chrome/Edge ou o Google Drive): dá para baixar as corrigidas em um zip."}</p>
+    ${prontas.length ? `<div class="conf"><b>Usar as ${prontas.length} imagem(ns) corrigida(s) com o modo escolhido?</b>
+      <p class="suave">${sessao.pasta && sessao.pasta.podeGravar ? `<b>Inserir no pedido</b>: a original vai para a subpasta <code>originais_sem_sangria</code> (nada é apagado) e a corrigida (PNG) ocupa o lugar dela${SG.itens.some((i) => i.novo && i.opcoes) ? "; as do computador entram como novas" : ""}. Depois é preciso conferir de novo.` : "Esta pasta não aceita gravação neste navegador (use Chrome/Edge ou o Google Drive)."}${driveOk ? " <b>Enviar para o Drive</b>: escolha a pasta do pedido; as corrigidas entram como arquivos novos (as originais não são tocadas)." : ""} Ou baixe um zip.</p>
       ${sessao.pasta && sessao.pasta.podeGravar && sessao.pasta.inserirCorrigida ? `<button class="acao" id="sg-inserir">Sim, inserir no pedido</button>` : ""}
+      ${driveOk ? `<button class="acao" id="sg-drive">Enviar para uma pasta do Drive…</button>` : ""}
       <button class="acao sec" id="sg-zip">Só baixar (zip)</button>
-      <button class="acao sec" id="sg-descartar">Não, descartar as corrigidas</button></div>` : ""}`;
+      <button class="acao sec" id="sg-descartar">Não, descartar as corrigidas</button><div id="sg-drive-lista"></div></div>` : ""}`;
   box.querySelector("#sg-comid").onchange = (e) => { SG.mostrarComId = e.target.checked; sgAtualizarLista(); sgDesenhar(); };
   box.querySelector("#sg-add").onchange = (e) => { for (const f of e.target.files) SG.itens.push({ chave: "novo/" + f.name + Date.now(), nome: f.name, file: f, novo: true, incluir: true, modo: "borda" }); sgDesenhar(); };
   box.querySelectorAll("[data-sg-inc]").forEach((el) => (el.onchange = () => { SG.itens[+el.dataset.sgInc].incluir = el.checked; sgDesenhar(); }));
-  box.querySelectorAll("[data-sg-modo]").forEach((el) => (el.onchange = () => { const i = SG.itens[+el.dataset.sgModo]; i.modo = el.value; if (i.saida || i.erro) { i.saida = null; i.erro = ""; sgRodar([i]); } }));
-  box.querySelector("#sg-rodar").onclick = () => sgRodar(SG.itens.filter((i) => i.incluir && !i.saida));
-  box.querySelector("#sg-fechar-painel").onclick = () => { if (!SG.itens.some((i) => i.saida)) { SG.itens.forEach((i) => i.previaUrl && URL.revokeObjectURL(i.previaUrl)); SG.itens = SG.itens.filter((i) => false); box.hidden = true; } else $("#sg-status").textContent = "Responda primeiro se quer inserir as corrigidas (ou descarte)."; };
+  box.querySelectorAll("[data-sg-modo]").forEach((el) => (el.onchange = () => { SG.itens[+el.dataset.sgModo].modo = el.value; sgDesenhar(); }));
+  box.querySelector("#sg-rodar").onclick = () => sgRodar(pendentes);
+  box.querySelector("#sg-fechar-painel").onclick = () => { if (!SG.itens.some((i) => i.opcoes)) { sgLimpar(); box.hidden = true; } else $("#sg-status").textContent = "Responda primeiro o que fazer com as corrigidas (ou descarte)."; };
   const ins = box.querySelector("#sg-inserir"); if (ins) ins.onclick = sgInserir;
+  const dr = box.querySelector("#sg-drive"); if (dr) dr.onclick = sgEnviarDrive;
   const zip = box.querySelector("#sg-zip"); if (zip) zip.onclick = sgBaixarZip;
-  const des = box.querySelector("#sg-descartar"); if (des) des.onclick = () => { SG.itens.forEach((i) => { i.saida = null; i.previaUrl && URL.revokeObjectURL(i.previaUrl); i.previaUrl = ""; }); sgDesenhar(); };
+  const des = box.querySelector("#sg-descartar"); if (des) des.onclick = () => { sgLimpar(true); sgDesenhar(); };
 }
+function sgLimpar(manterLista) {
+  for (const i of SG.itens) { if (i.urls) Object.values(i.urls).forEach((u) => URL.revokeObjectURL(u)); i.urls = null; i.opcoes = null; i.modo = "borda"; }
+  if (!manterLista) SG.itens = [];
+}
+const sgBlobUrl = (bytes) => URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
 async function sgRodar(lista) {
   if (SG.rodando || !lista.length) return;
   SG.rodando = true; await pronto;
@@ -614,36 +671,49 @@ async function sgRodar(lista) {
     let k = 0;
     for (const i of lista) {
       i.processando = true; i.erro = ""; sgDesenhar();
-      $("#sg-status").textContent = `Corrigindo ${++k}/${lista.length}… (a primeira vez baixa o módulo de imagens, uns 30 MB)`;
+      $("#sg-status").textContent = `Gerando as opções ${++k}/${lista.length}… (a primeira vez baixa o módulo de imagens, uns 30 MB)`;
       try {
         const arq = i.novo ? i.file : await i.item.ler();
-        const r = await chamar("sangria_um", { nome: i.nome, bytes: new Uint8Array(await arq.arrayBuffer()), modo: i.modo });
-        i.saida = r.saida;
-        if (i.previaUrl) URL.revokeObjectURL(i.previaUrl);
-        i.previaUrl = URL.createObjectURL(new Blob([r.previa], { type: "image/png" }));
+        const r = await chamar("sangria_um", { nome: i.nome, bytes: new Uint8Array(await arq.arrayBuffer()) });
+        i.opcoes = r.modos;
+        i.urls = { original: sgBlobUrl(r.original), borda: sgBlobUrl(r.modos.borda.previa), branco: sgBlobUrl(r.modos.branco.previa), preto: sgBlobUrl(r.modos.preto.previa) };
+        i.modo = "borda";
       } catch (e) { i.erro = e.message; }
       i.processando = false; sgDesenhar();
     }
   } finally { SG.rodando = false; sgDesenhar(); }
 }
 async function sgInserir() {
-  const fila = SG.itens.filter((i) => i.saida && i.incluir), st = $("#sg-status");
+  const fila = SG.itens.filter((i) => i.opcoes && i.incluir), st = $("#sg-status");
   $("#sg-inserir").disabled = true;
   try {
     let n = 0;
-    for (const i of fila) { st.textContent = `Inserindo ${++n}/${fila.length}…`; await sessao.pasta.inserirCorrigida(i.novo ? null : i.item, nomePng(i.nome), i.saida); }
-    SG.itens.forEach((i) => i.previaUrl && URL.revokeObjectURL(i.previaUrl));
-    SG.itens = [];
+    for (const i of fila) { st.textContent = `Inserindo ${++n}/${fila.length}…`; await sessao.pasta.inserirCorrigida(i.novo ? null : i.item, nomePng(i.nome), sgSaida(i)); }
+    sgLimpar();
     if (sessao.pasta.recarregar) sessao.pasta = await sessao.pasta.recarregar();
     sessao.conferencia = null; atualizarRotulos();
     $("#sg").innerHTML = `<span class="ok">${fila.length} imagem(ns) corrigida(s) inserida(s).</span> As originais ficaram em <code>originais_sem_sangria</code>. Clique em <b>Conferir</b> de novo.`;
   } catch (e) { st.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; $("#sg-inserir").disabled = false; }
 }
 async function sgBaixarZip() {
-  const fila = SG.itens.filter((i) => i.saida && i.incluir);
-  const bytes = await chamar("zipar", { arquivos: fila.map((i) => [nomePng(i.nome), i.saida]) });
+  const fila = SG.itens.filter((i) => i.opcoes && i.incluir);
+  const bytes = await chamar("zipar", { arquivos: fila.map((i) => [nomePng(i.nome), sgSaida(i)]) });
   salvar(new Blob([bytes], { type: "application/zip" }), `${(sessao.pasta && sessao.pasta.nome) || "pedido"} - sangria corrigida.zip`);
   $("#sg-status").textContent = "Zip baixado. Você ainda pode inserir as corrigidas no pedido ou descartá-las.";
+}
+// Envia as corrigidas (modo escolhido) para a pasta de um pedido no Drive: entram como arquivos novos; nada é apagado nem movido.
+async function sgEnviarDrive() {
+  const st = $("#sg-status"), lista = $("#sg-drive-lista");
+  try {
+    const pasta = await pastaDoDrive(lista);  // lista os pedidos do Drive e espera a escolha
+    const fila = SG.itens.filter((i) => i.opcoes && i.incluir);
+    let n = 0;
+    for (const i of fila) { st.textContent = `Enviando ${++n} de ${fila.length} para “${pasta.nome}” no Drive…`; await pasta.inserirCorrigida(null, nomePng(i.nome), sgSaida(i)); }
+    sgLimpar();
+    $("#sg").innerHTML = `<span class="ok">${fila.length} imagem(ns) corrigida(s) enviada(s) para “${esc(pasta.nome)}” no Drive.</span> Se for a pasta deste pedido, clique em <b>Conferir</b>: elas aparecem como imagens extras para você decidir se entram no pedido.`;
+    if (sessao.pasta && sessao.pasta.drive && sessao.pasta.drive.id === pasta.drive.id && sessao.pasta.recarregar) { sessao.pasta = await sessao.pasta.recarregar(); atualizarRotulos(); }
+    sessao.conferencia = null;
+  } catch (e) { if (e.message !== "cancelado") st.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
 }
 $("#sg-abrir").onclick = () => { sgAtualizarLista(); sgDesenhar(); };
 
@@ -662,9 +732,10 @@ function pendencias(etapa) {
   if (etapa === "checagem") {
     if (copiando) m.push("a cópia das imagens para o Drive ainda está em andamento");
     if (SG.rodando) m.push("a correção de sangria ainda está rodando");
-    else if (SG.itens.some((i) => i.saida)) m.push("responda se quer inserir as imagens de sangria corrigidas no pedido (ou descarte)");
+    else if (SG.itens.some((i) => i.opcoes)) m.push("responda se quer inserir as imagens de sangria corrigidas no pedido (ou descarte)");
     if (!sessao.pasta) m.push("escolha a pasta do pedido (ou envie as imagens do XML para o Drive)");
     else if (sessao.xml && !sessao.conferencia) m.push("clique em Conferir para checar as imagens");
+    else if (sessao.conferencia && sessao.conferencia.extrasPendentes) m.push(`decida o que fazer com as ${sessao.conferencia.extrasPendentes} imagem(ns) extras (fora do pedido) que a conferência achou`);
     else if (sessao.conferencia && sessao.conferencia.pendentes) {
       const c = sessao.conferencia, itens = [];
       if (c.faltando) itens.push(`${c.faltando} imagem(ns) faltando`);
@@ -727,9 +798,10 @@ function novoPedido() {
   pedido.fontes = []; pedido.alteracoes = [];
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
+  sessao.extrasDecisao = null;
   clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
-  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf"]) { const el = $(s); if (el) el.textContent = ""; }
+  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras"]) { const el = $(s); if (el) el.textContent = ""; }
   $("#m-barra").hidden = true; $("#m-fim").hidden = true; $("#nav-aviso").hidden = true;
   renderFontes(); renderAlteracoes(); fichaMd = ""; atualizarRotulos();
   document.querySelector("#passos [data-aba=entrada]").click();
