@@ -115,3 +115,13 @@ test("montarCard aceita observação livre", () => {
   const { desc } = montarCard({ cliente: "Caixas", slots: 0, paginas: 14, valor: 0, obs: "14 folhas de couché 300g" });
   assert.match(desc, /Obs: 14 folhas de couché 300g/);
 });
+
+import { prazoDe } from "../src/avisos.js";
+test("Prazo manual vale na coluna de origem e some depois de um movimento", () => {
+  const { desc } = montarCard({ cliente: "L", slots: 86, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
+  assert.match(desc, /Prazo: 19\/11\/2026 17:00/);
+  const info = lerCard({ id: "x", name: "L · 86 slots", desc });
+  const ent = br("2026-11-18T11:26:00");
+  assert.equal(prazoDe("Gráfica", ent, info), br("2026-11-19T17:00:00"));
+  assert.notEqual(prazoDe("Gráfica", br("2026-11-19T10:00:00"), info), br("2026-11-19T17:00:00")); // card foi movido
+});

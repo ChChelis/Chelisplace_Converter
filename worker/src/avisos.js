@@ -14,16 +14,27 @@ export function lerCard(card) {
   };
   const t = (card.name || "").match(/^(.*?)\s*·\s*(\d+)\s*slots?\s*$/i);
   const slots = parseInt(linha("Slots"), 10) || (t ? parseInt(t[2], 10) : 0);
-  const em = linha("Entrou na coluna").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
-  const entrouEm = em ? Date.UTC(+em[3], +em[2] - 1, +em[1], (+em[4] || 0) + 3, +em[5] || 0) : null; // hora de Brasília -> UTC
+  const dataBR = (t) => {
+    const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], (+m[4] || 0) + 3, +m[5] || 0) : null; // hora de Brasília -> UTC
+  };
+  const entrouEm = dataBR(linha("Entrou na coluna"));
+  const prazoManual = dataBR(linha("Prazo"));
   return {
     id: card.id,
-    entrouEm,
+    entrouEm, prazoManual,
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
     telefone: linha("Telefone"),
     slots,
     url: card.url,
   };
+}
+
+// Prazo do card: o "Prazo:" informado à mão vale só enquanto o card está na coluna em que foi criado
+// (entrada = a data "Entrou na coluna"); depois de qualquer movimento volta a regra da coluna.
+export function prazoDe(coluna, entradaMs, info) {
+  if (info.prazoManual && info.entrouEm && info.entrouEm === entradaMs) return info.prazoManual;
+  return prazoFinal(coluna, entradaMs, info.slots);
 }
 
 // Instante em que o card entrou na coluna atual (a partir das ações do quadro, mais novas primeiro).
@@ -107,9 +118,9 @@ export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
     for (const c of doL) {
       const info = lerCard(c);
       const ent = entradas[c.id];
-      const atr = atrasado(l.name, ent, agoraMs, info.slots);
+      const prazo = prazoDe(l.name, ent, info);
+      const atr = prazo !== null && agoraMs > prazo;
       total++; if (atr) atrasados++;
-      const prazo = prazoFinal(l.name, ent, info.slots);
       const extra = atr ? ` ⚠️ ATRASADO (prazo era ${fmtBR(prazo)})` : "";
       linhas.push(`• ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} — há ${duracao(agoraMs - ent)}${extra}`);
     }
@@ -132,7 +143,7 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
     const l = listas.find((x) => x.id === c.idList);
     if (!l) continue;
     const info = lerCard(c);
-    const p = prazoFinal(l.name, entradas[c.id], info.slots);
+    const p = prazoDe(l.name, entradas[c.id], info);
     if (p !== null && p <= agoraMs && p > agoraMs - 3600e3) out.push({ info, coluna: l.name, prazo: p });
   }
   return out;
@@ -173,6 +184,11 @@ export function montarCard(b) {
     const t = typeof b.entrouEm === "number" ? b.entrouEm : Date.parse(b.entrouEm);
     if (Number.isFinite(t)) { const d = new Date(t - 3 * 3600e3), p = (n) => String(n).padStart(2, "0");
       linhas.push(`Entrou na coluna: ${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`); }
+  }
+  if (b.prazo) {
+    const t = typeof b.prazo === "number" ? b.prazo : Date.parse(b.prazo);
+    if (Number.isFinite(t)) { const d = new Date(t - 3 * 3600e3), p = (n) => String(n).padStart(2, "0");
+      linhas.push(`Prazo: ${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`); }
   }
   const pasta = txt(b.pastaUrl, 300);
   if (/^https:\/\/drive\.google\.com\//.test(pasta)) linhas.push(`Pasta do Drive: ${pasta}`);
