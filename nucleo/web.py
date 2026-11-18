@@ -31,6 +31,7 @@ def checar(pasta, xml_path, faltantes_path=None, ignorar=None):
     return json.dumps(dict(
         total=sum(r.exigido.values()), ok=r.ok,
         faltando=[[nome(i), n] for i, n in r.faltando.items()],
+        faltando_ids=[[i, nome(i), n] for i, n in r.faltando.items()],
         a_duplicar=[[nome(i), n] for i, n in r.a_duplicar.items()],
         excesso=[[nome(i), n] for i, n in r.excesso.items()],
         fora_da_lista=r.fora_da_lista, sem_id=r.sem_id, verso_padrao=r.verso_padrao,

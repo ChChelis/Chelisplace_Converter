@@ -188,7 +188,7 @@ function confirmar(onde, texto, fazer) {
     sim.disabled = nao.disabled = true;
     c.innerHTML = `<div class="aviso">Trabalhando… (não feche a página)</div><div class="barra"><div style="width:2%"></div></div>`;
     const atualizar = (t, fr) => { c.firstElementChild.textContent = t; if (fr != null) c.querySelector(".barra > div").style.width = Math.max(2, Math.round(fr * 100)) + "%"; };
-    try { c.innerHTML = esc(await fazer(atualizar)); } catch (e) { c.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
+    try { const rs = await fazer(atualizar); c.innerHTML = rs && typeof rs === "object" && rs.html ? rs.html : esc(rs); } catch (e) { c.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
   };
   c.append(sim, nao);
   onde.append(c);
@@ -196,7 +196,7 @@ function confirmar(onde, texto, fazer) {
 
 // ---------- pedido em uso (compartilhado entre Checagem e Montagem) ----------
 const chaveExtras = (itens) => itens.map((x) => x.nome).sort().join("|");  // identifica um conjunto de imagens extras
-const sessao = { pasta: null, xml: null, xmlNome: "", ignorar: new Set(), conferencia: null, extrasDecisao: null };  // conferencia: resultado da última checagem (null = precisa conferir de novo)
+const sessao = { trocas: {}, pasta: null, xml: null, xmlNome: "", ignorar: new Set(), conferencia: null, extrasDecisao: null };  // conferencia: resultado da última checagem (null = precisa conferir de novo)
 let clienteEditado = false;
 const chaveIgnorar = () => "ignorar:" + sessao.pasta.nome;
 function carregarIgnorados() { try { sessao.ignorar = new Set(JSON.parse(guardado.ler(chaveIgnorar()) || "[]")); } catch { sessao.ignorar = new Set(); } }
@@ -285,7 +285,8 @@ async function conferir() {
   // Imagens fora do pedido (soltas sem ID/fora do XML, e tudo em completar/): mudam o total depois do orçamento, então pedem decisão
   const fora = new Set([...r.fora_da_lista, ...r.sem_id]);
   const extrasItens = [...pasta.raiz.filter((x) => fora.has(x.nome)), ...(pasta.completar || [])];
-  const extrasPendentes = window.desenharExtras ? await window.desenharExtras(extrasItens) : 0;
+  if (window.desenharTrocas) window.desenharTrocas(r);  // faltando × imagens extras: “usar no lugar”
+  const extrasPendentes = window.desenharExtras ? await window.desenharExtras(extrasItens, r.faltando.length) : 0;
   sessao.conferencia = { extrasPendentes, pendentes: r.faltando.length + r.a_duplicar.length + r.excesso.length + r.pares_incompletos.length + (soltos.length ? 1 : 0), faltando: r.faltando.length, a_duplicar: r.a_duplicar.length, excesso: r.excesso.length, pares_incompletos: r.pares_incompletos.length, soltos: soltos.length };
   const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async (atualizar) => {
     await pasta.moverPares(soltos, (k, n) => atualizar(`Movendo arquivo ${k} de ${n} para pares/…`, (k - 1) / n));

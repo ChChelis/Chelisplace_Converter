@@ -97,6 +97,15 @@ class TestOrcamento(unittest.TestCase):
         self.assertEqual((r["pago"], r["impressao"]), (330, 121.99))
 
 
+class TestIdComSufixoDoNavegador(unittest.TestCase):
+    def test_id_com_copia_do_navegador(self):
+        i = "1TyW9YbDbWWuqbEOmkKznjSOwJtsSS6G4"
+        self.assertEqual(checagem.id_do_arquivo(f"Ranger-Captain of Eos (MH1 21) ({i}) (1).jpg"), i)
+        self.assertEqual(checagem.id_do_arquivo(f"Ranger-Captain ({i}).jpg"), i)
+        self.assertIsNone(checagem.id_do_arquivo("Ranger-Captain (1).jpg"))
+        self.assertIn(f"({i}).jpg", checagem.nome_copia(f"Ranger ({i}) (1).jpg", 1))
+
+
 class TestSangria(Base):
     def _carta(self, nome, canto_transp=True, caixa=True):
         import numpy as np

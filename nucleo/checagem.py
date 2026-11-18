@@ -13,7 +13,7 @@ from pathlib import Path
 from . import xml_mpc
 
 EXTENSOES = {".jpg", ".jpeg", ".png", ".webp"}
-RE_ID = re.compile(r"\(([A-Za-z0-9_-]{20,})\)$")
+RE_ID = re.compile(r"\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?$")  # tolera o " (1)" que o navegador acrescenta a downloads repetidos
 
 
 def id_do_arquivo(caminho):

@@ -68,8 +68,14 @@ function xmlCombinado(fontes) {
   return `<?xml version="1.0" encoding="utf-8"?><order><details><quantity>${total}</quantity></details><fronts>${fr}</fronts><backs>${bk}</backs>${[...new Set(cbs)].map((i) => `<cardback>${xmlEsc(i)}</cardback>`).join("")}</order>`;
 }
 let ultimoXmlTexto = "", xmlDeFontes = false;
+// Trocas “usar no lugar”: o ID de uma imagem que sumiu do MPCFill é trocado, no XML, pelo ID da imagem que você subiu à mão
+function aplicarTrocas(txt) {
+  for (const [antigo, novo] of Object.entries(sessao.trocas || {})) txt = txt.replace(new RegExp("<id>\\s*" + antigo + "\\s*</id>", "g"), `<id>${novo}</id>`);
+  return txt;
+}
 function sincronizarXml() {
-  const x = xmlCombinado(pedido.fontes), n = pedido.fontes.filter((f) => f.xmlTexto).length;
+  let x = xmlCombinado(pedido.fontes); if (x !== null) x = aplicarTrocas(x);
+  const n = pedido.fontes.filter((f) => f.xmlTexto).length;
   if (x === null) {  // nenhum pedido com XML: se o XML atual veio das fontes, solta
     if (xmlDeFontes) { sessao.xml = null; sessao.xmlNome = ""; sessao.conferencia = null; ultimoXmlTexto = ""; xmlDeFontes = false; atualizarRotulos(); }
     return;
@@ -512,7 +518,10 @@ let copiando = false;
 function desenharEnvio() {
   const alvo = $("#c-enviar");
   const cartas = new Map();
-  for (const f of pedido.fontes) for (const c of [...f.frentes, ...f.versos]) if (c.id && !cartas.has(c.id)) cartas.set(c.id, c);
+  for (const f of pedido.fontes) for (const c0 of [...f.frentes, ...f.versos]) {
+    const c = sessao.trocas[c0.id] ? { ...c0, id: sessao.trocas[c0.id] } : c0;  // imagem trocada à mão: usa o ID dela
+    if (c.id && !cartas.has(c.id)) cartas.set(c.id, c);
+  }
   if (!cartas.size) { alvo.innerHTML = ""; return; }
   const nomePedido = (sessao.pasta && sessao.pasta.nome) || ($("#f-cliente").value.trim()) || (pedido.fontes[0].titulo.replace(/\.xml$/i, "").replace(/ \(bot\)$/, ""));
   alvo.innerHTML = `<div class="conf"><b>Imagens do XML (${cartas.size} arquivos distintos)</b><p class="suave">Se a pasta do pedido ainda não tem as imagens, a página pode copiá-las para o seu Drive, pelo próprio Drive (nada é baixado no seu computador). Requer o login do Google.</p>
@@ -521,7 +530,7 @@ function desenharEnvio() {
   // se a pasta escolhida já tem todas as imagens do XML, o botão não tem mais o que fazer
   const p0 = sessao.pasta;
   if (p0 && p0.drive) {
-    const tem = new Set([...p0.raiz, ...p0.pares].map((x) => (x.nome.match(/\(([A-Za-z0-9_-]{20,})\)\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
+    const tem = new Set([...p0.raiz, ...p0.pares].map((x) => (x.nome.match(/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
     if ([...cartas.keys()].every((id) => tem.has(id))) { $("#c-env-ir").disabled = true; $("#c-env-ir").textContent = "Imagens já estão no Drive ✓"; }
   }
   $("#c-env-ir").onclick = () => {
@@ -534,7 +543,7 @@ function desenharEnvio() {
       const raizId = await Drive.raiz();
       const existentes = (await Drive.listar(raizId, ` and mimeType='${Drive.PASTA}'`)).find((x) => x.name === nome);
       const pastaId = existentes ? existentes.id : await Drive.criarPasta(nome, raizId);
-      const ja = new Set((await Drive.listar(pastaId)).map((x) => (x.name.match(/\(([A-Za-z0-9_-]{20,})\)\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
+      const ja = new Set((await Drive.listar(pastaId)).map((x) => (x.name.match(/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
       const falhas = []; let feitas = 0, puladas = 0;
       const fila = [...cartas.values()];
       const totalCopias = fila.length;
@@ -544,14 +553,18 @@ function desenharEnvio() {
         while (fila.length) {
           const c = fila.shift();
           if (ja.has(c.id)) { puladas++; progresso(); continue; }
-          try { await Drive.copiar(c.id, nomeNoDrive(c), pastaId); feitas++; } catch (e) { falhas.push(`${c.nome}: ${e.message}`); }
+          try { await Drive.copiar(c.id, nomeNoDrive(c), pastaId); feitas++; } catch (e) { falhas.push({ nome: c.nome, motivo: motivoCurto(e.message) }); }
           progresso();
         }
       }));
       sessao.pasta = await montarPastaDrive({ id: pastaId, name: nome });  // a etapa 4 já abre nesta pasta
       carregarIgnorados(); atualizarRotulos();
       $("#c-env-ir").disabled = true; $("#c-env-ir").textContent = "Imagens já estão no Drive ✓"; sessao.conferencia = null;
-      return `${feitas} copiada(s), ${puladas} já estava(m) lá` + (falhas.length ? `, ${falhas.length} falharam (${falhas.slice(0, 3).join("; ")}${falhas.length > 3 ? "…" : ""}). Essas precisam ser baixadas pelo bot (tela “XML e imagens” dele) para a pasta do pedido.` : ". Pasta pronta: clique em Conferir.");
+      if (!falhas.length) return `${feitas} copiada(s), ${puladas} já estava(m) lá. Pasta pronta: clique em Conferir.`;
+      const naoExistem = falhas.filter((f) => f.motivo.startsWith("não existe")).length;
+      return { html: `${feitas} copiada(s), ${puladas} já estava(m) lá, <span class="alerta">${falhas.length} falharam</span>:<ul>${falhas.map((f) => `<li>${esc(f.nome)}: ${esc(f.motivo)}</li>`).join("")}</ul>` +
+        (naoExistem ? `<p class="suave"><b>${naoExistem}</b> dessas imagens não existem mais no Drive do MPCFill (apagadas ou privadas): o bot também não consegue baixá-las. Suba outra versão da carta (ou baixe à mão) para a pasta do pedido, clique em <b>Conferir</b> e use <b>Usar no lugar</b> para trocar uma pela outra.</p>` : "") +
+        (falhas.length > naoExistem ? `<p class="suave">As demais podem ter sido limite temporário do Drive: clique em <b>Enviar as imagens para o Drive</b> de novo (ele pula as que já estão lá).</p>` : "") };
       } finally { copiando = false; }
     });
   };
@@ -570,10 +583,54 @@ window.aoAbrirAba = (aba) => {
 renderFontes(); renderAlteracoes();
 pronto.then(carregarPrecos);
 
+const motivoCurto = (m) => /404|not found/i.test(m) ? "não existe mais no Drive do MPCFill (apagada ou privada)" : /rate|429|quota|userRateLimit/i.test(m) ? "limite do Drive: tente de novo" : /403|permission|forbidden/i.test(m) ? "sem permissão para copiar" : String(m).replace(/\s+/g, " ").slice(0, 90);
+
+// ---------- Faltando × extras: “usar no lugar” ----------
+// Imagens do XML que sumiram do MPCFill e que você substituiu à mão (arquivo com outro ID): diz-se qual entra no lugar de qual.
+const idDoNomeArquivo = (n) => (n.match(/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/) || [])[1] || "";
+const baseDaCarta = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").split(/[\[({]/)[0].trim().toLowerCase();
+function desenharTrocas(r) {
+  const el = $("#c-trocas");
+  const feitas = Object.entries(sessao.trocas || {});
+  const cands = [...r.fora_da_lista, ...r.sem_id].map((n) => ({ nome: n, id: idDoNomeArquivo(n) })).filter((c) => c.id);
+  const falt = r.faltando_ids || [];
+  let h = "";
+  if (feitas.length) h += `<div class="conf"><b class="ok">${feitas.length} troca(s) feita(s)</b> <span class="suave">(o XML passa a usar a imagem que você subiu)</span><ul>${feitas.map(([a, b]) => `<li>${esc(a.slice(0, 8))}… → ${esc(b.slice(0, 8))}… <button class="peq" data-desfaz-troca="${a}">Desfazer</button></li>`).join("")}</ul></div>`;
+  if (falt.length && cands.length) {
+    h += `<div class="conf conf-so-voce"><b class="aviso">Usar no lugar</b><p class="suave">Estas imagens do XML não estão na pasta, e há imagens na pasta que não são do XML. Se você subiu outra versão à mão, diga qual entra no lugar de qual (as cópias que faltarem serão pedidas depois, em “A duplicar”).</p>` +
+      falt.map(([id, nome, qtd], i) => {
+        const b = baseDaCarta(nome), sug = cands.findIndex((c) => { const cb = baseDaCarta(c.nome); return cb && (cb === b || cb.startsWith(b) || b.startsWith(cb)); });
+        return `<div class="item"><span><b>${esc(nome)}</b> × ${qtd}</span> →
+          <select data-troca="${i}"><option value="">(não trocar)</option>${cands.map((c, k) => `<option value="${k}" ${k === sug ? "selected" : ""}>${esc(c.nome)}</option>`).join("")}</select></div>`;
+      }).join("") + `<button class="acao" id="t-aplicar">Usar no lugar</button></div>`;
+  }
+  el.innerHTML = h;
+  el.querySelectorAll("[data-desfaz-troca]").forEach((b) => (b.onclick = () => {
+    const novo = sessao.trocas[b.dataset.desfazTroca]; delete sessao.trocas[b.dataset.desfazTroca];
+    pedido.alteracoes.forEach((a) => (a.itens = a.itens.filter((it) => it.usado_id !== novo))); pedido.alteracoes = pedido.alteracoes.filter((a) => a.itens.length);
+    sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
+  }));
+  const ap = $("#t-aplicar");
+  if (ap) ap.onclick = () => {
+    let n = 0;
+    el.querySelectorAll("[data-troca]").forEach((sel) => {
+      if (sel.value === "") return;
+      const [id, nome] = falt[+sel.dataset.troca], c = cands[+sel.value];
+      sessao.trocas[id] = c.id; n++;
+      let grupo = pedido.alteracoes.find((a) => a.titulo === "Artes trocadas (original indisponível)");
+      if (!grupo) { grupo = { titulo: "Artes trocadas (original indisponível)", itens: [] }; pedido.alteracoes.push(grupo); }
+      grupo.itens.push({ texto: `${nomeLimpo(nome)}: a versão pedida não está mais disponível; usada outra versão`, usado_id: c.id });
+    });
+    if (!n) return;
+    sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
+  };
+}
+window.desenharTrocas = desenharTrocas;
+
 // ---------- Imagens extras (fora do pedido): completar/ e soltas sem ID ----------
 // Elas mudam o total de slots depois do orçamento: a Conferência pede uma decisão e, se incluir, o pedido, o orçamento e a ficha são atualizados.
-const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(/\s*\([A-Za-z0-9_-]{20,}\)\s*$/, "").trim();
-async function desenharExtras(itens) {
+const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(/\s*\([A-Za-z0-9_-]{20,}\)(?:\s*\(\d+\))?\s*$/, "").trim();
+async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras"), chave = chaveExtras(itens);
   const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
   if (!itens.length) {
@@ -600,6 +657,7 @@ async function desenharExtras(itens) {
   const depois = (await chamar("orcar", { frentes: slotsAtual + itens.length, versos: 0, modo: pedido.modo, precos: pr })).pago;
   el.innerHTML = `<div class="conf conf-so-voce"><b class="aviso">${itens.length} imagem(ns) fora do pedido na pasta</b>${lista}
     <p>Elas não estavam no pedido quando o orçamento foi feito. Se entrarem, o pedido passa de <b>${slotsAtual}</b> para <b>${slotsAtual + itens.length} slots</b> e o valor da tabela de <b>${reais(antes)}</b> para <b>${reais(depois)}</b> (cobrado hoje: ${reais(valorFinal())}).</p>
+    ${faltandoQtd ? `<p class="aviso">Atenção: ainda faltam ${faltandoQtd} imagem(ns) do XML. Se estas imagens são as <b>trocas</b> delas, use <b>Usar no lugar</b> (acima) e não inclua aqui, senão o pedido conta em dobro.</p>` : ""}
     <button class="acao" id="x-inc-atualiza">Incluir e atualizar o valor</button>
     <button class="acao sec" id="x-inc-mantem">Incluir e manter o valor atual</button>
     <button class="acao sec" id="x-nao">Não incluir</button></div>`;
@@ -621,7 +679,7 @@ window.desenharExtras = desenharExtras;
 // ---------- Correção de sangria (botão separado; processo do HANDOFF_SANGRIA) ----------
 // 816x1110 RGBA, carta 744x1040 centralizada, 299.9994 dpi; modos por imagem: borda (padrão), branco, preto. Nunca sobrescreve sem guardar a original.
 const SG = { itens: [], mostrarComId: false, rodando: false };
-const semIdNoNome = (n) => !/\(([A-Za-z0-9_-]{20,})\)\.[A-Za-z0-9]+$/.test(n);
+const semIdNoNome = (n) => !/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/.test(n);
 const nomePng = (n) => n.replace(/\.[A-Za-z0-9]+$/, "") + ".png";
 function sgAtualizarLista() {
   const p = sessao.pasta, ja = new Map(SG.itens.map((i) => [i.chave, i]));
@@ -807,10 +865,10 @@ function novoPedido() {
   pedido.fontes = []; pedido.alteracoes = [];
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
-  sessao.extrasDecisao = null;
+  sessao.extrasDecisao = null; sessao.trocas = {};
   clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
-  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras"]) { const el = $(s); if (el) el.textContent = ""; }
+  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas"]) { const el = $(s); if (el) el.textContent = ""; }
   $("#m-barra").hidden = true; $("#m-fim").hidden = true; $("#nav-aviso").hidden = true;
   renderFontes(); renderAlteracoes(); fichaMd = ""; atualizarRotulos();
   document.querySelector("#passos [data-aba=entrada]").click();
