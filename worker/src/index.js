@@ -1,7 +1,7 @@
 // Worker chelisplace-avisos: webhook do Trello + resumos 10h/17h + avisos de atraso -> Telegram.
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm } from "./avisos.js";
 
 const T = "https://api.trello.com/1";
 
@@ -54,6 +54,36 @@ async function verificarAtrasos(env, agoraMs) {
   }
 }
 
+const ORIGENS = ["https://pedidos.chelisplace.com", "https://pedidos-ng2.pages.dev", "http://localhost:8780"];
+const cors = (origem) => ({
+  "access-control-allow-origin": origem, "vary": "origin",
+  "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "POST, OPTIONS",
+});
+
+// POST /card: cria (ou atualiza, com cardId) o card do pedido. Exige origem da página + senha da página.
+async function rotaCard(req, env) {
+  const origem = req.headers.get("origin") || "";
+  if (!ORIGENS.includes(origem)) return new Response("origem não permitida", { status: 403 });
+  const h = cors(origem);
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
+  if (req.method !== "POST") return new Response("método inválido", { status: 405, headers: h });
+  if (!env.PAGINA_SECRET || req.headers.get("authorization") !== `Bearer ${env.PAGINA_SECRET}`)
+    return new Response(JSON.stringify({ erro: "senha incorreta" }), { status: 401, headers: { ...h, "content-type": "application/json" } });
+  const b = await req.json().catch(() => null);
+  if (!b) return new Response(JSON.stringify({ erro: "corpo inválido" }), { status: 400, headers: { ...h, "content-type": "application/json" } });
+  const { name, desc } = montarCard(b);
+  let card;
+  if (b.cardId && /^[0-9a-f]{24}$/.test(b.cardId)) {
+    card = await trello(env, `/cards/${b.cardId}`, { name, desc }, "PUT");
+  } else {
+    const listas = await trello(env, `/boards/${env.TRELLO_BOARD_ID}/lists`, { fields: "name" });
+    const novos = listas.find((l) => norm(l.name).includes("novo"));
+    if (!novos) return new Response(JSON.stringify({ erro: "coluna 'Novos pedidos' não encontrada" }), { status: 500, headers: { ...h, "content-type": "application/json" } });
+    card = await trello(env, "/cards", { idList: novos.id, name, desc, pos: "bottom" }, "POST");
+  }
+  return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url }), { headers: { ...h, "content-type": "application/json" } });
+}
+
 const json = (o, s = 200) => new Response(JSON.stringify(o, null, 2), { status: s, headers: { "content-type": "application/json; charset=utf-8" } });
 
 export default {
@@ -76,6 +106,8 @@ export default {
       }
       return new Response("ok");
     }
+
+    if (partes[0] === "card" && partes.length === 1) return rotaCard(req, env).catch((e) => new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: { ...cors(req.headers.get("origin") || ""), "content-type": "application/json" } }));
 
     // Utilidades do Chelis (abrir no navegador): /admin/<ADMIN_SECRET>/<acao>
     if (partes[0] === "admin") {

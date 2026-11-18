@@ -138,6 +138,14 @@
     <p class="suave">Chave, nome e cidade ficam só neste navegador. O QR leva o valor do pedido.</p>
     <button class="acao" id="p-pdf">Gerar PDF do Pix</button><span id="p-aviso" class="suave"></span><div id="p-saida"></div>
   </details>
+  <details class="conf" id="t-det"><summary>Trello (acompanhamento do pedido)</summary>
+    <div class="linha">
+      <div><label for="t-url">Endereço do Worker</label><input id="t-url" type="text" autocomplete="off" placeholder="https://…workers.dev"></div>
+      <div><label for="t-senha">Senha da página</label><input id="t-senha" type="password" autocomplete="off"></div>
+    </div>
+    <p class="suave">Endereço e senha ficam só neste navegador. O card nasce em <b>Novos pedidos</b> com cliente, telefone, slots, páginas, valor cobrado, pasta do Drive e alterações (nunca custo, lucro, desconto ou Pix). Clicar de novo atualiza o mesmo card.</p>
+    <button class="acao" id="t-criar">Criar card no Trello</button><span id="t-aviso" class="suave"></span>
+  </details>
 </section>
 
 <section id="montagem" hidden>

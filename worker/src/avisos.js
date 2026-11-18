@@ -120,3 +120,25 @@ export function avisoMovimento({ cardNome, de, para, card }) {
   botoes.push([{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]);
   return { texto, botoes };
 }
+
+// Card criado pela página: só estes campos entram (nunca custo, lucro, desconto ou Pix).
+const txt = (v, n) => String(v ?? "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, n);
+const num = (v) => (Number.isFinite(+v) && +v >= 0 ? +v : 0);
+export function montarCard(b) {
+  const cliente = txt(b.cliente, 80) || "Cliente sem nome";
+  const slots = Math.round(num(b.slots));
+  const paginas = Math.round(num(b.paginas));
+  const valor = num(b.valor);
+  const linhas = [
+    `Cliente: ${cliente}`,
+    `Telefone: ${txt(b.telefone, 40)}`,
+    `Slots: ${slots}`,
+    `Páginas: ${paginas}`,
+    `Valor cobrado: R$ ${valor.toFixed(2).replace(".", ",")}`,
+  ];
+  const pasta = txt(b.pastaUrl, 300);
+  if (/^https:\/\/drive\.google\.com\//.test(pasta)) linhas.push(`Pasta do Drive: ${pasta}`);
+  const alts = (Array.isArray(b.alteracoes) ? b.alteracoes : []).slice(0, 30).map((a) => txt(a, 200)).filter(Boolean);
+  if (alts.length) linhas.push("", "Alterações:", ...alts.map((a) => "- " + a));
+  return { name: `${cliente} · ${slots} slots`, desc: linhas.join("\n") };
+}

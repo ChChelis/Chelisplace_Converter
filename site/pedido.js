@@ -1,6 +1,6 @@
 "use strict";
 // Fluxo do pedido: entrada → orçamento → conferência (bot local) → ficha e Pix. Usa as peças de app.js (sessao, chamar, pronto…).
-const pedido = { fontes: [], alteracoes: [], modo: "normal", precos: {}, padrao: null };
+const pedido = { fontes: [], alteracoes: [], modo: "normal", precos: {}, padrao: null, cardId: null };
 // ID de 20+ caracteres entre parênteses no fim do nome, tolerando o que o navegador/Windows acrescenta a cópias (" (1)", " - Copia", " - Copy (2)")
 const SUFIXO_COPIA = "(?:\\s*(?:-\\s*)?(?:c[oó]pia|copy)(?:\\s*\\(\\d+\\))?|\\s*\\(\\d+\\))*";
 const RE_ID_ARQ = new RegExp("\\(([A-Za-z0-9_-]{20,})\\)" + SUFIXO_COPIA + "\\.[A-Za-z0-9]+$", "i");
@@ -867,13 +867,13 @@ window.podeAbrirAba = podeAbrirAba;
 
 // ---------- Novo pedido: zera tudo menos o Google Drive e as configurações ----------
 function novoPedido() {
-  pedido.fontes = []; pedido.alteracoes = [];
+  pedido.fontes = []; pedido.alteracoes = []; pedido.cardId = null; $("#t-criar").textContent = "Criar card no Trello";
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
   sessao.extrasDecisao = null; sessao.trocas = {};
   clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
-  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas"]) { const el = $(s); if (el) el.textContent = ""; }
+  for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas", "#t-aviso"]) { const el = $(s); if (el) el.textContent = ""; }
   $("#m-barra").hidden = true; $("#m-fim").hidden = true; $("#nav-aviso").hidden = true;
   renderFontes(); renderAlteracoes(); fichaMd = ""; atualizarRotulos();
   document.querySelector("#passos [data-aba=entrada]").click();
@@ -894,3 +894,28 @@ async function checarVersao() {
   } catch { /* sem versao.json (teste local antigo): segue sem mostrar */ }
 }
 checarVersao(); setInterval(checarVersao, 5 * 60 * 1000);
+
+
+// ---------- Trello: cria/atualiza o card do pedido pelo Worker (senha só neste navegador) ----------
+["t-url", "t-senha"].forEach((id) => { $("#" + id).value = guardado.ler(id); $("#" + id).addEventListener("input", () => guardado.gravar(id, $("#" + id).value.trim())); });
+$("#t-criar").onclick = async () => {
+  const av = $("#t-aviso"), btn = $("#t-criar");
+  const base = $("#t-url").value.trim().replace(/\/+$/, ""), senha = $("#t-senha").value.trim();
+  if (!/^https:\/\//.test(base) || !senha) { av.textContent = " Preencha o endereço do Worker (https://…) e a senha."; $("#t-det").open = true; return; }
+  if (!ultimoOrc || !(valorFinal() > 0)) { av.textContent = " Faça o orçamento antes (valor cobrado e slots)."; return; }
+  const slots = ultimoOrc.slots, alts = pedido.alteracoes.filter((a) => a.titulo.trim()).map((a) => `${a.titulo.trim()}: ${a.itens.map((i) => i.texto.trim()).filter(Boolean).join("; ")}`);
+  const corpo = {
+    cliente: $("#f-cliente").value.trim(), telefone: $("#f-tel").value.trim(), slots, paginas: Math.ceil(slots / 18), valor: valorFinal(),
+    pastaUrl: sessao.pasta && sessao.pasta.drive ? `https://drive.google.com/drive/folders/${sessao.pasta.drive.id}` : "",
+    alteracoes: alts, cardId: pedido.cardId || undefined,
+  };
+  btn.disabled = true; av.textContent = " Enviando…";
+  try {
+    const r = await fetch(base + "/card", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + senha }, body: JSON.stringify(corpo) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.erro || "erro " + r.status);
+    pedido.cardId = d.id; btn.textContent = "Atualizar card no Trello";
+    av.innerHTML = ` Card ${corpo.cardId ? "atualizado" : "criado"}: <a href="${esc(d.url)}" target="_blank" rel="noopener">abrir no Trello</a>`;
+  } catch (e) { av.textContent = " Não deu: " + e.message; }
+  btn.disabled = false;
+};

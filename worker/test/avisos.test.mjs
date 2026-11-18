@@ -46,3 +46,19 @@ test("coluna sem mensagem ao cliente só tem botão do grupo", () => {
   assert.equal(botoes.length, 1);
 });
 test("linkWaCliente sem telefone devolve null", () => assert.equal(linkWaCliente("", "oi"), null));
+
+import { montarCard } from "../src/avisos.js";
+test("montarCard usa só campos permitidos e nunca vaza custo/lucro/pix", () => {
+  const { name, desc } = montarCard({ cliente: "Ana", telefone: "+55 31 9", slots: 216, paginas: 12, valor: 270, pastaUrl: "https://drive.google.com/drive/folders/abc",
+    custo: 99, lucro: 50, chavePix: "segredo@pix", descontos: "x", alteracoes: ["Troca de arte X"] });
+  assert.equal(name, "Ana · 216 slots");
+  assert.match(desc, /Valor cobrado: R\$ 270,00/);
+  assert.match(desc, /Pasta do Drive: https:\/\/drive\.google\.com\//);
+  assert.match(desc, /- Troca de arte X/);
+  assert.doesNotMatch(desc, /segredo|custo|lucro|99|desconto/i);
+});
+test("montarCard rejeita pasta que não é do Drive e lida com lixo", () => {
+  const { desc } = montarCard({ cliente: "B", slots: "abc", valor: -5, pastaUrl: "https://evil.example/x" });
+  assert.doesNotMatch(desc, /evil/);
+  assert.match(desc, /Slots: 0/);
+});
