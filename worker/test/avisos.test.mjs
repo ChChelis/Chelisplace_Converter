@@ -110,3 +110,8 @@ test("entrada manual vale no lugar da criação, mas um movimento real posterior
   const mov = { type: "updateCard", date: "2026-11-19T10:00:00Z", data: { card: { id: "a" }, listAfter: { id: "L2" } } };
   assert.equal(entradasPorCard([mov, criacao], [card]).a, Date.parse("2026-11-19T10:00:00Z"));
 });
+
+test("montarCard aceita observação livre", () => {
+  const { desc } = montarCard({ cliente: "Caixas", slots: 0, paginas: 14, valor: 0, obs: "14 folhas de couché 300g" });
+  assert.match(desc, /Obs: 14 folhas de couché 300g/);
+});

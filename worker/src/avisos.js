@@ -176,6 +176,8 @@ export function montarCard(b) {
   }
   const pasta = txt(b.pastaUrl, 300);
   if (/^https:\/\/drive\.google\.com\//.test(pasta)) linhas.push(`Pasta do Drive: ${pasta}`);
+  const obs = txt(b.obs, 400);
+  if (obs) linhas.push(`Obs: ${obs}`);
   const alts = (Array.isArray(b.alteracoes) ? b.alteracoes : []).slice(0, 30).map((a) => txt(a, 200)).filter(Boolean);
   if (alts.length) linhas.push("", "Alterações:", ...alts.map((a) => "- " + a));
   return { name: `${cliente} · ${slots} slots`, desc: linhas.join("\n") };
