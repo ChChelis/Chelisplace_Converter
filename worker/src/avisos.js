@@ -52,7 +52,7 @@ export function linkWaCliente(telefone, texto) {
 // Mensagens ao cliente por coluna (o Chelis revisa e clica em enviar).
 export const MSG_CLIENTE = {
   grafica: (c) => `Olá, ${c}! Seu pedido foi enviado para a gráfica. Assim que estiver pronto eu aviso por aqui.`,
-  retirada: (c) => `Olá, ${c}! Seu pedido foi retirado da gráfica e segue para a colagem.`,
+  retirada: (c) => `Olá, ${c}! Seu pedido foi retirado na gráfica e segue para a finalização.`,
   pronto: (c) => `Olá, ${c}! Seu pedido está pronto para entrega. Me diga o melhor jeito de combinarmos.`,
 };
 export function msgClientePorColuna(coluna) {
