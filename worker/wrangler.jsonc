@@ -1,9 +1,8 @@
 {
-  // Worker de avisos (Trello -> Telegram). Segredos NUNCA aqui: criar no painel da Cloudflare.
+  // Worker de avisos (Trello -> Telegram). Segredos NUNCA aqui: criar no painel da Cloudflare (inclui TELEGRAM_CHAT_ID e TRELLO_BOARD_ID, para não serem apagados a cada deploy).
   "name": "chelisplace-avisos",
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
-  "vars": { "TELEGRAM_CHAT_ID": "", "TRELLO_BOARD_ID": "" },
   "triggers": {
     // 10h e 17h de Brasília (UTC-3), seg-sex: resumos. Demais: vigia de atrasos 9h–18h (sem 10h/17h).
     "crons": ["0 13,20 * * 1-5", "0 12,14-19,21 * * 1-5"]
