@@ -6,6 +6,8 @@ Repositório: `chchelis/chelisplace_converter`, branch **`claude/language-unders
 
 Leia, nesta ordem: este documento → `docs/site.md` (comportamento detalhado da página, em ordem cronológica) → `docs/nucleo.md` → `docs/referencia_processo.md` (processo e preços) → `docs/drive.md` → `docs/app.md` (bot local) → `docs/memoria_projeto.md` (pipeline do bot). Histórico: `docs/handoff_pagina_final.md`.
 
+> **ESTADO (18/11/2026): a integração está pronta e em uso.** Leia `docs/desenho_trello_whatsapp.md` (decisões) e `docs/worker_avisos.md` (Worker `chelisplace-avisos`, deploy, segredos, regras de prazo, feriados, janela de Finalizados, campos do card). A seção 8 abaixo é histórica (já respondida). Resumo: Trello cria/move card (botão no passo 5 + `/card`), avisos e resumos 10h/17h no Telegram com botão "Encaminhar ao grupo do WhatsApp", mensagens ao cliente por `wa.me`. Pendências: observar resumos/atrasos em dia útil real; apagar o Worker antigo `chelisplace-converter-pedidos`; WhatsApp Cloud API em grupo foi descartado (exige OBA, número fora do app Business).
+
 ## 1. O que existe (tudo testado)
 Página estática (sem servidor) em **https://pedidos.chelisplace.com** (também https://pedidos-ng2.pages.dev), Python no navegador via Pyodide 0.27.7 em Web Worker. Seis passos em abas; **não passa de etapa com pendência** (Próximo desabilitado dizendo o que falta; clicar em aba à frente também é barrado):
 1. **Entrada** (`site/pedido.js`): lista colada, XML do MPCFill (vários arquivos de uma vez), decklist. Várias entradas somam: **mais de um pedido no mesmo pedido** (XML combinado com slots em sequência; kits incompletos se completam).
