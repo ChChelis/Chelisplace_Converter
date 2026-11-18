@@ -3,3 +3,4 @@ order/*/catalog*.json
 site/nucleo/
 __pycache__/
 *.pyc
+site/versao.json

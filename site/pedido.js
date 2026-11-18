@@ -880,3 +880,17 @@ function novoPedido() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 $("#m-novo").onclick = () => confirmar($("#m-novo-conf"), "Começar um novo pedido? Isso limpa o pedido atual (cartas, ficha, pasta e XML escolhidos). Os PDFs já baixados não são afetados e o Google Drive continua conectado.", async () => { novoPedido(); return ""; });
+
+// ---------- Versão da página: mostra qual está rodando e avisa quando sai uma nova (recarregar zera o pedido) ----------
+let versaoRodando = null;
+async function checarVersao() {
+  try {
+    const v = await (await fetch("versao.json", { cache: "no-store" })).json();
+    if (!versaoRodando) { versaoRodando = v.versao; $("#versao").textContent = `· versão ${v.versao}`; $("#versao").title = `publicada em ${v.data} (UTC)`; }
+    else if (v.versao !== versaoRodando) {
+      const a = $("#nova-versao"); a.hidden = false;
+      a.innerHTML = `<b>Há uma versão nova da página (${esc(v.versao)}).</b> Esta aba continua rodando a ${esc(versaoRodando)}, com as regras antigas. Termine (ou anote) o pedido em andamento e recarregue com <b>Ctrl+F5</b> para usar a nova: recarregar zera o pedido atual.`;
+    }
+  } catch { /* sem versao.json (teste local antigo): segue sem mostrar */ }
+}
+checarVersao(); setInterval(checarVersao, 5 * 60 * 1000);

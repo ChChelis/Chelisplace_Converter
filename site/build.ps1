@@ -9,3 +9,5 @@ Copy-Item (Join-Path $site "..\nucleo\fontes") (Join-Path $destino "fontes") -Re
 $nomes = (Get-ChildItem (Join-Path $destino "*.py")).Name
 [System.IO.File]::WriteAllText((Join-Path $destino "lista.txt"), (($nomes -join "`n") + "`n"), (New-Object System.Text.UTF8Encoding($false)))
 Write-Host "Núcleo copiado para site\nucleo ($($nomes.Count) arquivos)."
+$v = if ($env:CF_PAGES_COMMIT_SHA) { $env:CF_PAGES_COMMIT_SHA } else { try { (git rev-parse HEAD).Trim() } catch { "dev" } }
+[System.IO.File]::WriteAllText((Join-Path $site "versao.json"), ('{"versao":"' + $v.Substring(0, [Math]::Min(7, $v.Length)) + '","data":"' + (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm") + '"}' + "`n"), (New-Object System.Text.UTF8Encoding($false)))

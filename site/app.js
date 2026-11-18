@@ -423,11 +423,18 @@ $("#m-rodar").addEventListener("click", async () => {
     for (const [nome, bytes] of pdfs) saida.append(baixar(new Blob([bytes], { type: "application/pdf" }), nome));
     if (p.drive) {
       const b = Object.assign(document.createElement("button"), { className: "acao", textContent: "Salvar PDFs no Drive (pasta saida)" });
-      b.onclick = () => confirmar(saida, `Criar a pasta "saida" dentro de "${p.nome}" no Drive (se não existir) e enviar ${pdfs.length} PDF(s) para lá?`, async () => {
+      b.onclick = () => confirmar(saida, `Criar a pasta "saida" dentro de "${p.nome}" no Drive (se não existir) e enviar ${pdfs.length} PDF(s) para lá? PDFs que já existam lá com o mesmo nome (de uma montagem anterior) vão para a subpasta "anteriores": nada é apagado, e a saída fica só com a montagem atual.`, async (atualizar) => {
         const dir = await Drive.criarPasta("saida", p.drive.id);
+        const novos = new Set(pdfs.map(([nome]) => nome));
+        const antigos = (await Drive.listar(dir)).filter((f) => f.mimeType !== Drive.PASTA && novos.has(f.name));
+        if (antigos.length) {
+          const ant = await Drive.criarPasta("anteriores", dir);
+          let m = 0;
+          for (const f of antigos) { atualizar(`Guardando PDF anterior ${++m} de ${antigos.length} em saida/anteriores…`, 0); await Drive.mover(f.id, ant, dir); }
+        }
         let n = 0;
-        for (const [nome, bytes] of pdfs) { await Drive.enviar(nome, new Blob([bytes], { type: "application/pdf" }), dir, "application/pdf"); n++; }
-        return `${n} PDF(s) enviados para ${p.nome}/saida no Drive.`;
+        for (const [nome, bytes] of pdfs) { atualizar(`Enviando ${n + 1} de ${pdfs.length}: ${nome}…`, n / pdfs.length); await Drive.enviar(nome, new Blob([bytes], { type: "application/pdf" }), dir, "application/pdf"); n++; }
+        return `${n} PDF(s) enviados para ${p.nome}/saida no Drive.` + (antigos.length ? ` ${antigos.length} PDF(s) de montagens anteriores foram para saida/anteriores.` : "");
       });
       saida.append(b);
     }

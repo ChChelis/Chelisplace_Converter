@@ -106,3 +106,7 @@ O ID (20+ caracteres entre parênteses) é reconhecido mesmo com o que o navegad
 
 ### “Usar no lugar” também com cópias a mais
 Uma imagem **sobrando** (cópia a mais de um ID que o XML já pede) pode ser a substituta de uma que sumiu do MPCFill (ex.: a mesma arte subida à mão, já pedida por outra linha). O quadro **Usar no lugar** agora oferece essas sobras (“— cópia a mais”) além das imagens fora do XML; ao trocar, o ID da imagem que sumiu passa a ser o dela, e “faltando” e “a mais” somem juntos. Não use “Mover cópia a mais” nesse caso.
+
+### Versão da página e PDFs anteriores
+- O cabeçalho mostra **“· versão <commit>”** (`site/versao.json`, gerado pelo `build.sh`/`build.ps1`, não vai para o git) e, a cada 5 minutos, a página confere se saiu uma versão nova; se sim, avisa no topo que a aba ainda roda a antiga e que **recarregar zera o pedido** (terminar/anotar antes). Aba aberta antes de uma correção continua com o Python antigo na memória, por isso o aviso.
+- **PDFs na pasta `saida` do Drive:** ao salvar, PDFs com o mesmo nome de uma montagem anterior vão para `saida/anteriores` (nada é apagado), e a saída fica só com a montagem atual.
