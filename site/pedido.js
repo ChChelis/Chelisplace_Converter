@@ -595,16 +595,18 @@ const baseDaCarta = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").split(/[\[({]/)[0].t
 function desenharTrocas(r) {
   const el = $("#c-trocas");
   const feitas = Object.entries(sessao.trocas || {});
+  // candidatos: imagens fora do XML E cópias "a mais" de imagens que o XML já pede (a sobra pode ser justamente a substituta de uma que sumiu)
   const cands = [...r.fora_da_lista, ...r.sem_id].map((n) => ({ nome: n, id: idDoNomeArquivo(n) })).filter((c) => c.id);
+  for (const [id, arqs] of r.excesso_mover || []) if (arqs.length && !cands.some((c) => c.id === id)) cands.push({ nome: arqs[0], id, sobra: true });
   const falt = r.faltando_ids || [];
   let h = "";
   if (feitas.length) h += `<div class="conf"><b class="ok">${feitas.length} troca(s) feita(s)</b> <span class="suave">(o XML passa a usar a imagem que você subiu)</span><ul>${feitas.map(([a, b]) => `<li>${esc(a.slice(0, 8))}… → ${esc(b.slice(0, 8))}… <button class="peq" data-desfaz-troca="${a}">Desfazer</button></li>`).join("")}</ul></div>`;
   if (falt.length && cands.length) {
-    h += `<div class="conf conf-so-voce"><b class="aviso">Usar no lugar</b><p class="suave">Estas imagens do XML não estão na pasta, e há imagens na pasta que não são do XML. Se você subiu outra versão à mão, diga qual entra no lugar de qual (as cópias que faltarem serão pedidas depois, em “A duplicar”).</p>` +
+    h += `<div class="conf conf-so-voce"><b class="aviso">Usar no lugar</b><p class="suave">Estas imagens do XML não estão na pasta, e há imagens na pasta que não são do XML ou que estão <b>sobrando</b> (cópias a mais). Se você subiu outra versão à mão, diga qual entra no lugar de qual: o arquivo escolhido passa a ser pedido no lugar da que sumiu (as cópias que faltarem serão pedidas depois, em “A duplicar”).</p>` +
       falt.map(([id, nome, qtd], i) => {
         const b = baseDaCarta(nome), sug = cands.findIndex((c) => { const cb = baseDaCarta(c.nome); return cb && (cb === b || cb.startsWith(b) || b.startsWith(cb)); });
         return `<div class="item"><span><b>${esc(nome)}</b> × ${qtd}</span> →
-          <select data-troca="${i}"><option value="">(não trocar)</option>${cands.map((c, k) => `<option value="${k}" ${k === sug ? "selected" : ""}>${esc(c.nome)}</option>`).join("")}</select></div>`;
+          <select data-troca="${i}"><option value="">(não trocar)</option>${cands.map((c, k) => `<option value="${k}" ${k === sug ? "selected" : ""}>${esc(c.nome)}${c.sobra ? " — cópia a mais" : ""}</option>`).join("")}</select></div>`;
       }).join("") + `<button class="acao" id="t-aplicar">Usar no lugar</button></div>`;
   }
   el.innerHTML = h;

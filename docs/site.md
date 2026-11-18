@@ -103,3 +103,6 @@ O painel “Tabela de preços” (kits e preços) é preenchido **uma vez** e va
 
 ### ID no nome do arquivo com marcas de cópia
 O ID (20+ caracteres entre parênteses) é reconhecido mesmo com o que o navegador/Windows acrescenta a cópias: ` (1)`, ` - Copia`, ` - Copia (2)`, ` - Copy` (`nucleo/checagem.py` `RE_ID` e `RE_ID_ARQ` em `site/pedido.js`). **Cópias a mais** do mesmo ID podem ser movidas, com confirmação e progresso, para a subpasta `copias_a_mais/` (nada é apagado; fica o arquivo de nome mais curto de cada imagem).
+
+### “Usar no lugar” também com cópias a mais
+Uma imagem **sobrando** (cópia a mais de um ID que o XML já pede) pode ser a substituta de uma que sumiu do MPCFill (ex.: a mesma arte subida à mão, já pedida por outra linha). O quadro **Usar no lugar** agora oferece essas sobras (“— cópia a mais”) além das imagens fora do XML; ao trocar, o ID da imagem que sumiu passa a ser o dela, e “faltando” e “a mais” somem juntos. Não use “Mover cópia a mais” nesse caso.
