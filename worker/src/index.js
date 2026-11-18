@@ -78,8 +78,9 @@ async function rotaCard(req, env) {
     card = await trello(env, `/cards/${b.cardId}`, { name, desc }, "PUT");
   } else {
     const listas = await trello(env, `/boards/${env.TRELLO_BOARD_ID}/lists`, { fields: "name" });
-    const novos = listas.find((l) => norm(l.name).includes("novo"));
-    if (!novos) return new Response(JSON.stringify({ erro: "coluna 'Novos pedidos' não encontrada" }), { status: 500, headers: { ...h, "content-type": "application/json" } });
+    const alvo = norm(String(b.coluna || "novo"));
+    const novos = listas.find((l) => norm(l.name).includes(alvo));
+    if (!novos) return new Response(JSON.stringify({ erro: `coluna '${String(b.coluna || "Novos pedidos").slice(0, 40)}' não encontrada`, colunas: listas.map((l) => l.name) }), { status: 500, headers: { ...h, "content-type": "application/json" } });
     card = await trello(env, "/cards", { idList: novos.id, name, desc, pos: "bottom" }, "POST");
   }
   return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url }), { headers: { ...h, "content-type": "application/json" } });

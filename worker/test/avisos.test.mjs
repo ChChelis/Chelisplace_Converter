@@ -97,3 +97,16 @@ test("feriados nacionais: fixos, Consciência Negra e Sexta-feira Santa", () => 
 test("5º dia útil pula Sexta-feira Santa (abr/2026 = qua 08/04)", () => {
   assert.equal(quintoDiaUtil(2026, 3), br("2026-04-08T00:00:00"));
 });
+
+test("Entrou na coluna: montarCard grava e lerCard lê (hora de Brasília)", () => {
+  const { desc } = montarCard({ cliente: "Ana", slots: 18, valor: 30, entrouEm: "2026-11-12T14:00:00-03:00" });
+  assert.match(desc, /Entrou na coluna: 12\/11\/2026 14:00/);
+  assert.equal(lerCard({ id: "x", name: "Ana · 18 slots", desc }).entrouEm, br("2026-11-12T14:00:00"));
+});
+test("entrada manual vale no lugar da criação, mas um movimento real posterior vence", () => {
+  const card = { id: "a", name: "Ana · 18 slots", desc: "Entrou na coluna: 12/11/2026 14:00", dateLastActivity: "2026-11-18T10:00:00Z" };
+  const criacao = { type: "createCard", date: "2026-11-18T10:00:00Z", data: { card: { id: "a" }, list: { id: "L1" } } };
+  assert.equal(entradasPorCard([criacao], [card]).a, br("2026-11-12T14:00:00"));
+  const mov = { type: "updateCard", date: "2026-11-19T10:00:00Z", data: { card: { id: "a" }, listAfter: { id: "L2" } } };
+  assert.equal(entradasPorCard([mov, criacao], [card]).a, Date.parse("2026-11-19T10:00:00Z"));
+});

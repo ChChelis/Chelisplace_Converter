@@ -12,11 +12,14 @@ export function lerCard(card) {
     const m = desc.match(new RegExp("^\\s*" + k + "\\s*:\\s*(.+)$", "im"));
     return m ? m[1].trim() : "";
   };
-  const t = card.name.match(/^(.*?)\s*·\s*(\d+)\s*slots?\s*$/i);
+  const t = (card.name || "").match(/^(.*?)\s*·\s*(\d+)\s*slots?\s*$/i);
   const slots = parseInt(linha("Slots"), 10) || (t ? parseInt(t[2], 10) : 0);
+  const em = linha("Entrou na coluna").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  const entrouEm = em ? Date.UTC(+em[3], +em[2] - 1, +em[1], (+em[4] || 0) + 3, +em[5] || 0) : null; // hora de Brasília -> UTC
   return {
     id: card.id,
-    cliente: linha("Cliente") || (t ? t[1] : card.name),
+    entrouEm,
+    cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
     telefone: linha("Telefone"),
     slots,
     url: card.url,
@@ -25,14 +28,18 @@ export function lerCard(card) {
 
 // Instante em que o card entrou na coluna atual (a partir das ações do quadro, mais novas primeiro).
 export function entradasPorCard(acoes, cards) {
+  const manual = {};
+  for (const c of cards) { const e = lerCard(c).entrouEm; if (e) manual[c.id] = e; }
   const mapa = {};
   for (const a of acoes) {
     const id = a.data?.card?.id;
     if (!id || mapa[id]) continue;
     const entrou = a.data?.listAfter?.id || a.data?.list?.id;
-    if (entrou) mapa[id] = Date.parse(a.date);
+    if (!entrou) continue;
+    // card criado com data de entrada informada (carga de pedidos antigos): vale a data informada, até alguém mover o card
+    mapa[id] = a.type !== "updateCard" && manual[id] ? manual[id] : Date.parse(a.date);
   }
-  for (const c of cards) if (!mapa[c.id]) mapa[c.id] = Date.parse(c.dateLastActivity);
+  for (const c of cards) if (!mapa[c.id]) mapa[c.id] = manual[c.id] || Date.parse(c.dateLastActivity);
   return mapa;
 }
 
@@ -162,6 +169,11 @@ export function montarCard(b) {
     `Páginas: ${paginas}`,
     `Valor cobrado: R$ ${valor.toFixed(2).replace(".", ",")}`,
   ];
+  if (b.entrouEm) {
+    const t = typeof b.entrouEm === "number" ? b.entrouEm : Date.parse(b.entrouEm);
+    if (Number.isFinite(t)) { const d = new Date(t - 3 * 3600e3), p = (n) => String(n).padStart(2, "0");
+      linhas.push(`Entrou na coluna: ${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`); }
+  }
   const pasta = txt(b.pastaUrl, 300);
   if (/^https:\/\/drive\.google\.com\//.test(pasta)) linhas.push(`Pasta do Drive: ${pasta}`);
   const alts = (Array.isArray(b.alteracoes) ? b.alteracoes : []).slice(0, 30).map((a) => txt(a, 200)).filter(Boolean);
