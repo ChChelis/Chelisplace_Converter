@@ -13,7 +13,9 @@ from pathlib import Path
 from . import xml_mpc
 
 EXTENSOES = {".jpg", ".jpeg", ".png", ".webp"}
-RE_ID = re.compile(r"\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?$")  # tolera o " (1)" que o navegador acrescenta a downloads repetidos
+# Depois do ID entre parênteses pode vir o que o navegador/Windows acrescenta a cópias: " (1)", " - Copia", " - Copy (2)"…
+_SUFIXO_COPIA = r"(?:\s*(?:-\s*)?(?:c[oó]pia|copy)(?:\s*\(\d+\))?|\s*\(\d+\))*"
+RE_ID = re.compile(r"\(([A-Za-z0-9_-]{20,})\)" + _SUFIXO_COPIA + r"$", re.I)
 
 
 def id_do_arquivo(caminho):

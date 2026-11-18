@@ -95,8 +95,8 @@ async function lerHandle(handle) {
         const w = await (await handle.getFileHandle(dest, { create: true })).createWritable();
         await w.write(f); await w.close();
       },
-      async moverPares(nomes, prog) {
-        const dir = await handle.getDirectoryHandle("pares", { create: true });
+      async moverPares(nomes, prog, sub = "pares") {
+        const dir = await handle.getDirectoryHandle(sub, { create: true });
         let k = 0;
         for (const nome of nomes) {
           if (prog) prog(++k, nomes.length);
@@ -165,8 +165,8 @@ async function montarPastaDrive(ped) {
       await Drive.enviar(nomeNovo, new Blob([bytes], { type: "image/png" }), it ? it.parentId : ped.id, "image/png");
     },
     async copiar(orig, dest) { await Drive.copiar(raiz.find((x) => x.nome === orig).id, dest, ped.id); },
-    async moverPares(nomes, prog) {
-      const dir = await Drive.criarPasta("pares", ped.id);
+    async moverPares(nomes, prog, sub = "pares") {
+      const dir = await Drive.criarPasta(sub, ped.id);
       let k = 0;
       for (const nome of nomes) { if (prog) prog(++k, nomes.length); const it = raiz.find((x) => x.nome === nome); if (it) await Drive.mover(it.id, dir, ped.id); }
     },
@@ -278,6 +278,13 @@ async function conferir() {
     for (const [orig, dest] of r.duplicar) { atualizar(`Criando cópia ${k + 1} de ${r.duplicar.length}…`, k / r.duplicar.length); await pasta.copiar(orig, dest); k++; }
     sessao.conferencia = null;  // a pasta mudou: precisa conferir de novo
     return `${r.duplicar.length} cópia(s) criada(s). Clique em Conferir para ver o resultado.`;
+  }));
+  // cópias a mais do mesmo arquivo (ex.: "… - Copia.jpg"): nada é apagado, as sobras vão para copias_a_mais/
+  const sobras = (r.excesso_mover || []).flatMap(([, fs]) => fs);
+  if (pasta.podeGravar && sobras.length) botao(`Mover ${sobras.length} cópia(s) a mais para copias_a_mais/`, () => confirmar(acoes, `Mover ${sobras.length} arquivo(s) repetido(s) para a subpasta "copias_a_mais" (nada é apagado; fica o de nome mais curto de cada imagem)?\n${sobras.slice(0, 6).join("\n")}${sobras.length > 6 ? "\n…" : ""}`, async (atualizar) => {
+    await pasta.moverPares(sobras, (k, n) => atualizar(`Movendo arquivo ${k} de ${n} para copias_a_mais/…`, (k - 1) / n), "copias_a_mais");
+    sessao.conferencia = null;
+    return `${sobras.length} arquivo(s) movido(s) para copias_a_mais/. Clique em Conferir para ver o resultado.`;
   }));
   // pares completos que ainda estão soltos na pasta do pedido: propõe a pasta pares/ sozinho, com confirmação
   const jaEmPares = new Set(pasta.pares.map((x) => x.nome));

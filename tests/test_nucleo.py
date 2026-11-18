@@ -102,6 +102,9 @@ class TestIdComSufixoDoNavegador(unittest.TestCase):
         i = "1TyW9YbDbWWuqbEOmkKznjSOwJtsSS6G4"
         self.assertEqual(checagem.id_do_arquivo(f"Ranger-Captain of Eos (MH1 21) ({i}) (1).jpg"), i)
         self.assertEqual(checagem.id_do_arquivo(f"Ranger-Captain ({i}).jpg"), i)
+        self.assertEqual(checagem.id_do_arquivo(f"Ranger-Captain of Eos (MH1 21) ({i}) - Copia.jpg"), i)
+        self.assertEqual(checagem.id_do_arquivo(f"Ranger ({i}) - Copia (2).png"), i)
+        self.assertEqual(checagem.id_do_arquivo(f"Ranger ({i}) - Copy.png"), i)
         self.assertIsNone(checagem.id_do_arquivo("Ranger-Captain (1).jpg"))
         self.assertIn(f"({i}).jpg", checagem.nome_copia(f"Ranger ({i}) (1).jpg", 1))
 

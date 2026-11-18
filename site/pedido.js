@@ -1,6 +1,9 @@
 "use strict";
 // Fluxo do pedido: entrada → orçamento → conferência (bot local) → ficha e Pix. Usa as peças de app.js (sessao, chamar, pronto…).
 const pedido = { fontes: [], alteracoes: [], modo: "normal", precos: {}, padrao: null };
+// ID de 20+ caracteres entre parênteses no fim do nome, tolerando o que o navegador/Windows acrescenta a cópias (" (1)", " - Copia", " - Copy (2)")
+const SUFIXO_COPIA = "(?:\\s*(?:-\\s*)?(?:c[oó]pia|copy)(?:\\s*\\(\\d+\\))?|\\s*\\(\\d+\\))*";
+const RE_ID_ARQ = new RegExp("\\(([A-Za-z0-9_-]{20,})\\)" + SUFIXO_COPIA + "\\.[A-Za-z0-9]+$", "i");
 const lerJson = (k, pad) => { try { return JSON.parse(guardado.ler(k)) || pad; } catch { return pad; } };
 
 // ---------- entrada ----------
@@ -530,7 +533,7 @@ function desenharEnvio() {
   // se a pasta escolhida já tem todas as imagens do XML, o botão não tem mais o que fazer
   const p0 = sessao.pasta;
   if (p0 && p0.drive) {
-    const tem = new Set([...p0.raiz, ...p0.pares].map((x) => (x.nome.match(/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
+    const tem = new Set([...p0.raiz, ...p0.pares].map((x) => (x.nome.match(RE_ID_ARQ) || [])[1]).filter(Boolean));
     if ([...cartas.keys()].every((id) => tem.has(id))) { $("#c-env-ir").disabled = true; $("#c-env-ir").textContent = "Imagens já estão no Drive ✓"; }
   }
   $("#c-env-ir").onclick = () => {
@@ -543,7 +546,7 @@ function desenharEnvio() {
       const raizId = await Drive.raiz();
       const existentes = (await Drive.listar(raizId, ` and mimeType='${Drive.PASTA}'`)).find((x) => x.name === nome);
       const pastaId = existentes ? existentes.id : await Drive.criarPasta(nome, raizId);
-      const ja = new Set((await Drive.listar(pastaId)).map((x) => (x.name.match(/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/) || [])[1]).filter(Boolean));
+      const ja = new Set((await Drive.listar(pastaId)).map((x) => (x.name.match(RE_ID_ARQ) || [])[1]).filter(Boolean));
       const falhas = []; let feitas = 0, puladas = 0;
       const fila = [...cartas.values()];
       const totalCopias = fila.length;
@@ -587,7 +590,7 @@ const motivoCurto = (m) => /404|not found/i.test(m) ? "não existe mais no Drive
 
 // ---------- Faltando × extras: “usar no lugar” ----------
 // Imagens do XML que sumiram do MPCFill e que você substituiu à mão (arquivo com outro ID): diz-se qual entra no lugar de qual.
-const idDoNomeArquivo = (n) => (n.match(/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/) || [])[1] || "";
+const idDoNomeArquivo = (n) => (n.match(RE_ID_ARQ) || [])[1] || "";
 const baseDaCarta = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").split(/[\[({]/)[0].trim().toLowerCase();
 function desenharTrocas(r) {
   const el = $("#c-trocas");
@@ -629,7 +632,7 @@ window.desenharTrocas = desenharTrocas;
 
 // ---------- Imagens extras (fora do pedido): completar/ e soltas sem ID ----------
 // Elas mudam o total de slots depois do orçamento: a Conferência pede uma decisão e, se incluir, o pedido, o orçamento e a ficha são atualizados.
-const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(/\s*\([A-Za-z0-9_-]{20,}\)(?:\s*\(\d+\))?\s*$/, "").trim();
+const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(new RegExp("\\s*\\([A-Za-z0-9_-]{20,}\\)" + SUFIXO_COPIA + "\\s*$", "i"), "").trim();
 async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras"), chave = chaveExtras(itens);
   const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
@@ -679,7 +682,7 @@ window.desenharExtras = desenharExtras;
 // ---------- Correção de sangria (botão separado; processo do HANDOFF_SANGRIA) ----------
 // 816x1110 RGBA, carta 744x1040 centralizada, 299.9994 dpi; modos por imagem: borda (padrão), branco, preto. Nunca sobrescreve sem guardar a original.
 const SG = { itens: [], mostrarComId: false, rodando: false };
-const semIdNoNome = (n) => !/\(([A-Za-z0-9_-]{20,})\)(?:\s*\(\d+\))?\.[A-Za-z0-9]+$/.test(n);
+const semIdNoNome = (n) => !RE_ID_ARQ.test(n);
 const nomePng = (n) => n.replace(/\.[A-Za-z0-9]+$/, "") + ".png";
 function sgAtualizarLista() {
   const p = sessao.pasta, ja = new Map(SG.itens.map((i) => [i.chave, i]));

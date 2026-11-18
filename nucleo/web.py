@@ -32,6 +32,8 @@ def checar(pasta, xml_path, faltantes_path=None, ignorar=None):
         total=sum(r.exigido.values()), ok=r.ok,
         faltando=[[nome(i), n] for i, n in r.faltando.items()],
         faltando_ids=[[i, nome(i), n] for i, n in r.faltando.items()],
+        # cópias a mais: mantém as de nome mais curto (a original) e lista as demais para mover para copias_a_mais/
+        excesso_mover=[[i, sorted(r.existentes[i], key=lambda f: (len(f), f))[r.exigido[i]:]] for i in r.excesso],
         a_duplicar=[[nome(i), n] for i, n in r.a_duplicar.items()],
         excesso=[[nome(i), n] for i, n in r.excesso.items()],
         fora_da_lista=r.fora_da_lista, sem_id=r.sem_id, verso_padrao=r.verso_padrao,
