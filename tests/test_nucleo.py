@@ -158,6 +158,49 @@ class TestSangria(Base):
             sangria.corrigir(self.d / "d.png", "azul")
 
 
+class TestPlanoDePaginas(unittest.TestCase):
+    def test_pedido_grande_com_muitos_pares_e_extras_nao_deixa_pagina_pela_metade_no_meio(self):
+        # caso real: 934 cartas + 24 de pares + 16 extras = 974 slots → 55 páginas, 16 em branco
+        raiz = [f"r{i:04d}.png" for i in range(934)]
+        pares = [f"p{i:02d}.png" for i in range(24)]
+        extras = [f"e{i:02d}.png" for i in range(16)]
+        pag = montagem.planejar(raiz, pares, extras=extras)
+        self.assertEqual(len(pag), 55)
+        self.assertTrue(all(all(s for s in p) for p in pag[:-1]))        # todas as páginas anteriores estão cheias
+        ultima = pag[-1]
+        self.assertEqual(sum(1 for s in ultima if s), 2)                  # a última só tem os 2 últimos extras
+        self.assertEqual(ultima[-2:], ["e14.png", "e15.png"])             # no fim da página, os brancos antes
+        self.assertEqual(sum(1 for p in pag for s in p if s), 974)
+        self.assertEqual(montagem.progresso(pag)[-1], "974/974")
+
+    def test_poucos_pares_continuam_nos_ultimos_slots_com_brancos_antes(self):
+        pag = montagem.planejar([f"r{i:02d}.png" for i in range(100)], ["a.png", "b.png", "c.png", "d.png", "e.png", "f.png"])
+        self.assertEqual(len(pag), 6)
+        self.assertEqual(pag[-1][-6:], ["a.png", "b.png", "c.png", "d.png", "e.png", "f.png"])
+        self.assertEqual(sum(1 for s in pag[-1] if s is None), 2)         # 106 itens: sobram 2 brancos, antes dos pares
+        self.assertEqual(sum(1 for s in pag[-1] if s), 16)
+
+    def test_par_nunca_e_dividido_entre_paginas(self):
+        # corte cairia entre a frente e o verso: a frente vai junto para a última página
+        for n_raiz in range(60, 80):
+            pares = [x for i in range(5) for x in (f"f{i}.png", f"v{i}.png")]
+            pag = montagem.planejar([f"r{i:03d}.png" for i in range(n_raiz)], pares, extras=["e1.png"])
+            planos = [(pi, si, s) for pi, p in enumerate(pag) for si, s in enumerate(p) if s]
+            pos = {s: pi for pi, si, s in planos}
+            for i in range(5):
+                self.assertEqual(pos[f"f{i}.png"], pos[f"v{i}.png"], f"par {i} dividido com {n_raiz} cartas")
+            self.assertTrue(all(all(s for s in p) or pi >= len(pag) - 2 for pi, p in enumerate(pag)))  # só as duas últimas páginas podem ter branco
+            self.assertEqual(sum(1 for p in pag for s in p if s), n_raiz + 11)
+
+    def test_fecha_exato_sem_brancos(self):
+        pag = montagem.planejar([f"r{i:03d}.png" for i in range(102)], [f"p{i}.png" for i in range(6)])
+        self.assertTrue(all(all(s for s in p) for p in pag))
+        self.assertEqual(len(pag), 6)
+
+    def test_vazio(self):
+        self.assertEqual(montagem.planejar([]), [[None] * 18])
+
+
 class TestVersoPadrao(Base):
     def _xml(self):
         fr = "".join(f"<card><id>{'F%02d' % i + 'x' * 22}</id><slots>{i}</slots><name>C{i}.png</name></card>" for i in range(10))

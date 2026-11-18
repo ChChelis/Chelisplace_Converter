@@ -36,18 +36,31 @@ def planejar(raiz, pares=(), preenchimento=(), extras=(), por_pagina=POR_PAGINA)
     raiz: caminhos em ordem alfabética; preenchimento: [(caminho, cópias)] logo depois da raiz;
     pares: consecutivos nos últimos slots, na ordem recebida (frente seguida do verso, como no Photoshop).
     extras: imagens que não estão no XML; ficam depois dos pares, também no fim, na ordem recebida.
-    Se o total não fecha um múltiplo de 18, os slots em branco ficam entre a raiz e os pares.
+    Se o total não fecha um múltiplo de 18, os slots em branco ficam SÓ NA ÚLTIMA PÁGINA, antes dos últimos pares/extras
+    que cabem nela. Assim nenhuma página do meio fica pela metade, mesmo com dezenas de pares e extras no fim.
     """
     fila = sorted(raiz, key=lambda p: Path(p).name.lower())
     for caminho, copias in preenchimento:
         fila += [caminho] * copias
-    pares = list(pares) + list(extras)
-    total = len(fila) + len(pares)
+    cauda = list(pares) + list(extras)
+    itens = fila + cauda
+    total = len(itens)
     n_pag = max(1, math.ceil(total / por_pagina))
-    slots = [None] * (n_pag * por_pagina)
-    slots[:len(fila)] = fila
-    for i, p in enumerate(pares):
-        slots[len(slots) - len(pares) + i] = p  # total já reserva o espaço: nunca sobrepõe a fila
+    resto = total % por_pagina
+    if resto:
+        k = min(len(cauda), resto)  # quantos itens do fim da cauda ficam depois dos brancos, na última página
+        corte = total - k
+        brancos = por_pagina - resto
+        pre = itens[:corte]
+        i = corte - len(fila)  # posição do corte dentro da cauda
+        if 0 < i < len(pares) and i % 2 == 1:
+            # o corte cairia entre a frente e o verso de um par: a frente vai para a última página e um branco fica no fim da anterior
+            pre, brancos = itens[:corte - 1] + [None], brancos - 1
+            corte -= 1
+        slots = pre + [None] * brancos + itens[corte:]
+    else:
+        slots = list(itens)
+    slots += [None] * (n_pag * por_pagina - len(slots))
     return [slots[i:i + por_pagina] for i in range(0, len(slots), por_pagina)]
 
 

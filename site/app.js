@@ -360,12 +360,15 @@ async function prepararMontagem() {
     h += `</div>`;
   }
   if (falta) {
-    h += `<div class="conf"><b class="alerta">A última página tem ${resto} de 18 slots: faltam ${falta}.</b><br>Adicione ${falta} imagem(ns) para completar (entram depois dos pares) ou monte assim mesmo, com ${falta} slot(s) em branco antes dos pares.`;
+    h += `<div class="conf"><b class="alerta">A última página tem ${resto} de 18 slots: faltam ${falta}.</b><br>Adicione ${falta} imagem(ns) para completar (entram depois dos pares) ou monte assim mesmo, com ${falta} slot(s) em branco <b>só na última página</b> (as demais saem cheias).`;
     if (MONT.adicionadas.length) h += `<br><span class="suave">${MONT.adicionadas.length} imagem(ns) adicionada(s): ${esc(MONT.adicionadas.map((f) => f.name).join(", "))}</span> <button class="peq" id="m-add-limpar">Remover as adicionadas</button>`;
     h += `<br><input id="m-add" type="file" accept="image/*" multiple> `;
     h += MONT.permitirBranco ? `<span class="suave">Vai montar com ${falta} slot(s) em branco.</span> <button class="peq" id="m-branco-nao">Desfazer</button>` : `<button class="acao sec" id="m-branco">Montar com ${falta} slot(s) em branco</button>`;
     h += `</div>`;
   } else if (total) h += `<p class="ok">As páginas fecham em múltiplos de 18.</p>`;
+  // o que da pasta NÃO entra na montagem (para conferir antes de gerar)
+  const fora = [...padrao.map((x) => [x.nome, "verso padrão"]), ...(MONT.incluirExtras === false ? extras.map((x) => [x.nome, "extra não incluído"]) : [])];
+  if (fora.length) h += `<details class="conf"><summary class="suave">${fora.length} imagem(ns) da pasta <b>não entram</b> na montagem</summary><ul>${fora.slice(0, 40).map(([n, why]) => `<li>${esc(n)} <span class="suave">(${why})</span></li>`).join("")}${fora.length > 40 ? `<li class="suave">… e mais ${fora.length - 40}</li>` : ""}</ul></details>`;
   // por que o botão está travado (sempre dizer)
   const motivos = [];
   if (!total) motivos.push("não há nenhuma imagem para montar");
