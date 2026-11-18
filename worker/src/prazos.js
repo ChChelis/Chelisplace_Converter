@@ -1,14 +1,16 @@
 // Cálculo de prazos em horário útil (America/Sao_Paulo, UTC-3 fixo, sem horário de verão).
-// Funções puras: sem rede, sem segredos.
+// Funções puras: sem rede, sem segredos. Fins de semana e feriados nacionais não contam.
 const DESLOC = -3 * 3600e3;
 const MIN = 60e3;
+import { ehFeriado } from "./feriados.js";
 
 export const EXPEDIENTE = { ini: 10 * 60, fim: 17 * 60 }; // 10h–17h
 export const GRAFICA = { ini: 9 * 60, fim: 18 * 60 }; // 9h–18h
 
 // "relógio local" como um Date em UTC (getUTC* devolve a hora de Brasília)
 const local = (ms) => new Date(ms + DESLOC);
-const util = (d) => d.getUTCDay() >= 1 && d.getUTCDay() <= 5;
+export const diaUtil = (d) => d.getUTCDay() >= 1 && d.getUTCDay() <= 5 && !ehFeriado(d); // seg–sex, sem feriado nacional
+const util = diaUtil;
 const minDia = (d) => d.getUTCHours() * 60 + d.getUTCMinutes();
 
 // Soma `minutos` de tempo útil (dentro da janela, seg–sex) a partir de `inicioMs`.

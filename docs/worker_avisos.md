@@ -20,3 +20,4 @@ Título `Cliente · N slots`; descrição com linhas `Cliente:`, `Telefone:`, `S
 - **Finalizado no resumo:** só aparecem os cards finalizados a partir do 5º dia útil (seg–sex, sem feriados nacionais: fixos, Consciência Negra e Sexta-feira Santa; Carnaval e Corpus Christi não entram) mais recente, 00h de Brasília: é o dia em que se paga a colagem. Depois dessa data o resumo começa uma janela nova. Finalizado nunca entra em aviso de atraso.
 - **Novo pedido:** card criado (pela página ou à mão) gera "🆕 Novo pedido" no grupo.
 - **Segredo da página:** `PAGINA_SECRET` (senha digitada em "Trello" no passo 5 da página).
+- **Feriados nacionais** (mesma lista da janela de Finalizados) param o relógio de todos os prazos e silenciam resumos e alertas no dia.

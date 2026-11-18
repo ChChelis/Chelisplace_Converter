@@ -1,6 +1,7 @@
 // Worker chelisplace-avisos: webhook do Trello + resumos 10h/17h + avisos de atraso -> Telegram.
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
+import { diaUtil } from "./prazos.js";
 import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo } from "./avisos.js";
 
 const T = "https://api.trello.com/1";
@@ -142,6 +143,7 @@ export default {
 
   async scheduled(evento, env) {
     const agora = Date.now();
+    if (!diaUtil(new Date(agora - 3 * 3600e3))) return; // feriado nacional: sem resumos nem alertas
     if (evento.cron === "0 13,20 * * 1-5") {
       const manha = new Date(agora - 3 * 3600e3).getUTCHours() < 12;
       await resumo(env, agora, manha ? "☀️ Resumo da manhã (10h)" : "🌇 Resumo do fim do expediente (17h)");
