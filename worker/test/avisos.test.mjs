@@ -65,22 +65,35 @@ test("montarCard rejeita pasta que não é do Drive e lida com lixo", () => {
 
 import { quintoDiaUtil, inicioJanelaFinalizados, avisoNovo } from "../src/avisos.js";
 test("5º dia útil: nov/2026 = sex 06/11 (01/11 é domingo); dez/2026 = sex 08/12? (conta seg-sex)", () => {
-  assert.equal(quintoDiaUtil(2026, 10), br("2026-11-06T00:00:00")); // seg 2,3,4,5,6
+  assert.equal(quintoDiaUtil(2026, 10), br("2026-11-09T00:00:00")); // 02/11 é feriado: 3,4,5,6,9
   assert.equal(quintoDiaUtil(2026, 11), br("2026-12-07T00:00:00")); // ter 1,2,3,4,sex? 1,2,3,4 + seg 7
 });
 test("janela de Finalizados troca no 5º dia útil", () => {
-  assert.equal(inicioJanelaFinalizados(br("2026-11-18T10:00:00")), br("2026-11-06T00:00:00"));
+  assert.equal(inicioJanelaFinalizados(br("2026-11-18T10:00:00")), br("2026-11-09T00:00:00"));
   assert.equal(inicioJanelaFinalizados(br("2026-11-05T12:00:00")), quintoDiaUtil(2026, 9));
-  assert.equal(inicioJanelaFinalizados(br("2026-11-06T00:00:00")), br("2026-11-06T00:00:00"));
+  assert.equal(inicioJanelaFinalizados(br("2026-11-06T12:00:00")), quintoDiaUtil(2026, 9));
+  assert.equal(inicioJanelaFinalizados(br("2026-11-09T00:00:00")), br("2026-11-09T00:00:00"));
 });
 test("resumo só mostra Finalizados da janela atual", () => {
   const listas = [{ id: "F", name: "Finalizado" }];
   const cards = [{ id: "a", name: "Velho · 18 slots", desc: "", idList: "F" }, { id: "b", name: "Novo · 18 slots", desc: "", idList: "F" }];
   const entradas = { a: br("2026-11-03T12:00:00"), b: br("2026-11-10T12:00:00") };
   const t = montarResumo({ listas, cards, entradas, agoraMs: br("2026-11-18T10:00:00"), titulo: "T" });
-  assert.match(t, /Novo/); assert.doesNotMatch(t, /Velho/); assert.match(t, /Finalizado \(1\) — desde 06\/11/);
+  assert.match(t, /Novo/); assert.doesNotMatch(t, /Velho/); assert.match(t, /Finalizado \(1\) — desde 09\/11/);
 });
 test("aviso de novo pedido", () => {
   const { texto, botoes } = avisoNovo({ card: { name: "Ana · 216 slots", desc: "" }, coluna: "Novos pedidos" });
   assert.match(texto, /Novo pedido: Ana · 216 slots/); assert.equal(botoes.length, 1);
+});
+
+import { feriadosNacionais } from "../src/avisos.js";
+test("feriados nacionais: fixos, Consciência Negra e Sexta-feira Santa", () => {
+  const f = feriadosNacionais(2026);
+  for (const d of ["2026-01-01", "2026-04-21", "2026-05-01", "2026-09-07", "2026-10-12", "2026-11-02", "2026-11-15", "2026-11-20", "2026-12-25", "2026-04-03"]) assert.ok(f.has(d), d);
+  assert.ok(!f.has("2026-02-17")); // carnaval não entra
+  assert.ok(feriadosNacionais(2027).has("2027-03-26")); // Sexta Santa 2027
+  assert.ok(!feriadosNacionais(2023).has("2023-11-20"));
+});
+test("5º dia útil pula Sexta-feira Santa (abr/2026 = qua 08/04)", () => {
+  assert.equal(quintoDiaUtil(2026, 3), br("2026-04-08T00:00:00"));
 });
