@@ -180,17 +180,14 @@ class TestPlanoDePaginas(unittest.TestCase):
         self.assertEqual(sum(1 for s in pag[-1] if s is None), 2)         # 106 itens: sobram 2 brancos, antes dos pares
         self.assertEqual(sum(1 for s in pag[-1] if s), 16)
 
-    def test_par_nunca_e_dividido_entre_paginas(self):
-        # corte cairia entre a frente e o verso: a frente vai junto para a última página
+    def test_par_pode_ser_dividido_entre_paginas_e_so_a_ultima_tem_branco(self):
         for n_raiz in range(60, 80):
             pares = [x for i in range(5) for x in (f"f{i}.png", f"v{i}.png")]
             pag = montagem.planejar([f"r{i:03d}.png" for i in range(n_raiz)], pares, extras=["e1.png"])
-            planos = [(pi, si, s) for pi, p in enumerate(pag) for si, s in enumerate(p) if s]
-            pos = {s: pi for pi, si, s in planos}
-            for i in range(5):
-                self.assertEqual(pos[f"f{i}.png"], pos[f"v{i}.png"], f"par {i} dividido com {n_raiz} cartas")
-            self.assertTrue(all(all(s for s in p) or pi >= len(pag) - 2 for pi, p in enumerate(pag)))  # só as duas últimas páginas podem ter branco
+            self.assertTrue(all(all(s for s in p) for p in pag[:-1]), n_raiz)  # só a última página pode ter branco
             self.assertEqual(sum(1 for p in pag for s in p if s), n_raiz + 11)
+            ordem = [s for p in pag for s in p if s]
+            self.assertEqual(ordem[-11:], pares + ["e1.png"])                   # a ordem dos pares e extras é mantida
 
     def test_fecha_exato_sem_brancos(self):
         pag = montagem.planejar([f"r{i:03d}.png" for i in range(102)], [f"p{i}.png" for i in range(6)])
@@ -365,10 +362,11 @@ class TestImagemMontagem(Base):
         pag = montagem.planejar([f"{i:02d}.png" for i in range(17)], pares=["p1", "p2"], extras=["e1"])
         slots = pag[0] + pag[1]
         self.assertEqual(len(pag), 2)
-        self.assertEqual(slots[-3:], ["p1", "p2", "e1"])       # pares e depois extras, no fim
+        self.assertEqual([x for x in slots if x][-3:], ["p1", "p2", "e1"])   # pares e depois extras, no fim, na ordem
         self.assertEqual(slots[16], "16.png")
-        self.assertTrue(all(x is None for x in slots[17:33]))  # brancos ficam entre a raiz e os pares
-        self.assertEqual(montagem.progresso(pag), ["17/20", "20/20"])
+        self.assertEqual(slots[17], "p1")                                    # o par pode ser dividido: a frente fecha a 1ª página
+        self.assertTrue(all(x is None for x in slots[18:34]))                # brancos só na última página, antes dos últimos itens
+        self.assertEqual(montagem.progresso(pag), ["18/20", "20/20"])
 
     def test_niveis_do_psd(self):
         im = Image.new("RGB", (3, 1))

@@ -38,6 +38,7 @@ def planejar(raiz, pares=(), preenchimento=(), extras=(), por_pagina=POR_PAGINA)
     extras: imagens que não estão no XML; ficam depois dos pares, também no fim, na ordem recebida.
     Se o total não fecha um múltiplo de 18, os slots em branco ficam SÓ NA ÚLTIMA PÁGINA, antes dos últimos pares/extras
     que cabem nela. Assim nenhuma página do meio fica pela metade, mesmo com dezenas de pares e extras no fim.
+    Um par pode ser dividido entre duas páginas (decisão do Chelis).
     """
     fila = sorted(raiz, key=lambda p: Path(p).name.lower())
     for caminho, copias in preenchimento:
@@ -49,15 +50,8 @@ def planejar(raiz, pares=(), preenchimento=(), extras=(), por_pagina=POR_PAGINA)
     resto = total % por_pagina
     if resto:
         k = min(len(cauda), resto)  # quantos itens do fim da cauda ficam depois dos brancos, na última página
-        corte = total - k
-        brancos = por_pagina - resto
-        pre = itens[:corte]
-        i = corte - len(fila)  # posição do corte dentro da cauda
-        if 0 < i < len(pares) and i % 2 == 1:
-            # o corte cairia entre a frente e o verso de um par: a frente vai para a última página e um branco fica no fim da anterior
-            pre, brancos = itens[:corte - 1] + [None], brancos - 1
-            corte -= 1
-        slots = pre + [None] * brancos + itens[corte:]
+        # os brancos vão logo antes desses k itens; um par pode ficar dividido entre duas páginas (frente numa, verso na seguinte)
+        slots = itens[:total - k] + [None] * (por_pagina - resto) + itens[total - k:]
     else:
         slots = list(itens)
     slots += [None] * (n_pag * por_pagina - len(slots))
