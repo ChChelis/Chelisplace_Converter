@@ -919,3 +919,22 @@ $("#t-criar").onclick = async () => {
   } catch (e) { av.textContent = " Não deu: " + e.message; }
   btn.disabled = false;
 };
+
+
+// ---------- WhatsApp do cliente (wa.me): abre a conversa com o texto pronto; o Chelis clica em enviar e anexa o PDF ----------
+function abrirWhatsApp(texto) {
+  const n = $("#f-tel").value.replace(/\D/g, "");
+  if (!n) { $("#f-aviso").textContent = "Preencha o telefone do cliente (com DDD) para abrir o WhatsApp."; return; }
+  window.open(`https://wa.me/${n}?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+  $("#f-aviso").textContent = "WhatsApp aberto: confira o texto, envie e anexe o PDF à mão.";
+}
+const saudacao = () => { const nome = $("#f-cliente").value.trim(); return `Oi${nome ? ", " + nome : ""}!`; };
+$("#f-wa-ficha").onclick = () => {
+  const v = ultimoOrc && valorFinal() > 0 ? ` O valor do pedido é ${reais(valorFinal())}; o Pix está no PDF.` : "";
+  abrirWhatsApp(`${saudacao()} Segue a ficha do seu pedido${ultimoOrc ? ` (${ultimoOrc.slots} slots)` : ""}.${v} Qualquer dúvida é só falar.`);
+};
+$("#f-wa-cartas").onclick = () => {
+  const alt = pedido.alteracoes.filter((a) => /sem vers/i.test(a.titulo)).flatMap((a) => a.itens.map((i) => i.texto.trim()).filter(Boolean));
+  if (!alt.length) { $("#f-aviso").textContent = "Nenhuma carta sem versão próxima registrada. Use o botão da etapa Conferência para levá-las até aqui."; return; }
+  abrirWhatsApp(`${saudacao()} Sobre o seu pedido: algumas cartas não tinham a versão pedida.\n\n${alt.map((t) => "• " + t).join("\n")}\n\nPosso seguir assim ou prefere trocar alguma?`);
+};

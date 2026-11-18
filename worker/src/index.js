@@ -1,7 +1,7 @@
 // Worker chelisplace-avisos: webhook do Trello + resumos 10h/17h + avisos de atraso -> Telegram.
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo } from "./avisos.js";
 
 const T = "https://api.trello.com/1";
 
@@ -102,6 +102,11 @@ export default {
         const { texto, botoes } = avisoMovimento({
           cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card,
         });
+        await enviar(env, texto, botoes);
+      }
+      if ((a?.type === "createCard" || a?.type === "copyCard") && a.data?.card?.id) {
+        const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc" }).catch(() => ({ id: a.data.card.id, name: a.data.card.name, desc: "" }));
+        const { texto, botoes } = avisoNovo({ card, coluna: a.data.list?.name || "?" });
         await enviar(env, texto, botoes);
       }
       return new Response("ok");

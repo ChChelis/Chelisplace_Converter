@@ -63,14 +63,36 @@ export function msgClientePorColuna(coluna) {
   return null;
 }
 
+// Janela de Finalizados: começa no 5º dia útil (seg–sex, feriados não contam) mais recente, 00h de Brasília.
+// É a data em que o Chelis paga a colagem; depois dela o resumo só mostra o que foi finalizado a partir dali.
+export function quintoDiaUtil(ano, mes) { // mes 0-11; devolve epoch ms de 00:00 BRT
+  let n = 0;
+  for (let d = 1; d <= 31; d++) {
+    const dt = new Date(Date.UTC(ano, mes, d));
+    if (dt.getUTCMonth() !== mes) break;
+    const w = dt.getUTCDay();
+    if (w >= 1 && w <= 5 && ++n === 5) return Date.UTC(ano, mes, d, 3, 0, 0);
+  }
+}
+export function inicioJanelaFinalizados(agoraMs) {
+  const l = new Date(agoraMs - 3 * 3600e3);
+  let ano = l.getUTCFullYear(), mes = l.getUTCMonth();
+  let ini = quintoDiaUtil(ano, mes);
+  if (agoraMs < ini) { mes--; if (mes < 0) { mes = 11; ano--; } ini = quintoDiaUtil(ano, mes); }
+  return ini;
+}
+
 // Resumo das 10h/17h: por coluna, na ordem do quadro, só colunas com cards.
 export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
   const linhas = [titulo];
   let atrasados = 0, total = 0;
+  const ini = inicioJanelaFinalizados(agoraMs);
   for (const l of listas) {
-    const doL = cards.filter((c) => c.idList === l.id);
+    let doL = cards.filter((c) => c.idList === l.id);
+    const fin = norm(l.name).includes("finalizad");
+    if (fin) doL = doL.filter((c) => entradas[c.id] >= ini); // só a janela atual (depois do pagamento)
     if (!doL.length) continue;
-    linhas.push("", `▸ ${l.name} (${doL.length})`);
+    linhas.push("", `▸ ${l.name} (${doL.length})${fin ? ` — desde ${fmtBR(ini).slice(0, 5)}` : ""}`);
     for (const c of doL) {
       const info = lerCard(c);
       const ent = entradas[c.id];
@@ -141,4 +163,11 @@ export function montarCard(b) {
   const alts = (Array.isArray(b.alteracoes) ? b.alteracoes : []).slice(0, 30).map((a) => txt(a, 200)).filter(Boolean);
   if (alts.length) linhas.push("", "Alterações:", ...alts.map((a) => "- " + a));
   return { name: `${cliente} · ${slots} slots`, desc: linhas.join("\n") };
+}
+
+// Aviso de card novo (criado pela página ou à mão no Trello).
+export function avisoNovo({ card, coluna }) {
+  const info = lerCard(card);
+  const texto = `🆕 Novo pedido: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna: ${coluna}`;
+  return { texto, botoes: [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]] };
 }

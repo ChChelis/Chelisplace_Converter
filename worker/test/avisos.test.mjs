@@ -21,7 +21,7 @@ test("entradasPorCard usa a ação mais nova e cai para dateLastActivity", () =>
 test("resumo marca atrasados e conta totais", () => {
   const listas = [{ id: "L1", name: "Novos pedidos" }, { id: "L2", name: "Finalizado" }];
   const cards = [{ id: "a", name: "Ana · 108 slots", desc: "", idList: "L1" }, { id: "b", name: "Bia · 18 slots", desc: "", idList: "L2" }];
-  const entradas = { a: br("2026-11-17T10:00:00"), b: br("2026-11-01T10:00:00") };
+  const entradas = { a: br("2026-11-17T10:00:00"), b: br("2026-11-10T10:00:00") };
   const t = montarResumo({ listas, cards, entradas, agoraMs: br("2026-11-18T10:00:00"), titulo: "T" });
   assert.match(t, /Ana · 108 slots.*ATRASADO/);
   assert.match(t, /Bia.*(?!ATRASADO)/);
@@ -61,4 +61,26 @@ test("montarCard rejeita pasta que não é do Drive e lida com lixo", () => {
   const { desc } = montarCard({ cliente: "B", slots: "abc", valor: -5, pastaUrl: "https://evil.example/x" });
   assert.doesNotMatch(desc, /evil/);
   assert.match(desc, /Slots: 0/);
+});
+
+import { quintoDiaUtil, inicioJanelaFinalizados, avisoNovo } from "../src/avisos.js";
+test("5º dia útil: nov/2026 = sex 06/11 (01/11 é domingo); dez/2026 = sex 08/12? (conta seg-sex)", () => {
+  assert.equal(quintoDiaUtil(2026, 10), br("2026-11-06T00:00:00")); // seg 2,3,4,5,6
+  assert.equal(quintoDiaUtil(2026, 11), br("2026-12-07T00:00:00")); // ter 1,2,3,4,sex? 1,2,3,4 + seg 7
+});
+test("janela de Finalizados troca no 5º dia útil", () => {
+  assert.equal(inicioJanelaFinalizados(br("2026-11-18T10:00:00")), br("2026-11-06T00:00:00"));
+  assert.equal(inicioJanelaFinalizados(br("2026-11-05T12:00:00")), quintoDiaUtil(2026, 9));
+  assert.equal(inicioJanelaFinalizados(br("2026-11-06T00:00:00")), br("2026-11-06T00:00:00"));
+});
+test("resumo só mostra Finalizados da janela atual", () => {
+  const listas = [{ id: "F", name: "Finalizado" }];
+  const cards = [{ id: "a", name: "Velho · 18 slots", desc: "", idList: "F" }, { id: "b", name: "Novo · 18 slots", desc: "", idList: "F" }];
+  const entradas = { a: br("2026-11-03T12:00:00"), b: br("2026-11-10T12:00:00") };
+  const t = montarResumo({ listas, cards, entradas, agoraMs: br("2026-11-18T10:00:00"), titulo: "T" });
+  assert.match(t, /Novo/); assert.doesNotMatch(t, /Velho/); assert.match(t, /Finalizado \(1\) — desde 06\/11/);
+});
+test("aviso de novo pedido", () => {
+  const { texto, botoes } = avisoNovo({ card: { name: "Ana · 216 slots", desc: "" }, coluna: "Novos pedidos" });
+  assert.match(texto, /Novo pedido: Ana · 216 slots/); assert.equal(botoes.length, 1);
 });
