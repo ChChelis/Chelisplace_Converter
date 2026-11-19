@@ -36,7 +36,7 @@ test("recemAtrasados só pega o que venceu na última hora", () => {
 });
 test("aviso de movimento para Gráfica traz link do cliente e do grupo", () => {
   const { texto, botoes } = avisoMovimento({ cardNome: "Ana · 108 slots", de: "Montagem", para: "Gráfica", card: { name: "Ana · 108 slots", desc: "Telefone: +55 31 98888-7777" } });
-  assert.match(texto, /De "Montagem" para "Gráfica"/);
+  assert.match(texto, /De _Montagem_ para _Gráfica_/);
   assert.equal(botoes.length, 2);
   assert.match(botoes[0][0].url, /^https:\/\/wa\.me\/5531988887777\?text=/);
   assert.match(botoes[1][0].url, /^https:\/\/wa\.me\/\?text=/);
@@ -83,7 +83,7 @@ test("resumo só mostra Finalizados da janela atual", () => {
 });
 test("aviso de novo pedido", () => {
   const { texto, botoes } = avisoNovo({ card: { name: "Ana · 216 slots", desc: "" }, coluna: "Novos pedidos" });
-  assert.match(texto, /NOVO PEDIDO: Ana · 216 slots/); assert.equal(botoes.length, 1);
+  assert.match(texto, /\*NOVO PEDIDO:\* Ana · 216 slots/); assert.equal(botoes.length, 1);
 });
 
 import { feriadosNacionais } from "../src/avisos.js";
@@ -172,8 +172,8 @@ test("dataHoraBR formata em Brasília", () => assert.equal(dataHoraBR(br("2026-1
 test("avisos não usam emojis e trazem a descrição do card sem linhas de controle", () => {
   const desc = "Cliente: Ana\nTelefone: +55 31 9\nSlots: 18\nPáginas: 1\nValor cobrado: R$ 30,00\nEntrou na coluna: 18/11/2026 11:26\nPrazo: 19/11/2026 17:00\nPrevisão de entrega: antiga\n\nAlterações:\n- Troca de arte";
   const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc }, previsao: "Prazo máximo de colagem: 27/11/2026 13:00" });
-  assert.match(m.texto, /Dados do pedido:\nCliente: Ana\nSlots: 18/);
-  assert.match(m.texto, /Prazo máximo de colagem: 27\/11\/2026 13:00/);
+  assert.match(m.texto, /_Dados do pedido:_\n\*Cliente:\* Ana\n\*Slots:\* 18/);
+  assert.match(m.texto, /\*Prazo máximo de colagem: 27\/11\/2026 13:00\*/);
   assert.match(m.texto, /- Troca de arte/);
   assert.doesNotMatch(m.texto, /Entrou na coluna|Prazo:|antiga/);
   const emoji = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{25A0}-\u{25FF}]/u;
@@ -195,7 +195,7 @@ test("mensagem interna: sem valor cobrado, com valor de colagem (páginas x 18 x
   const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260 });
   const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Rodrigo Grupo · 956 slots", desc }, previsao: "Prazo máximo de colagem: 25/11/2026 22:00" });
   assert.doesNotMatch(m.texto, /Valor cobrado|1\.?260/);
-  assert.match(m.texto, /Valor de colagem: R\$ 126/);
+  assert.match(m.texto, /\*Valor de colagem:\* R\$ 126/);
   assert.match(desc, /Valor cobrado: R\$ 1260,00/); // o card mantém o valor cobrado
 });
 
@@ -208,4 +208,30 @@ test("mensagem ao cliente nunca traz valores nem dados internos; aviso do grupo 
     assert.doesNotMatch(cli.split("?text=")[1], /R\$|\d{3,}|valor|colagem|Pix|previs|prazo|slots/i);
     assert.doesNotMatch(m.texto, /\+55|8825/); // o grupo não vê o telefone
   }
+});
+
+import { paraTelegram } from "../src/avisos.js";
+test("paraTelegram converte *negrito* e _itálico_ em HTML e escapa o resto", () => {
+  assert.equal(paraTelegram("*PEDIDO MOVIDO:* Ana & Cia <x>\nDe _Montagem_ para _Gráfica_."), "<b>PEDIDO MOVIDO:</b> Ana &amp; Cia &lt;x&gt;\nDe <i>Montagem</i> para <i>Gráfica</i>.");
+  assert.equal(paraTelegram("*Previsão de retirada da gráfica: 23/11/2026 17:00*"), "<b>Previsão de retirada da gráfica: 23/11/2026 17:00</b>");
+});
+test("paraTelegram não italiciza underscores de links nem asteriscos soltos", () => {
+  const link = "https://drive.google.com/drive/folders/1AbC_dEf_GhI-jk";
+  assert.equal(paraTelegram(`*Pasta do Drive:* ${link}`), `<b>Pasta do Drive:</b> ${link}`);
+  assert.equal(paraTelegram("2 * 3 = 6 e snake_case_nome"), "2 * 3 = 6 e snake_case_nome");
+});
+test("mensagem completa do grupo usa só *negrito* e _itálico_ do WhatsApp, sem emojis e com o card em texto puro", () => {
+  const { desc } = montarCard({ cliente: "Rodrigo Grupo", telefone: "+55 31 8825-0936", slots: 956, paginas: 54, valor: 1260, pastaUrl: "https://drive.google.com/drive/folders/1AbC_dEf", alteracoes: ["Troca de arte X"] });
+  assert.doesNotMatch(desc, /[*]|(^|\s)_/); // a descrição do card (Markdown do Trello) não recebe formatação do WhatsApp
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Rodrigo Grupo · 956 slots", desc }, previsao: "Previsão de retirada da gráfica: 23/11/2026 17:00" });
+  assert.equal(m.texto, [
+    "*PEDIDO MOVIDO:* Rodrigo Grupo · 956 slots",
+    "De _Montagem_ para _Gráfica_.", "",
+    "_Dados do pedido:_",
+    "*Cliente:* Rodrigo Grupo", "*Slots:* 956", "*Páginas:* 54",
+    "*Pasta do Drive:* https://drive.google.com/drive/folders/1AbC_dEf",
+    "*Valor de colagem:* R$ 126",
+    "*Previsão de retirada da gráfica: 23/11/2026 17:00*", "",
+    "*Alterações:*", "- Troca de arte X",
+  ].join("\n"));
 });

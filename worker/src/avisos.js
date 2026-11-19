@@ -172,19 +172,19 @@ export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
     const fin = norm(l.name).includes("finalizad");
     if (fin) doL = doL.filter((c) => entradas[c.id] >= ini); // só a janela atual (depois do pagamento)
     if (!doL.length) continue;
-    linhas.push("", `Coluna ${l.name} (${doL.length})${fin ? ` - desde ${fmtBR(ini).slice(0, 5)}` : ""}:`);
+    linhas.push("", `*Coluna ${l.name} (${doL.length})${fin ? ` - desde ${fmtBR(ini).slice(0, 5)}` : ""}:*`);
     for (const c of doL) {
       const info = lerCard(c);
       const ent = entradas[c.id];
       const prazo = prazoDe(l.name, ent, info);
       const atr = prazo !== null && agoraMs > prazo;
       total++; if (atr) atrasados++;
-      const extra = atr ? ` - ATRASADO (prazo era ${fmtBR(prazo)})` : "";
+      const extra = atr ? ` - *ATRASADO* (prazo era ${fmtBR(prazo)})` : "";
       linhas.push(`- ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} - há ${duracao(agoraMs - ent)}${extra}`);
     }
   }
   if (!total) linhas.push("", "Nenhum pedido no quadro.");
-  else linhas.push("", `Total: ${total} pedido(s), ${atrasados} atrasado(s).`);
+  else linhas.push("", `_Total: ${total} pedido(s), ${atrasados} atrasado(s)._`);
   return linhas.join("\n");
 }
 
@@ -217,14 +217,20 @@ export function descricaoParaAviso(desc, linha) {
   let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo|Telefone|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
   if (info.slots || info.paginas) d = setLinha(d, "Valor de colagem", `R$ ${valorColagem(info)}`);
   d = aplicarPrevisao(d, linha);
-  return d.length > 900 ? d.slice(0, 900).trimEnd() + "..." : d;
+  if (d.length > 900) d = d.slice(0, 900).trimEnd() + "...";
+  // formatação do WhatsApp (*negrito*, _itálico_): rótulos em negrito; a linha de prazo/previsão inteira em negrito
+  return d.split("\n").map((l) => {
+    if (RE_PREVISAO.test(l)) return `*${l.trim()}*`;
+    const m = l.match(/^([A-Za-zÀ-ÿ ]{1,30}):(\s.*)?$/);
+    return m && !/^https?$/i.test(m[1]) ? `*${m[1]}:*${m[2] || ""}` : l;
+  }).join("\n");
 }
 
 // Texto do aviso de movimento de card + botões opcionais (sem emojis: colam mal no WhatsApp).
 export function avisoMovimento({ cardNome, de, para, card, previsao }) { // previsao: linha "Rótulo: data" ou null
   const info = lerCard(card || { name: cardNome, desc: "" });
   const dados = descricaoParaAviso(card?.desc, previsao);
-  const texto = `PEDIDO MOVIDO: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nDe "${de}" para "${para}".` + (dados ? `\n\nDados do pedido:\n${dados}` : "");
+  const texto = `*PEDIDO MOVIDO:* ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nDe _${de}_ para _${para}_.` + (dados ? `\n\n_Dados do pedido:_\n${dados}` : "");
   const botoes = [];
   const gerar = msgClientePorColuna(para);
   if (gerar) {
@@ -275,6 +281,15 @@ export function montarCard(b) {
 export function avisoNovo({ card, coluna, previsao }) {
   const info = lerCard(card);
   const dados = descricaoParaAviso(card.desc, previsao === undefined ? info.previsao : previsao);
-  const texto = `NOVO PEDIDO: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna "${coluna}".` + (dados ? `\n\nDados do pedido:\n${dados}` : "");
+  const texto = `*NOVO PEDIDO:* ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna _${coluna}_.` + (dados ? `\n\n_Dados do pedido:_\n${dados}` : "");
   return { texto, botoes: [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]] };
+}
+
+// O Telegram não entende o formato do WhatsApp: converte *negrito* e _itálico_ (só nas bordas de palavra, para não
+// pegar underscores de links) em HTML do Telegram, escapando o resto.
+export function paraTelegram(t) {
+  const esc = t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc
+    .replace(/(^|[\s(])\*(\S(?:[^*\n]*\S)?)\*(?=$|[\s).,;:!?])/gm, "$1<b>$2</b>")
+    .replace(/(^|[\s(])_(\S(?:[^_\n]*\S)?)_(?=$|[\s).,;:!?])/gm, "$1<i>$2</i>");
 }
