@@ -110,7 +110,8 @@ export function entradasPorCard(acoes, cards) {
   for (const a of acoes) {
     const id = a.data?.card?.id;
     if (!id || mapa[id]) continue;
-    const entrou = a.data?.listAfter?.id || a.data?.list?.id;
+    // só vale mudança de coluna: updateCard precisa de listAfter (outras edições do card, como descrição ou vencimento, não reiniciam o relógio)
+    const entrou = a.type === "updateCard" ? a.data?.listAfter?.id : a.data?.listAfter?.id || a.data?.list?.id;
     if (!entrou) continue;
     // card criado com data de entrada informada (carga de pedidos antigos): vale a data informada, até alguém mover o card
     mapa[id] = a.type !== "updateCard" && manual[id] ? manual[id] : Date.parse(a.date);

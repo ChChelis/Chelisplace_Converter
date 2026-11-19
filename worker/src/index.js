@@ -169,10 +169,10 @@ export default {
         return json({ ok: true, id: r.id });
       }
       if (acao === "vencimentos") { // grava o vencimento (retirada prevista) nos cards que já estão na Gráfica e ainda não têm
-        const q = await carregarQuadro(env), agora = Date.now(), feitos = [];
+        const q = await carregarQuadro(env), agora = Date.now(), feitos = [], refazer = url.searchParams.get("refazer") === "1";
         for (const c of q.cards) {
           const l = q.listas.find((x) => x.id === c.idList);
-          if (!l || c.due) continue;
+          if (!l || (c.due && !refazer) || c.dueComplete) continue;
           const info = lerCard(c), due = vencimentoGrafica(l.name, q.entradas[c.id], info, agora);
           if (!due) continue;
           await trello(env, `/cards/${c.id}`, { due, dueComplete: "false" }, "PUT");

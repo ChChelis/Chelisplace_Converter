@@ -268,3 +268,15 @@ test("lembretes de retirada: manhã do dia e véspera (próximo dia útil, pulan
   assert.equal(lembretesRetirada({ listas, cards, agoraMs: br("2026-11-18T17:00:00"), periodo: "tarde" }), null); // véspera de 19/11: nada
   assert.doesNotMatch(vespera, /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u);
 });
+
+test("edição do card (descrição/vencimento) não reinicia a entrada na coluna; só mudança de coluna conta", () => {
+  const { desc } = montarCard({ cliente: "Cube", slots: 86, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
+  const card = { id: "c1", name: "Cube · 86 slots", desc, dateLastActivity: "2026-11-19T00:30:00Z" };
+  const edicao = { type: "updateCard", date: "2026-11-19T00:20:00Z", data: { card: { id: "c1" }, list: { id: "G" } } }; // sem listAfter
+  const criacao = { type: "createCard", date: "2026-11-18T14:26:00Z", data: { card: { id: "c1" }, list: { id: "G" } } };
+  assert.equal(entradasPorCard([edicao, criacao], [card]).c1, br("2026-11-18T11:26:00"));
+  const info = lerCard(card);
+  assert.equal(vencimentoGrafica("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-18T22:16:00")), new Date(br("2026-11-19T10:00:00")).toISOString());
+  const mover = { type: "updateCard", date: "2026-11-20T12:00:00Z", data: { card: { id: "c1" }, listAfter: { id: "R" }, listBefore: { id: "G" } } };
+  assert.equal(entradasPorCard([mover, edicao, criacao], [card]).c1, Date.parse("2026-11-20T12:00:00Z"));
+});
