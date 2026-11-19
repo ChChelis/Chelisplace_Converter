@@ -300,3 +300,12 @@ test("Entrada confirmada em: movimentos de teste antes da confirmação não val
   assert.equal(entradasPorCard([real, teste], [card])[id], br("2026-11-19T10:00:00"));
   assert.doesNotMatch(avisoMovimento({ cardNome: "x", de: "A", para: "B", card: { name: "A · 18 slots", desc } }).texto, /confirmada/i);
 });
+
+test("prazo que vence exatamente às 17h (hora cheia do resumo) é pego pelo alerta das 18h", () => {
+  const listas = [{ id: "G", name: "Gráfica" }];
+  const { desc } = montarCard({ cliente: "Cube", slots: 86, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
+  const cards = [{ id: "c", name: "Cube · 86 slots", desc, idList: "G" }];
+  const entradas = { c: br("2026-11-18T11:26:00") };
+  assert.equal(recemAtrasados({ listas, cards, entradas, agoraMs: br("2026-11-19T18:00:00") }).length, 1);
+  assert.equal(recemAtrasados({ listas, cards, entradas, agoraMs: br("2026-11-19T19:00:00") }).length, 0);
+});

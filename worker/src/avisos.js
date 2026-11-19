@@ -219,7 +219,7 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
     if (!l) continue;
     const info = lerCard(c);
     const p = prazoDe(l.name, entradas[c.id], info);
-    if (p !== null && p <= agoraMs && p > agoraMs - 3600e3) out.push({ info, coluna: l.name, prazo: p });
+    if (p !== null && p <= agoraMs && p >= agoraMs - 3600e3) out.push({ info, coluna: l.name, prazo: p });
   }
   return out;
 }
