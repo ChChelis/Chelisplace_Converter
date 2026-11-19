@@ -119,8 +119,13 @@ export async function criarOuAtualizarEvento(env, evento) {
   if (!agendaConfigurada(env)) return { ignorado: "agenda não configurada" };
   let r = await google(env, "POST", "", evento);
   if (r.status === 409) r = await google(env, "PUT", `/${evento.id}`, evento);
-  if (!r.ok) throw new Error(`Google Agenda ${r.status}`);
+  if (!r.ok) throw new Error(`Google Agenda ${r.status}: ${await motivo(r)}`);
   return { ok: true };
+}
+
+// Motivo curto devolvido pelo Google (sem credenciais), para diagnosticar 404/403.
+async function motivo(r) {
+  try { const d = await r.json(); return String(d?.error?.message || d?.error || "").slice(0, 200); } catch { return ""; }
 }
 
 export async function criarOuAtualizarEventos(env, eventos) {
@@ -133,7 +138,7 @@ export async function removerEvento(env, cardId) {
   if (!agendaConfigurada(env)) return { ignorado: "agenda não configurada" };
   for (const id of idsDoCard(cardId)) {
     const r = await google(env, "DELETE", `/${id}`);
-    if (!r.ok && r.status !== 404 && r.status !== 410) throw new Error(`Google Agenda ${r.status}`);
+    if (!r.ok && r.status !== 404 && r.status !== 410) throw new Error(`Google Agenda ${r.status}: ${await motivo(r)}`);
   }
   return { ok: true };
 }
