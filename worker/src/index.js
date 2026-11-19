@@ -50,7 +50,7 @@ async function resumo(env, agoraMs, titulo) {
 async function verificarAtrasos(env, agoraMs) {
   const q = await carregarQuadro(env);
   for (const a of recemAtrasados({ ...q, agoraMs })) {
-    const texto = `⚠️ ATRASADO: ${a.info.cliente} (${a.coluna}) — prazo era ${fmtBR(a.prazo)}`;
+    const texto = `ATRASADO: ${a.info.cliente} (${a.coluna}). O prazo era ${fmtBR(a.prazo)}.`;
     await enviar(env, texto, [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]]);
   }
 }
@@ -161,8 +161,8 @@ export default {
         const r = await trello(env, "/webhooks", { callbackURL: cb, idModel: env.TRELLO_BOARD_ID, description: "chelisplace-avisos" }, "POST");
         return json({ ok: true, id: r.id });
       }
-      if (acao === "teste") { await enviar(env, "✅ Chelisplace Avisos conectado."); return json({ ok: true }); }
-      if (acao === "resumo") { await resumo(env, Date.now(), "📋 Resumo (teste manual)"); return json({ ok: true }); }
+      if (acao === "teste") { await enviar(env, "Chelisplace Avisos conectado."); return json({ ok: true }); }
+      if (acao === "resumo") { await resumo(env, Date.now(), "Resumo (teste manual)"); return json({ ok: true }); }
       return json({ erro: "ação desconhecida" }, 404);
     }
     return new Response("chelisplace-avisos", { status: 200 });
@@ -173,7 +173,7 @@ export default {
     if (!diaUtil(new Date(agora - 3 * 3600e3))) return; // feriado nacional: sem resumos nem alertas
     if (evento.cron === "0 13,20 * * 1-5") {
       const manha = new Date(agora - 3 * 3600e3).getUTCHours() < 12;
-      await resumo(env, agora, manha ? "☀️ Resumo da manhã (10h)" : "🌇 Resumo do fim do expediente (17h)");
+      await resumo(env, agora, manha ? "Resumo da manhã (10h)" : "Resumo do fim do expediente (17h)");
     } else {
       await verificarAtrasos(env, agora);
     }

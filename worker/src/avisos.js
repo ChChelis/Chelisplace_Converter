@@ -104,8 +104,11 @@ export function duracao(ms) {
   return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h`;
 }
 
+// O Telegram recusa botões com URL longa (limite ~2048): corta o texto até o link caber.
 export function linkWaGrupo(texto) {
-  return "https://wa.me/?text=" + encodeURIComponent(texto);
+  let t = texto;
+  while (t.length > 20 && ("https://wa.me/?text=" + encodeURIComponent(t)).length > 1800) t = t.slice(0, Math.floor(t.length * 0.9)).trimEnd() + "...";
+  return "https://wa.me/?text=" + encodeURIComponent(t);
 }
 
 export function linkWaCliente(telefone, texto) {
@@ -159,16 +162,16 @@ export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
     const fin = norm(l.name).includes("finalizad");
     if (fin) doL = doL.filter((c) => entradas[c.id] >= ini); // só a janela atual (depois do pagamento)
     if (!doL.length) continue;
-    linhas.push("", `▸ ${l.name} (${doL.length})${fin ? ` — desde ${fmtBR(ini).slice(0, 5)}` : ""}`);
+    linhas.push("", `Coluna ${l.name} (${doL.length})${fin ? ` - desde ${fmtBR(ini).slice(0, 5)}` : ""}:`);
     for (const c of doL) {
       const info = lerCard(c);
       const ent = entradas[c.id];
       const prazo = prazoDe(l.name, ent, info);
       const atr = prazo !== null && agoraMs > prazo;
       total++; if (atr) atrasados++;
-      const extra = atr ? ` ⚠️ ATRASADO (prazo era ${fmtBR(prazo)})` : "";
+      const extra = atr ? ` - ATRASADO (prazo era ${fmtBR(prazo)})` : "";
       const pv = previsaoEntrega(l.name, ent, info, agoraMs);
-      linhas.push(`• ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} — há ${duracao(agoraMs - ent)}${extra}${pv ? ` — entrega ~ ${fmtBR(pv).slice(0, 5)}` : ""}`);
+      linhas.push(`- ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} - há ${duracao(agoraMs - ent)}${extra}${pv ? ` - entrega prevista ${fmtBR(pv).slice(0, 5)}` : ""}`);
     }
   }
   if (!total) linhas.push("", "Nenhum pedido no quadro.");
@@ -195,10 +198,18 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
   return out;
 }
 
-// Texto do aviso de movimento de card + botões opcionais.
+// Descrição do card para os avisos: sem as linhas de controle do Worker, com a previsão atual.
+export function descricaoParaAviso(desc, previsao) {
+  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo)\s*:/i.test(l)).join("\n").trim();
+  if (previsao) d = setLinha(d, "Previsão de entrega", previsao);
+  return d.length > 900 ? d.slice(0, 900).trimEnd() + "..." : d;
+}
+
+// Texto do aviso de movimento de card + botões opcionais (sem emojis: colam mal no WhatsApp).
 export function avisoMovimento({ cardNome, de, para, card, previsao }) {
   const info = lerCard(card || { name: cardNome, desc: "" });
-  const texto = `📦 ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\n${de} → ${para}${previsao ? `\nPrevisão de entrega: ${previsao}` : ""}`;
+  const dados = descricaoParaAviso(card?.desc, previsao);
+  const texto = `PEDIDO MOVIDO: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nDe "${de}" para "${para}".` + (dados ? `\n\nDados do pedido:\n${dados}` : "");
   const botoes = [];
   const gerar = msgClientePorColuna(para);
   if (gerar) {
@@ -248,6 +259,7 @@ export function montarCard(b) {
 // Aviso de card novo (criado pela página ou à mão no Trello).
 export function avisoNovo({ card, coluna, previsao }) {
   const info = lerCard(card);
-  const texto = `🆕 Novo pedido: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna: ${coluna}${previsao || info.previsao ? `\nPrevisão de entrega: ${previsao || info.previsao}` : ""}`;
+  const dados = descricaoParaAviso(card.desc, previsao || info.previsao);
+  const texto = `NOVO PEDIDO: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna "${coluna}".` + (dados ? `\n\nDados do pedido:\n${dados}` : "");
   return { texto, botoes: [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]] };
 }

@@ -36,7 +36,7 @@ test("recemAtrasados só pega o que venceu na última hora", () => {
 });
 test("aviso de movimento para Gráfica traz link do cliente e do grupo", () => {
   const { texto, botoes } = avisoMovimento({ cardNome: "Ana · 108 slots", de: "Montagem", para: "Gráfica", card: { name: "Ana · 108 slots", desc: "Telefone: +55 31 98888-7777" } });
-  assert.match(texto, /Montagem → Gráfica/);
+  assert.match(texto, /De "Montagem" para "Gráfica"/);
   assert.equal(botoes.length, 2);
   assert.match(botoes[0][0].url, /^https:\/\/wa\.me\/5531988887777\?text=/);
   assert.match(botoes[1][0].url, /^https:\/\/wa\.me\/\?text=/);
@@ -79,11 +79,11 @@ test("resumo só mostra Finalizados da janela atual", () => {
   const cards = [{ id: "a", name: "Velho · 18 slots", desc: "", idList: "F" }, { id: "b", name: "Novo · 18 slots", desc: "", idList: "F" }];
   const entradas = { a: br("2026-11-03T12:00:00"), b: br("2026-11-10T12:00:00") };
   const t = montarResumo({ listas, cards, entradas, agoraMs: br("2026-11-18T10:00:00"), titulo: "T" });
-  assert.match(t, /Novo/); assert.doesNotMatch(t, /Velho/); assert.match(t, /Finalizado \(1\) — desde 09\/11/);
+  assert.match(t, /Novo/); assert.doesNotMatch(t, /Velho/); assert.match(t, /Coluna Finalizado \(1\) - desde 09\/11/);
 });
 test("aviso de novo pedido", () => {
   const { texto, botoes } = avisoNovo({ card: { name: "Ana · 216 slots", desc: "" }, coluna: "Novos pedidos" });
-  assert.match(texto, /Novo pedido: Ana · 216 slots/); assert.equal(botoes.length, 1);
+  assert.match(texto, /NOVO PEDIDO: Ana · 216 slots/); assert.equal(botoes.length, 1);
 });
 
 import { feriadosNacionais } from "../src/avisos.js";
@@ -164,3 +164,25 @@ test("aviso de movimento e de novo pedido mostram a previsão (vai no texto enca
   assert.match(n.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
 });
 test("dataHoraBR formata em Brasília", () => assert.equal(dataHoraBR(br("2026-11-27T13:00:00")), "27/11/2026 13:00"));
+
+test("avisos não usam emojis e trazem a descrição do card sem linhas de controle", () => {
+  const desc = "Cliente: Ana\nTelefone: +55 31 9\nSlots: 18\nPáginas: 1\nValor cobrado: R$ 30,00\nEntrou na coluna: 18/11/2026 11:26\nPrazo: 19/11/2026 17:00\nPrevisão de entrega: antiga\n\nAlterações:\n- Troca de arte";
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc }, previsao: "27/11/2026 13:00" });
+  assert.match(m.texto, /Dados do pedido:\nCliente: Ana\nTelefone: \+55 31 9/);
+  assert.match(m.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
+  assert.match(m.texto, /- Troca de arte/);
+  assert.doesNotMatch(m.texto, /Entrou na coluna|Prazo:|antiga/);
+  const emoji = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{25A0}-\u{25FF}]/u;
+  assert.doesNotMatch(m.texto, emoji);
+  assert.doesNotMatch(avisoNovo({ card: { name: "A · 1 slots", desc }, coluna: "Novos pedidos" }).texto, emoji);
+  const r = montarResumo({ listas: [{ id: "L", name: "Novos pedidos" }], cards: [{ id: "a", name: "A · 1 slots", desc: "", idList: "L" }], entradas: { a: br("2026-11-10T10:00:00") }, agoraMs: br("2026-11-18T10:00:00"), titulo: "Resumo" });
+  assert.doesNotMatch(r, emoji);
+  assert.match(m.botoes.at(-1)[0].url, /^https:\/\/wa\.me\/\?text=/);
+});
+
+import { linkWaGrupo } from "../src/avisos.js";
+test("link do grupo cabe no limite de URL do Telegram mesmo com texto longo e acentuado", () => {
+  const url = linkWaGrupo("Alteração ção ".repeat(400));
+  assert.ok(url.length <= 1900, String(url.length));
+  assert.match(url, /^https:\/\/wa\.me\/\?text=/);
+});
