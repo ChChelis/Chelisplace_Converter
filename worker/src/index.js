@@ -181,7 +181,8 @@ export default {
           if (!l || (c.due && !refazer) || c.dueComplete) continue;
           const info = lerCard(c), entrada = daDescricao && info.entrouEm ? info.entrouEm : q.entradas[c.id], due = vencimentoGrafica(l.name, entrada, info, agora);
           if (!due) continue;
-          await trello(env, `/cards/${c.id}`, { due, dueComplete: "false" }, "PUT");
+          const previsao = linhaPrevisao(l.name, entrada, info, agora); // mantém a linha da descrição coerente com o vencimento
+          await trello(env, `/cards/${c.id}`, { due, dueComplete: "false", desc: aplicarPrevisao(c.desc || "", previsao) }, "PUT");
           feitos.push({
             cliente: info.cliente, vencimento: due,
             diagnostico: { entradaUsada: new Date(entrada).toISOString(), entrouEmDaDescricao: info.entrouEm ? new Date(info.entrouEm).toISOString() : null, prazoManual: info.prazoManual ? new Date(info.prazoManual).toISOString() : null, ultimaAtividade: c.dateLastActivity },
