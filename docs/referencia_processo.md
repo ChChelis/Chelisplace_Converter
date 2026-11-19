@@ -167,14 +167,14 @@ Definições: `slots` = frentes + versos de todas as fontes; `páginas = ceil(sl
 | `resto` | `slots mod 108` | `slots mod 180` |
 | **Pago** | `kits × 135 + resto × 1,6667` | `kits × 330 + resto × 2,44441` |
 | Impressão (custo) | `páginas × 14` (R$ 14/página; só vale com pedidos de 6+ páginas na gráfica) | `kits × 121,99 + páginas_extra × 24,99`, com `páginas_extra = páginas − kits × 10` |
-| Colagem (custo) | `slots × 0,13`, arredondado ao inteiro | idem |
+| Colagem (custo) | `páginas × 18 × 0,13` (**adesivos da página inteira**), arredondado ao inteiro | idem |
 | Bulk | 0 (salvo instrução) | 0 |
 | **Lucro** | `Pago − Impressão − Colagem` | idem |
 
 Notas da skill:
 - O valor do resto é arredondado "de forma razoável" (ex.: 21,67 → 22). A regra de arredondamento não está formalizada (seção 9).
 - Quando o usuário combinou outro valor, vale o dele.
-- Excepcionalmente a colagem usa `páginas × 18` (página cheia) em vez dos slots reais, só se o usuário já fez assim; por padrão, slots reais.
+- **Regra atual (Chelis, nov/2026):** a colagem é sobre os adesivos da **página inteira** (`páginas × 18`), não só dos slots do pedido: mesmo que o cliente peça 100 num kit de 108, os 8 adesivos que completam a página (às custas do pedido) também precisam ser colados e pagos. Antes valia `slots × 0,13`.
 - O kit escalonado vale a partir de um pedido de referência (de um cliente específico) em diante; pedidos fechados antes (preço antigo flat 1,25/slot) não se recalculam. A data/pedido exato de corte não está documentado (seção 9).
 - Por que escalonar: R$ 14/página só se sustenta garantindo à gráfica pedidos de 6+ páginas; slots além do último kit fechado dão o mesmo trabalho sem completar página nova.
 

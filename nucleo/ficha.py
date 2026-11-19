@@ -89,7 +89,7 @@ def gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_
     L += [f"### Valor do pedido: {_n(pago)} reais", "#### Confidencial", f"Pago = {_n(pago)}"]
     partes = [(f["titulo"], len(f.get("frentes", [])) + len(f.get("versos", []))) for f in fontes]
     L += raciocinio(r, p, n_orc, descontos, pago, partes if slots_orc is None or slots_orc == slots else None, modo, precos)
-    L += ["Custo", f"\t- Impressão: {imp}", f"\t- Colagem: {n_orc}x{_n(col)} = {_n(r['colagem'])}",
+    L += ["Custo", f"\t- Impressão: {imp}", f"\t- Colagem: {r['paginas']} páginas x {orcamento.SLOTS_POR_PAGINA} adesivos x{_n(col)} = {_n(r['colagem'])}",
           "\t- Bulk: 0", f"\t- Lucro: {_n(pago)}-{_n(r['impressao'])}-{_n(r['colagem'])} = {_n(lucro)}",
           "### Pix", chave_pix]
     return "\n".join(L) + "\n", r

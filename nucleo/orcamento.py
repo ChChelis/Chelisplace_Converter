@@ -61,7 +61,9 @@ def calcular(frentes, versos=0, modo="normal", precos=None):
         pag_kits = sum(u["qtd"] * u["slots"] for u in usados) // SLOTS_POR_PAGINA
         n_kits_base = sum(u["qtd"] for u in usados)
         impressao = n_kits_base * float(p["impressao_kit"]) + max(paginas - pag_kits, 0) * float(p["impressao_pagina_extra"])
-    colagem = inteiro(slots * float(p["colagem"]))
+    # a colagem é paga pelos adesivos da PÁGINA inteira (páginas × 18), mesmo que o pedido não a complete: os slots que sobram
+    # (completados às custas do pedido) também precisam ser colados
+    colagem = inteiro(paginas * SLOTS_POR_PAGINA * float(p["colagem"]))
     return dict(slots=slots, paginas=paginas, kits=kits, usados=usados, kit_final=kit_final, resto=resto, pago=pago,
                 impressao=round(impressao, 2), colagem=colagem,
                 lucro=round(pago - impressao - colagem, 2))

@@ -237,6 +237,19 @@ class TestVersoPadrao(Base):
         self.assertEqual(checagem.pares(ped), [("F03" + "x" * 22, "V" * 25)])
 
 
+class TestColagemPelaPagina(unittest.TestCase):
+    def test_colagem_e_da_pagina_inteira_nao_so_dos_slots_do_pedido(self):
+        # 100 slots = 6 páginas = 108 adesivos colados (os 8 que completam a página também são colados)
+        r = orcamento.calcular(100)
+        self.assertEqual((r["paginas"], r["colagem"]), (6, orcamento.inteiro(108 * 0.13)))
+        # 108 slots fechados: igual a antes
+        self.assertEqual(orcamento.calcular(108)["colagem"], orcamento.inteiro(108 * 0.13))
+        # 194 slots = 11 páginas = 198 adesivos (antes: 194 × 0,13 = 25; agora 26)
+        self.assertEqual(orcamento.calcular(194)["colagem"], 26)
+        # o preço de colagem editável também vale
+        self.assertEqual(orcamento.calcular(100, 0, "normal", dict(colagem=0.2))["colagem"], orcamento.inteiro(108 * 0.2))
+
+
 class TestOrcamentoEditavel(unittest.TestCase):
     def test_kits_e_avulso_editados(self):
         p = dict(kits=[dict(slots=108, preco=135), dict(slots=36, preco=50)], avulso=2.0)
@@ -291,7 +304,7 @@ class TestPixFicha(unittest.TestCase):
         md, r = ficha.gerar("X", "1", [dict(titulo="t", frentes=["A"] * 191, versos=["V"] * 3)], [], "", "normal", p, "chave", 285, dict(slot=1.25, pct=10))
         conf = md.split("#### Confidencial")[1]
         for trecho in ("1 × kit de 108 slots (6 pág.) = 135", "1 × kit de 72 slots (4 pág.) = 120", "1 × kit final de 18 slots (sobraram 14) = 30",
-                       "Valor da tabela = 285", "Todos os slots a 1,25: 194x1,25 = 243", "Desconto de 10% sobre o pedido (28,5 → 29): 256 (lucro 77)", "Lucro: 285-154-25 = 106"):
+                       "Valor da tabela = 285", "Todos os slots a 1,25: 194x1,25 = 243", "Desconto de 10% sobre o pedido (28,5 → 29): 256 (lucro 76)", "Lucro: 285-154-26 = 105", "Colagem: 11 páginas x 18 adesivos x0,13 = 26"):
             self.assertIn(trecho, conf)
         md2, _ = ficha.gerar("X", "1", [dict(titulo="t", frentes=["A"] * 172)], [], "", "normal", p, "chave", 243, dict(slot=1.25, pct=10))
         self.assertIn("3 × kit de 18 slots (3 pág.) = 90", md2)

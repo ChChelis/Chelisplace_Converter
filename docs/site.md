@@ -110,3 +110,6 @@ Uma imagem **sobrando** (cópia a mais de um ID que o XML já pede) pode ser a s
 ### Versão da página e PDFs anteriores
 - O cabeçalho mostra **“· versão <commit>”** (`site/versao.json`, gerado pelo `build.sh`/`build.ps1`, não vai para o git) e, a cada 5 minutos, a página confere se saiu uma versão nova; se sim, avisa no topo que a aba ainda roda a antiga e que **recarregar zera o pedido** (terminar/anotar antes). Aba aberta antes de uma correção continua com o Python antigo na memória, por isso o aviso.
 - **PDFs na pasta `saida` do Drive:** ao salvar, PDFs com o mesmo nome de uma montagem anterior vão para `saida/anteriores` (nada é apagado), e a saída fica só com a montagem atual.
+
+### Colagem pela página inteira
+O custo de colagem (confidencial, no orçamento e no `.md`) agora é `páginas × 18 adesivos × R$ 0,13` (`nucleo/orcamento.py`), e não `slots × 0,13`: os adesivos que completam a última página também são colados, às custas do pedido. Ex.: 194 slots = 11 páginas = 198 adesivos → R$ 26 (antes R$ 25) e lucro R$ 105 (antes R$ 106). O `.md` mostra “Colagem: 11 páginas x 18 adesivos x0,13 = 26”.

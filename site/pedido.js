@@ -200,7 +200,7 @@ function desenharPrecos() {
   $("#o-campos").innerHTML = `<div><label>Preço por slot avulso (R$)</label><input type="number" min="0" step="0.0001" data-p="avulso" value="${+ef.avulso.toFixed(4)}" ${auto ? "disabled" : ""}>
       <label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="o-avulso-auto" ${auto ? "checked" : ""}> calcular pelo menor kit</label>
       <label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="o-resto-kit" ${p.resto_em_kit ? "checked" : ""}> o que sobrar vira um kit do menor tamanho</label></div>` +
-    campo("colagem", "Colagem por slot (R$)", p.colagem) +
+    campo("colagem", "Colagem por adesivo (R$; paga pela página inteira)", p.colagem) +
     (p.impressao_pagina !== undefined ? campo("impressao_pagina", "Impressão por página (R$)", p.impressao_pagina)
       : campo("impressao_kit", "Impressão por kit foil (R$)", p.impressao_kit) + campo("impressao_pagina_extra", "Página extra foil (R$)", p.impressao_pagina_extra));
   const eq = () => p.kits.forEach((k, i) => { const el = $("#o-eq-" + i); if (el) el.textContent = k.slots > 0 ? `${Math.ceil(k.slots / 18)} página(s) · R$ ${fmt(k.preco / k.slots)}/slot` : ""; });
@@ -231,7 +231,7 @@ async function orcar() {
     ["Slots (frentes + versos)", r.slots], ["Páginas A3", r.paginas],
     ["Como o valor foi calculado", contas.length ? contas.join("<br>") + `<br><span class="suave">total: ${reais(r.pago)}</span>` : "—"],
     ["Valor cobrado do cliente" + (pago !== r.pago ? " (combinado)" : ""), `<b>${reais(pago)}</b>`],
-    [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], ["Colagem", reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
+    [`<span class="aviso">Só para você</span> · impressão`, reais(r.impressao)], [`Colagem <span class="suave">(${r.paginas} págs × 18 adesivos)</span>`, reais(r.colagem)], ["Lucro", reais(pago - r.impressao - r.colagem)],
   ].map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join("");
   preencherUso(r, pr);
   desenharDescontos(r);
