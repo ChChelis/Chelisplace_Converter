@@ -4,6 +4,8 @@
 import { diaUtil } from "./prazos.js";
 import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
+import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEventos } from "./agenda.js";
+
 const T = "https://api.trello.com/1";
 
 async function trello(env, caminho, params = {}, metodo = "GET") {
@@ -39,6 +41,30 @@ async function carregarQuadro(env) {
     trello(env, `/boards/${b}/actions`, { filter: "updateCard:idList,createCard,copyCard,moveCardToBoard", limit: "1000" }),
   ]);
   return { listas, cards, entradas: entradasPorCard(acoes, cards) };
+}
+
+// Google Agenda: evento da viagem para retirar na gráfica (vencimento do card); sem vencimento, remove o evento.
+// Falha do Google nunca derruba o resto: avisa o grupo e segue.
+async function agendaRetirada(env, card, dueIso, trelloUrl) {
+  try {
+    if (!agendaConfigurada(env)) return;
+    if (dueIso) await criarOuAtualizarEventos(env, montarEventos({ card, inicioMs: Date.parse(dueIso), trelloUrl }));
+    else await removerEvento(env, card.id);
+  } catch (e) {
+    await enviar(env, `Não consegui atualizar o Google Agenda (${e.message}). Os avisos do Telegram continuam normais.`).catch(() => {});
+  }
+}
+
+// Sincroniza (cria ou atualiza) o evento de todos os cards da Gráfica com vencimento ainda não cumprido.
+async function sincronizarAgenda(env, q) {
+  const grafica = new Set(q.listas.filter((l) => norm(l.name).includes("grafica")).map((l) => l.id));
+  const feitos = [];
+  for (const c of q.cards) {
+    if (!grafica.has(c.idList) || !c.due || c.dueComplete) continue;
+    await criarOuAtualizarEventos(env, montarEventos({ card: c, inicioMs: Date.parse(c.due), trelloUrl: c.url }));
+    feitos.push({ cliente: lerCard(c).cliente, inicio: c.due });
+  }
+  return feitos;
 }
 
 async function resumo(env, agoraMs, titulo, quadro) {
@@ -96,6 +122,7 @@ async function rotaCard(req, env) {
     const descFinal = aplicarPrevisao(desc, previsao);
     const due = vencimentoGrafica(novos.name, entrada, lerCard({ name, desc: descFinal }), Date.now());
     card = await trello(env, "/cards", { idList: novos.id, name, desc: descFinal, pos: "bottom", ...(due ? { due } : {}) }, "POST");
+    if (due) await agendaRetirada(env, { id: card.id, name, desc: descFinal }, due, card.shortUrl || card.url);
   }
   return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url, previsao }), { headers: { ...h, "content-type": "application/json" } });
 }
@@ -114,7 +141,7 @@ export default {
       const corpo = await req.json().catch(() => null);
       const a = corpo?.action;
       if (a?.type === "updateCard" && a.data?.listBefore && a.data?.listAfter) {
-        const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc" }).catch(() => ({ name: a.data.card.name, desc: "" }));
+        const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc,shortUrl" }).catch(() => ({ name: a.data.card.name, desc: "" }));
         // recalcula a previsão de entrega a partir da coluna nova e grava no card
         const info = lerCard(card);
         const quando = Date.parse(a.date) || Date.now();
@@ -126,13 +153,15 @@ export default {
         if (due) { params.due = due; params.dueComplete = "false"; }
         else if (norm(a.data.listBefore.name).includes("grafica")) params.dueComplete = "true";
         if (Object.keys(params).length) await trello(env, `/cards/${a.data.card.id}`, params, "PUT").catch(() => {});
+        if (due) await agendaRetirada(env, { id: a.data.card.id, name: card.name, desc: params.desc ?? card.desc }, due, card.shortUrl);
+        else if (norm(a.data.listBefore.name).includes("grafica")) await agendaRetirada(env, { id: a.data.card.id }, null);
         const { texto, botoes } = avisoMovimento({
           cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card, previsao,
         });
         await enviar(env, texto, botoes);
       }
       if ((a?.type === "createCard" || a?.type === "copyCard") && a.data?.card?.id) {
-        const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc" }).catch(() => ({ id: a.data.card.id, name: a.data.card.name, desc: "" }));
+        const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc,shortUrl" }).catch(() => ({ id: a.data.card.id, name: a.data.card.name, desc: "" }));
         const coluna = a.data.list?.name || "?";
         let previsao = lerCard(card).previsao;
         if (!previsao) { // card feito à mão no Trello: calcula (se a coluna tiver prazo) e grava
@@ -140,6 +169,7 @@ export default {
           const quando = Date.parse(a.date) || Date.now();
           const due = vencimentoGrafica(coluna, quando, lerCard(card), Date.now());
           if (previsao || due) await trello(env, `/cards/${a.data.card.id}`, { ...(previsao ? { desc: aplicarPrevisao(card.desc || "", previsao) } : {}), ...(due ? { due } : {}) }, "PUT").catch(() => {});
+          if (due) await agendaRetirada(env, { id: a.data.card.id, name: card.name, desc: previsao ? aplicarPrevisao(card.desc || "", previsao) : card.desc }, due, card.shortUrl);
         }
         const { texto, botoes } = avisoNovo({ card, coluna, previsao });
         await enviar(env, texto, botoes);
@@ -200,6 +230,11 @@ export default {
         }
         return json({ ok: true, confirmadaEm: agora, cards: feitos });
       }
+      if (acao === "agenda") { // cria/atualiza no Google Agenda o evento de cada card da Gráfica com vencimento
+        if (!agendaConfigurada(env)) return json({ ok: false, erro: "GOOGLE_SA_JSON e GOOGLE_CALENDAR_ID ainda não foram criados como segredos" }, 400);
+        try { return json({ ok: true, eventos: await sincronizarAgenda(env, await carregarQuadro(env)) }); }
+        catch (e) { return json({ ok: false, erro: e.message }, 500); }
+      }
       if (acao === "teste") { await enviar(env, "Chelisplace Avisos conectado."); return json({ ok: true }); }
       if (acao === "lembretes") { // teste manual: simula o lembrete de retirada (?periodo=manha|tarde)
         const q = await carregarQuadro(env), per = url.searchParams.get("periodo") === "manha" ? "manha" : "tarde";
@@ -219,6 +254,7 @@ export default {
     if (evento.cron === "0 13,20 * * 1-5") {
       const manha = new Date(agora - 3 * 3600e3).getUTCHours() < 12;
       const q = await carregarQuadro(env);
+      if (agendaConfigurada(env)) await sincronizarAgenda(env, q).catch(() => {}); // autocorreção diária do Google Agenda
       await resumo(env, agora, manha ? "*Resumo da manhã (10h)*" : "*Resumo do fim do expediente (17h)*", q);
       const aviso = lembretesRetirada({ ...q, agoraMs: agora, periodo: manha ? "manha" : "tarde" });
       if (aviso) await enviar(env, aviso, [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(aviso) }]]);

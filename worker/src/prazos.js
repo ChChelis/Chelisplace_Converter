@@ -96,3 +96,10 @@ export function atrasado(coluna, entradaMs, agoraMs, slots = 0) {
 // Chave "AAAA-MM-DD" (Brasília) do dia de `ms` e do próximo dia útil depois dele.
 export const chaveDia = (ms) => chaveData(local(ms));
 export const chaveProximoDiaUtil = (ms) => chaveData(proxDiaUtil(meiaNoite(local(ms))));
+
+// Dia útil anterior ao de `ms`, às 17h (fim do expediente da loja): momento do aviso de véspera.
+export function diaUtilAnterior17(ms) {
+  const dia = meiaNoite(local(ms));
+  do dia.setUTCDate(dia.getUTCDate() - 1); while (!util(dia));
+  return noDia(dia, EXPEDIENTE.fim);
+}
