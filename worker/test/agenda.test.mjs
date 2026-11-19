@@ -113,3 +113,19 @@ test("trocarCodigo envia o código e devolve o refresh token", async () => {
   try { const d = await trocarCodigo({ GOOGLE_CLIENT_ID: "cid", GOOGLE_CLIENT_SECRET: "csec" }, "COD", "https://w.test/google/callback"); assert.equal(d.refresh_token, "RT"); } finally { globalThis.fetch = original; }
   assert.match(corpo, /grant_type=authorization_code/); assert.match(corpo, /code=COD/);
 });
+
+import { idAgenda } from "../src/agenda.js";
+test("ID da agenda ignora espaços, quebras de linha e aspas coladas no segredo", () => {
+  assert.equal(idAgenda({ GOOGLE_CALENDAR_ID: ' "abc123@group.calendar.google.com"\n' }), "abc123@group.calendar.google.com");
+  assert.equal(idAgenda({}), "");
+});
+test("404 explica que a agenda não foi encontrada, sem revelar o ID", async () => {
+  const { sa } = await chaveDeTeste();
+  const env = { GOOGLE_SA_JSON: JSON.stringify(sa), GOOGLE_CALENDAR_ID: "segredinho1234@group.calendar.google.com" };
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => String(url).includes("oauth2") ? new Response(JSON.stringify({ access_token: "t", expires_in: 3600 })) : new Response(JSON.stringify({ error: { message: "Not Found" } }), { status: 404 });
+  let erro;
+  try { await criarOuAtualizarEvento(env, { id: "trelloabc" }); } catch (e) { erro = e.message; } finally { globalThis.fetch = original; }
+  assert.match(erro, /Google Agenda 404: Not Found \(agenda não encontrada: o ID configurado tem 40 caracteres e termina em "@group\.calendar\.google\.com"/);
+  assert.doesNotMatch(erro, /segredinho/);
+});

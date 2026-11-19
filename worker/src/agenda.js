@@ -105,8 +105,11 @@ export async function trocarCodigo(env, code, redirectUri) {
 
 export const agendaConfigurada = (env) => !!((env.GOOGLE_SA_JSON || modoOAuth(env)) && env.GOOGLE_CALENDAR_ID);
 
+// ID da agenda sem espaços, quebras de linha ou aspas que sobram ao colar o segredo.
+export const idAgenda = (env) => String(env.GOOGLE_CALENDAR_ID || "").trim().replace(/^["']|["']$/g, "").trim();
+
 async function google(env, metodo, caminho, corpo) {
-  const r = await fetch(`${API}/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID)}/events${caminho}`, {
+  const r = await fetch(`${API}/calendars/${encodeURIComponent(idAgenda(env))}/events${caminho}`, {
     method: metodo,
     headers: { authorization: `Bearer ${await token(env)}`, "content-type": "application/json" },
     body: corpo ? JSON.stringify(corpo) : undefined,
@@ -119,13 +122,19 @@ export async function criarOuAtualizarEvento(env, evento) {
   if (!agendaConfigurada(env)) return { ignorado: "agenda não configurada" };
   let r = await google(env, "POST", "", evento);
   if (r.status === 409) r = await google(env, "PUT", `/${evento.id}`, evento);
-  if (!r.ok) throw new Error(`Google Agenda ${r.status}: ${await motivo(r)}`);
+  if (!r.ok) throw new Error(`Google Agenda ${r.status}: ${await motivo(r, env)}`);
   return { ok: true };
 }
 
 // Motivo curto devolvido pelo Google (sem credenciais), para diagnosticar 404/403.
-async function motivo(r) {
-  try { const d = await r.json(); return String(d?.error?.message || d?.error || "").slice(0, 200); } catch { return ""; }
+async function motivo(r, env) {
+  let m = "";
+  try { const d = await r.json(); m = String(d?.error?.message || d?.error || "").slice(0, 200); } catch { /* sem corpo */ }
+  if (r.status === 404 && env) {
+    const id = idAgenda(env), arroba = id.indexOf("@");
+    m += ` (agenda não encontrada: o ID configurado tem ${id.length} caracteres${arroba >= 0 ? ` e termina em "${id.slice(arroba)}"` : " e não tem @"}; confira se a agenda é da mesma conta que autorizou)`;
+  }
+  return m;
 }
 
 export async function criarOuAtualizarEventos(env, eventos) {
@@ -138,7 +147,7 @@ export async function removerEvento(env, cardId) {
   if (!agendaConfigurada(env)) return { ignorado: "agenda não configurada" };
   for (const id of idsDoCard(cardId)) {
     const r = await google(env, "DELETE", `/${id}`);
-    if (!r.ok && r.status !== 404 && r.status !== 410) throw new Error(`Google Agenda ${r.status}: ${await motivo(r)}`);
+    if (!r.ok && r.status !== 404 && r.status !== 410) throw new Error(`Google Agenda ${r.status}: ${await motivo(r, env)}`);
   }
   return { ok: true };
 }
