@@ -930,8 +930,7 @@ function abrirWhatsApp(texto) {
 }
 const saudacao = () => { const nome = $("#f-cliente").value.trim(); return `Oi${nome ? ", " + nome : ""}!`; };
 $("#f-wa-ficha").onclick = () => {
-  const v = ultimoOrc && valorFinal() > 0 ? ` O valor do pedido é ${reais(valorFinal())}; o Pix está no PDF.` : "";
-  abrirWhatsApp(`${saudacao()} Segue a ficha do seu pedido${ultimoOrc ? ` (${ultimoOrc.slots} slots)` : ""}.${v} Qualquer dúvida é só falar.`);
+  abrirWhatsApp(`${saudacao()} Segue a ficha do seu pedido${ultimoOrc ? ` (${ultimoOrc.slots} slots)` : ""}, com os dados para o pagamento no PDF. Qualquer dúvida é só falar.`); // sem valores no texto
 };
 $("#f-wa-cartas").onclick = () => {
   const alt = pedido.alteracoes.filter((a) => /sem vers/i.test(a.titulo)).flatMap((a) => a.itens.map((i) => i.texto.trim()).filter(Boolean));

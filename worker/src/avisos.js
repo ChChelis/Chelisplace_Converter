@@ -211,10 +211,10 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
 export const COLAGEM_POR_SLOT = 0.13;
 export const valorColagem = (info) => Math.round((info.paginas || Math.ceil(info.slots / 18)) * 18 * COLAGEM_POR_SLOT);
 
-// Descrição do card para os avisos: sem as linhas de controle do Worker nem o valor cobrado; com valor de colagem e a linha da etapa.
+// Descrição do card para os avisos: sem as linhas de controle do Worker, o telefone nem o valor cobrado; com valor de colagem e a linha da etapa.
 export function descricaoParaAviso(desc, linha) {
   const info = lerCard({ name: "", desc });
-  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
+  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo|Telefone|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
   if (info.slots || info.paginas) d = setLinha(d, "Valor de colagem", `R$ ${valorColagem(info)}`);
   d = aplicarPrevisao(d, linha);
   return d.length > 900 ? d.slice(0, 900).trimEnd() + "..." : d;

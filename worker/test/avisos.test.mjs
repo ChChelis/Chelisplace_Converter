@@ -172,7 +172,7 @@ test("dataHoraBR formata em Brasília", () => assert.equal(dataHoraBR(br("2026-1
 test("avisos não usam emojis e trazem a descrição do card sem linhas de controle", () => {
   const desc = "Cliente: Ana\nTelefone: +55 31 9\nSlots: 18\nPáginas: 1\nValor cobrado: R$ 30,00\nEntrou na coluna: 18/11/2026 11:26\nPrazo: 19/11/2026 17:00\nPrevisão de entrega: antiga\n\nAlterações:\n- Troca de arte";
   const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc }, previsao: "Prazo máximo de colagem: 27/11/2026 13:00" });
-  assert.match(m.texto, /Dados do pedido:\nCliente: Ana\nTelefone: \+55 31 9/);
+  assert.match(m.texto, /Dados do pedido:\nCliente: Ana\nSlots: 18/);
   assert.match(m.texto, /Prazo máximo de colagem: 27\/11\/2026 13:00/);
   assert.match(m.texto, /- Troca de arte/);
   assert.doesNotMatch(m.texto, /Entrou na coluna|Prazo:|antiga/);
@@ -197,4 +197,15 @@ test("mensagem interna: sem valor cobrado, com valor de colagem (páginas x 18 x
   assert.doesNotMatch(m.texto, /Valor cobrado|1\.?260/);
   assert.match(m.texto, /Valor de colagem: R\$ 126/);
   assert.match(desc, /Valor cobrado: R\$ 1260,00/); // o card mantém o valor cobrado
+});
+
+test("mensagem ao cliente nunca traz valores nem dados internos; aviso do grupo não traz telefone", () => {
+  const { desc } = montarCard({ cliente: "Rodrigo Grupo", telefone: "+55 31 8825-0936", slots: 956, paginas: 54, valor: 1260, pastaUrl: "https://drive.google.com/x" });
+  for (const para of ["Gráfica", "Retirada", "Pronto para entrega"]) {
+    const m = avisoMovimento({ cardNome: "x", de: "A", para, card: { name: "Rodrigo Grupo · 956 slots", desc }, previsao: "Prazo máximo de colagem: 25/11/2026 22:00" });
+    const cli = decodeURIComponent(m.botoes[0][0].url);
+    assert.match(cli, /^https:\/\/wa\.me\/553188250936\?text=/);
+    assert.doesNotMatch(cli.split("?text=")[1], /R\$|\d{3,}|valor|colagem|Pix|previs|prazo|slots/i);
+    assert.doesNotMatch(m.texto, /\+55|8825/); // o grupo não vê o telefone
+  }
 });
