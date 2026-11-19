@@ -176,7 +176,10 @@ export default {
           const info = lerCard(c), due = vencimentoGrafica(l.name, q.entradas[c.id], info, agora);
           if (!due) continue;
           await trello(env, `/cards/${c.id}`, { due, dueComplete: "false" }, "PUT");
-          feitos.push({ cliente: info.cliente, vencimento: due });
+          feitos.push({
+            cliente: info.cliente, vencimento: due,
+            diagnostico: { entradaUsada: new Date(q.entradas[c.id]).toISOString(), entrouEmDaDescricao: info.entrouEm ? new Date(info.entrouEm).toISOString() : null, prazoManual: info.prazoManual ? new Date(info.prazoManual).toISOString() : null, ultimaAtividade: c.dateLastActivity },
+          });
         }
         return json({ ok: true, atualizados: feitos });
       }
