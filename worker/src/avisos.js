@@ -114,7 +114,11 @@ export function entradasPorCard(acoes, cards) {
     const entrou = a.type === "updateCard" ? a.data?.listAfter?.id : a.data?.listAfter?.id || a.data?.list?.id;
     if (!entrou) continue;
     // card criado com data de entrada informada (carga de pedidos antigos): vale a data informada, até alguém mover o card
-    mapa[id] = a.type !== "updateCard" && manual[id] ? manual[id] : Date.parse(a.date);
+    const quando = Date.parse(a.date);
+    // o id do card (ObjectId) guarda o instante de criação: uma ação até 10 min depois dele é a criação (ou gravações do próprio Worker)
+    const criacao = /^[0-9a-f]{24}$/.test(id) ? parseInt(id.slice(0, 8), 16) * 1000 : NaN;
+    const ehCriacao = a.type !== "updateCard" || quando <= criacao + 10 * 60e3;
+    mapa[id] = manual[id] && ehCriacao ? manual[id] : quando;
   }
   for (const c of cards) if (!mapa[c.id]) mapa[c.id] = manual[c.id] || Date.parse(c.dateLastActivity);
   return mapa;

@@ -280,3 +280,12 @@ test("edição do card (descrição/vencimento) não reinicia a entrada na colun
   const mover = { type: "updateCard", date: "2026-11-20T12:00:00Z", data: { card: { id: "c1" }, listAfter: { id: "R" }, listBefore: { id: "G" } } };
   assert.equal(entradasPorCard([mover, edicao, criacao], [card]).c1, Date.parse("2026-11-20T12:00:00Z"));
 });
+
+test("entrada manual vale também quando o Trello registra a criação como mudança de coluna (id do card dá a criação)", () => {
+  const id = Math.floor(br("2026-11-18T22:00:00") / 1000).toString(16).padStart(8, "0") + "0".repeat(16);
+  const card = { id, name: "A · 18 slots", desc: "Entrou na coluna: 18/11/2026 11:26", dateLastActivity: "2026-11-19T01:19:00Z" };
+  const nasc = { type: "updateCard", date: new Date(br("2026-11-18T22:01:08")).toISOString(), data: { card: { id }, listAfter: { id: "G" } } };
+  assert.equal(entradasPorCard([nasc], [card])[id], br("2026-11-18T11:26:00"));
+  const mover = { type: "updateCard", date: new Date(br("2026-11-19T09:00:00")).toISOString(), data: { card: { id }, listAfter: { id: "R" } } };
+  assert.equal(entradasPorCard([mover, nasc], [card])[id], br("2026-11-19T09:00:00")); // movimento real depois vence
+});
