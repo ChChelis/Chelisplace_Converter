@@ -289,3 +289,14 @@ test("entrada manual vale também quando o Trello registra a criação como muda
   const mover = { type: "updateCard", date: new Date(br("2026-11-19T09:00:00")).toISOString(), data: { card: { id }, listAfter: { id: "R" } } };
   assert.equal(entradasPorCard([mover, nasc], [card])[id], br("2026-11-19T09:00:00")); // movimento real depois vence
 });
+
+test("Entrada confirmada em: movimentos de teste antes da confirmação não valem; depois dela, sim", () => {
+  const id = Math.floor(br("2026-11-18T19:48:00") / 1000).toString(16).padStart(8, "0") + "0".repeat(16);
+  const desc = "Entrou na coluna: 18/11/2026 11:26\nEntrada confirmada em: 18/11/2026 22:30";
+  const card = { id, name: "A · 18 slots", desc, dateLastActivity: "2026-11-19T01:19:00Z" };
+  const teste = { type: "updateCard", date: new Date(br("2026-11-18T22:01:00")).toISOString(), data: { card: { id }, listAfter: { id: "G" } } };
+  assert.equal(entradasPorCard([teste], [card])[id], br("2026-11-18T11:26:00")); // teste às 22h01 < confirmação 22h30
+  const real = { type: "updateCard", date: new Date(br("2026-11-19T10:00:00")).toISOString(), data: { card: { id }, listAfter: { id: "R" } } };
+  assert.equal(entradasPorCard([real, teste], [card])[id], br("2026-11-19T10:00:00"));
+  assert.doesNotMatch(avisoMovimento({ cardNome: "x", de: "A", para: "B", card: { name: "A · 18 slots", desc } }).texto, /confirmada/i);
+});

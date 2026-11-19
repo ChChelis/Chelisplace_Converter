@@ -25,9 +25,10 @@ export function lerCard(card) {
   const paginas = parseInt(linha("Páginas"), 10) || 0;
   const entrouEm = dataBR(linha("Entrou na coluna"));
   const prazoManual = dataBR(linha("Prazo"));
+  const confirmadaEm = dataBR(linha("Entrada confirmada em"));
   return {
     id: card.id,
-    entrouEm, prazoManual, paginas,
+    entrouEm, prazoManual, confirmadaEm, paginas,
     slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
     previsao: (desc.match(RE_PREVISAO) || [""])[0].trim(), // linha de prazo/previsão da etapa atual, se houver
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
@@ -104,8 +105,8 @@ export function textoPrevisao(coluna, entradaMs, info, agoraMs) {
 
 // Instante em que o card entrou na coluna atual (a partir das ações do quadro, mais novas primeiro).
 export function entradasPorCard(acoes, cards) {
-  const manual = {};
-  for (const c of cards) { const e = lerCard(c).entrouEm; if (e) manual[c.id] = e; }
+  const info = {};
+  for (const c of cards) { const i = lerCard(c); if (i.entrouEm) info[c.id] = i; }
   const mapa = {};
   for (const a of acoes) {
     const id = a.data?.card?.id;
@@ -113,14 +114,15 @@ export function entradasPorCard(acoes, cards) {
     // só vale mudança de coluna: updateCard precisa de listAfter (outras edições do card, como descrição ou vencimento, não reiniciam o relógio)
     const entrou = a.type === "updateCard" ? a.data?.listAfter?.id : a.data?.listAfter?.id || a.data?.list?.id;
     if (!entrou) continue;
-    // card criado com data de entrada informada (carga de pedidos antigos): vale a data informada, até alguém mover o card
     const quando = Date.parse(a.date);
-    // o id do card (ObjectId) guarda o instante de criação: uma ação até 10 min depois dele é a criação (ou gravações do próprio Worker)
+    // "Entrou na coluna" (data informada) vale até a hora de corte: a "Entrada confirmada em" da descrição ou, na falta dela,
+    // 10 min depois da criação (o id do card, um ObjectId, guarda o instante de criação). Movimentos depois do corte reiniciam o relógio.
     const criacao = /^[0-9a-f]{24}$/.test(id) ? parseInt(id.slice(0, 8), 16) * 1000 : NaN;
-    const ehCriacao = a.type !== "updateCard" || quando <= criacao + 10 * 60e3;
-    mapa[id] = manual[id] && ehCriacao ? manual[id] : quando;
+    const corte = info[id]?.confirmadaEm ?? criacao + 10 * 60e3;
+    const valeManual = info[id] && (a.type !== "updateCard" || quando <= corte);
+    mapa[id] = valeManual ? info[id].entrouEm : quando;
   }
-  for (const c of cards) if (!mapa[c.id]) mapa[c.id] = manual[c.id] || Date.parse(c.dateLastActivity);
+  for (const c of cards) if (!mapa[c.id]) mapa[c.id] = info[c.id]?.entrouEm || Date.parse(c.dateLastActivity);
   return mapa;
 }
 
@@ -229,7 +231,7 @@ export const valorColagem = (info) => Math.round((info.paginas || Math.ceil(info
 // Descrição do card para os avisos: sem as linhas de controle do Worker, o telefone nem o valor cobrado; com valor de colagem e a linha da etapa.
 export function descricaoParaAviso(desc, linha) {
   const info = lerCard({ name: "", desc });
-  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo|Telefone|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
+  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Entrada confirmada em|Prazo|Telefone|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
   if (info.slots || info.paginas) d = setLinha(d, "Valor de colagem", `R$ ${valorColagem(info)}`);
   d = aplicarPrevisao(d, linha);
   if (d.length > 900) d = d.slice(0, 900).trimEnd() + "...";

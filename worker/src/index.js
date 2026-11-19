@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 const T = "https://api.trello.com/1";
 
@@ -78,7 +78,7 @@ async function rotaCard(req, env) {
     // atualização: preserva as linhas de controle do Worker (entrada, prazo manual, previsão) do card atual
     const atual = await trello(env, `/cards/${b.cardId}`, { fields: "desc" });
     let novo = desc;
-    for (const k of ["Entrou na coluna", "Prazo", ...ROTULOS]) {
+    for (const k of ["Entrou na coluna", "Entrada confirmada em", "Prazo", ...ROTULOS]) {
       const m = (atual.desc || "").match(new RegExp("^\\s*" + k + "\\s*:\\s*(.+)$", "im"));
       if (m) novo = setLinha(novo, k, m[1].trim());
     }
@@ -182,6 +182,16 @@ export default {
           });
         }
         return json({ ok: true, atualizados: feitos });
+      }
+      if (acao === "fixar-entradas") { // confirma, agora, a data "Entrou na coluna" dos cards que a têm: movimentos de teste anteriores deixam de valer
+        const q = await carregarQuadro(env), feitos = [], agora = dataHoraBR(Date.now());
+        for (const c of q.cards) {
+          const info = lerCard(c);
+          if (!info.entrouEm || c.dueComplete) continue;
+          await trello(env, `/cards/${c.id}`, { desc: setLinha(c.desc || "", "Entrada confirmada em", agora) }, "PUT");
+          feitos.push({ cliente: info.cliente, entrouNaColuna: new Date(info.entrouEm).toISOString() });
+        }
+        return json({ ok: true, confirmadaEm: agora, cards: feitos });
       }
       if (acao === "teste") { await enviar(env, "Chelisplace Avisos conectado."); return json({ ok: true }); }
       if (acao === "lembretes") { // teste manual: simula o lembrete de retirada (?periodo=manha|tarde)
