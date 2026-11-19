@@ -1,5 +1,5 @@
 // Lógica pura dos avisos (sem rede): leitura de cards, resumo, mensagens, links.
-import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE } from "./prazos.js";
+import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
 import { feriadosNacionais } from "./feriados.js";
 export { feriadosNacionais };
 
@@ -56,6 +56,16 @@ export const dataHoraBR = (ms) => {
 export function pegadaGrafica(entradaMs, info, agoraMs) {
   const liberacao = info.prazoManual && info.entrouEm === entradaMs ? info.prazoManual : fimDiaUtil(entradaMs, 3, EXPEDIENTE.fim);
   return alinharLoja(Math.max(liberacao, agoraMs));
+}
+// Vencimento (due) do card no Trello, que o Power-Up do Google Agenda mostra como evento: a viagem para retirar na gráfica.
+// Evento às 10h do dia da retirada prevista (a retirada em si é prevista para 17h); se as 10h daquele dia já passaram,
+// usa o próprio horário da retirada prevista, para não criar evento no passado.
+export const HORA_VIAGEM = 10 * 60;
+export function vencimentoGrafica(coluna, entradaMs, info, agoraMs) {
+  if (!norm(coluna).includes("grafica")) return null;
+  const pegada = pegadaGrafica(entradaMs, info, agoraMs);
+  const dia10 = pegada - ((new Date(pegada - 3 * 3600e3).getUTCHours() * 60 + new Date(pegada - 3 * 3600e3).getUTCMinutes()) - HORA_VIAGEM) * 60e3;
+  return new Date(dia10 > agoraMs ? dia10 : pegada).toISOString();
 }
 export function linhaPrevisao(coluna, entradaMs, info, agoraMs) {
   const n = norm(coluna);
@@ -292,4 +302,22 @@ export function paraTelegram(t) {
   return esc
     .replace(/(^|[\s(])\*(\S(?:[^*\n]*\S)?)\*(?=$|[\s).,;:!?])/gm, "$1<b>$2</b>")
     .replace(/(^|[\s(])_(\S(?:[^_\n]*\S)?)_(?=$|[\s).,;:!?])/gm, "$1<i>$2</i>");
+}
+
+// Lembretes de viagem para retirar na gráfica: de manhã (10h) os cards com retirada hoje; no fim do expediente (17h) os do
+// próximo dia útil. Usa o vencimento (due) do card, ainda não cumprido, na coluna Gráfica.
+export function lembretesRetirada({ listas, cards, agoraMs, periodo }) {
+  const alvo = periodo === "manha" ? chaveDia(agoraMs) : chaveProximoDiaUtil(agoraMs);
+  const grafica = new Set(listas.filter((l) => norm(l.name).includes("grafica")).map((l) => l.id));
+  const itens = cards.filter((c) => grafica.has(c.idList) && c.due && !c.dueComplete && chaveDia(Date.parse(c.due)) === alvo);
+  if (!itens.length) return null;
+  const [a, m, d] = alvo.split("-");
+  const titulo = periodo === "manha" ? `*RETIRADA NA GRÁFICA HOJE (${d}/${m})*` : `*RETIRADA NA GRÁFICA NO PRÓXIMO DIA ÚTIL (${d}/${m})*`;
+  const linhas = itens.map((c) => {
+    const info = lerCard(c);
+    const ret = (info.previsao.match(/Previsão de retirada da gráfica:\s*\d\d\/\d\d\/\d{4}\s+(\d\d:\d\d)/) || [])[1];
+    const viagem = dataHoraBR(Date.parse(c.due)).slice(11);
+    return `- ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}${info.paginas ? ` · ${info.paginas} páginas` : ""} - viagem a partir das ${viagem}${ret && ret !== viagem ? `, retirada prevista ${ret}` : ""}`;
+  });
+  return [titulo, ...linhas, "", periodo === "manha" ? "_Hoje será preciso fazer a viagem à gráfica._" : "_Planeje a viagem à gráfica para esse dia._"].join("\n");
 }

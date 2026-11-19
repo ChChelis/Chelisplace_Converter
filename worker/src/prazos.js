@@ -2,7 +2,7 @@
 // Funções puras: sem rede, sem segredos. Fins de semana e feriados nacionais não contam.
 const DESLOC = -3 * 3600e3;
 const MIN = 60e3;
-import { ehFeriado } from "./feriados.js";
+import { ehFeriado, chaveData } from "./feriados.js";
 
 export const EXPEDIENTE = { ini: 10 * 60, fim: 17 * 60 }; // 10h–17h
 export const GRAFICA = { ini: 9 * 60, fim: 18 * 60 }; // 9h–18h
@@ -92,3 +92,7 @@ export function atrasado(coluna, entradaMs, agoraMs, slots = 0) {
   const p = prazoFinal(coluna, entradaMs, slots);
   return p !== null && agoraMs > p;
 }
+
+// Chave "AAAA-MM-DD" (Brasília) do dia de `ms` e do próximo dia útil depois dele.
+export const chaveDia = (ms) => chaveData(local(ms));
+export const chaveProximoDiaUtil = (ms) => chaveData(proxDiaUtil(meiaNoite(local(ms))));

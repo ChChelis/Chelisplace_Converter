@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 const T = "https://api.trello.com/1";
 
@@ -35,14 +35,14 @@ async function carregarQuadro(env) {
   const b = env.TRELLO_BOARD_ID;
   const [listas, cards, acoes] = await Promise.all([
     trello(env, `/boards/${b}/lists`, { fields: "name" }),
-    trello(env, `/boards/${b}/cards`, { fields: "name,desc,idList,dateLastActivity,url" }),
+    trello(env, `/boards/${b}/cards`, { fields: "name,desc,idList,dateLastActivity,url,due,dueComplete" }),
     trello(env, `/boards/${b}/actions`, { filter: "updateCard:idList,createCard,copyCard,moveCardToBoard", limit: "1000" }),
   ]);
   return { listas, cards, entradas: entradasPorCard(acoes, cards) };
 }
 
-async function resumo(env, agoraMs, titulo) {
-  const q = await carregarQuadro(env);
+async function resumo(env, agoraMs, titulo, quadro) {
+  const q = quadro || (await carregarQuadro(env));
   const texto = montarResumo({ ...q, agoraMs, titulo });
   await enviar(env, texto, [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]]);
 }
@@ -94,7 +94,8 @@ async function rotaCard(req, env) {
     const entrada = Number.isFinite(t) ? t : Date.now();
     previsao = linhaPrevisao(novos.name, entrada, info, Date.now());
     const descFinal = aplicarPrevisao(desc, previsao);
-    card = await trello(env, "/cards", { idList: novos.id, name, desc: descFinal, pos: "bottom" }, "POST");
+    const due = vencimentoGrafica(novos.name, entrada, lerCard({ name, desc: descFinal }), Date.now());
+    card = await trello(env, "/cards", { idList: novos.id, name, desc: descFinal, pos: "bottom", ...(due ? { due } : {}) }, "POST");
   }
   return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url, previsao }), { headers: { ...h, "content-type": "application/json" } });
 }
@@ -118,9 +119,13 @@ export default {
         const info = lerCard(card);
         const quando = Date.parse(a.date) || Date.now();
         const previsao = linhaPrevisao(a.data.listAfter.name, quando, info, Date.now());
-        if ((previsao || "") !== info.previsao) {
-          await trello(env, `/cards/${a.data.card.id}`, { desc: aplicarPrevisao(card.desc || "", previsao) }, "PUT").catch(() => {});
-        }
+        const params = {};
+        if ((previsao || "") !== info.previsao) params.desc = aplicarPrevisao(card.desc || "", previsao);
+        // Google Agenda (Power-Up): entrando na Gráfica o vencimento vira a retirada prevista; saindo, o vencimento é dado como cumprido
+        const due = vencimentoGrafica(a.data.listAfter.name, quando, info, Date.now());
+        if (due) { params.due = due; params.dueComplete = "false"; }
+        else if (norm(a.data.listBefore.name).includes("grafica")) params.dueComplete = "true";
+        if (Object.keys(params).length) await trello(env, `/cards/${a.data.card.id}`, params, "PUT").catch(() => {});
         const { texto, botoes } = avisoMovimento({
           cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card, previsao,
         });
@@ -132,7 +137,9 @@ export default {
         let previsao = lerCard(card).previsao;
         if (!previsao) { // card feito à mão no Trello: calcula (se a coluna tiver prazo) e grava
           previsao = linhaPrevisao(coluna, Date.parse(a.date) || Date.now(), lerCard(card), Date.now());
-          if (previsao) await trello(env, `/cards/${a.data.card.id}`, { desc: aplicarPrevisao(card.desc || "", previsao) }, "PUT").catch(() => {});
+          const quando = Date.parse(a.date) || Date.now();
+          const due = vencimentoGrafica(coluna, quando, lerCard(card), Date.now());
+          if (previsao || due) await trello(env, `/cards/${a.data.card.id}`, { ...(previsao ? { desc: aplicarPrevisao(card.desc || "", previsao) } : {}), ...(due ? { due } : {}) }, "PUT").catch(() => {});
         }
         const { texto, botoes } = avisoNovo({ card, coluna, previsao });
         await enviar(env, texto, botoes);
@@ -161,7 +168,25 @@ export default {
         const r = await trello(env, "/webhooks", { callbackURL: cb, idModel: env.TRELLO_BOARD_ID, description: "chelisplace-avisos" }, "POST");
         return json({ ok: true, id: r.id });
       }
+      if (acao === "vencimentos") { // grava o vencimento (retirada prevista) nos cards que já estão na Gráfica e ainda não têm
+        const q = await carregarQuadro(env), agora = Date.now(), feitos = [];
+        for (const c of q.cards) {
+          const l = q.listas.find((x) => x.id === c.idList);
+          if (!l || c.due) continue;
+          const info = lerCard(c), due = vencimentoGrafica(l.name, q.entradas[c.id], info, agora);
+          if (!due) continue;
+          await trello(env, `/cards/${c.id}`, { due, dueComplete: "false" }, "PUT");
+          feitos.push({ cliente: info.cliente, vencimento: due });
+        }
+        return json({ ok: true, atualizados: feitos });
+      }
       if (acao === "teste") { await enviar(env, "Chelisplace Avisos conectado."); return json({ ok: true }); }
+      if (acao === "lembretes") { // teste manual: simula o lembrete de retirada (?periodo=manha|tarde)
+        const q = await carregarQuadro(env), per = url.searchParams.get("periodo") === "manha" ? "manha" : "tarde";
+        const aviso = lembretesRetirada({ ...q, agoraMs: Date.now(), periodo: per });
+        if (aviso) await enviar(env, aviso, [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(aviso) }]]);
+        return json({ ok: true, enviado: !!aviso });
+      }
       if (acao === "resumo") { await resumo(env, Date.now(), "*Resumo (teste manual)*"); return json({ ok: true }); }
       return json({ erro: "ação desconhecida" }, 404);
     }
@@ -173,7 +198,10 @@ export default {
     if (!diaUtil(new Date(agora - 3 * 3600e3))) return; // feriado nacional: sem resumos nem alertas
     if (evento.cron === "0 13,20 * * 1-5") {
       const manha = new Date(agora - 3 * 3600e3).getUTCHours() < 12;
-      await resumo(env, agora, manha ? "*Resumo da manhã (10h)*" : "*Resumo do fim do expediente (17h)*");
+      const q = await carregarQuadro(env);
+      await resumo(env, agora, manha ? "*Resumo da manhã (10h)*" : "*Resumo do fim do expediente (17h)*", q);
+      const aviso = lembretesRetirada({ ...q, agoraMs: agora, periodo: manha ? "manha" : "tarde" });
+      if (aviso) await enviar(env, aviso, [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(aviso) }]]);
     } else {
       await verificarAtrasos(env, agora);
     }

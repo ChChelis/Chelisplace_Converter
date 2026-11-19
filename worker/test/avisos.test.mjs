@@ -235,3 +235,36 @@ test("mensagem completa do grupo usa só *negrito* e _itálico_ do WhatsApp, sem
     "*Alterações:*", "- Troca de arte X",
   ].join("\n"));
 });
+
+import { vencimentoGrafica } from "../src/avisos.js";
+test("vencimento do Trello (Google Agenda) só para a Gráfica: retirada prevista às 17h do 3º dia útil", () => {
+  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
+  assert.equal(vencimentoGrafica("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-18T11:26:00")), new Date(br("2026-11-23T10:00:00")).toISOString()); // evento às 10h do dia da retirada
+  assert.equal(vencimentoGrafica("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-23T14:00:00")), new Date(br("2026-11-23T17:00:00")).toISOString()); // 10h já passou: usa a retirada prevista
+  for (const c of ["Novos pedidos", "Montagem", "Retirada", "Colagem", "Finalizado"]) assert.equal(vencimentoGrafica(c, 0, info, 0), null, c);
+});
+test("vencimento respeita o Prazo manual (Cube LLJR: 19/11 17h)", () => {
+  const { desc } = montarCard({ cliente: "L", slots: 86, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
+  const info = lerCard({ id: "x", name: "L · 86 slots", desc });
+  assert.equal(vencimentoGrafica("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-18T12:00:00")), new Date(br("2026-11-19T10:00:00")).toISOString());
+});
+
+import { lembretesRetirada } from "../src/avisos.js";
+test("lembretes de retirada: manhã do dia e véspera (próximo dia útil, pulando feriado e fim de semana)", () => {
+  const listas = [{ id: "G", name: "Gráfica" }, { id: "M", name: "Montagem" }];
+  const due = new Date(br("2026-11-23T10:00:00")).toISOString();
+  const cards = [
+    { id: "a", name: "Rodrigo Grupo · 956 slots", desc: "Páginas: 54\nPrevisão de retirada da gráfica: 23/11/2026 17:00", idList: "G", due, dueComplete: false },
+    { id: "b", name: "Feito · 18 slots", desc: "", idList: "G", due, dueComplete: true },
+    { id: "c", name: "Outra coluna · 18 slots", desc: "", idList: "M", due, dueComplete: false },
+    { id: "d", name: "Outro dia · 18 slots", desc: "", idList: "G", due: new Date(br("2026-11-24T17:00:00")).toISOString(), dueComplete: false },
+  ];
+  const manha = lembretesRetirada({ listas, cards, agoraMs: br("2026-11-23T10:00:00"), periodo: "manha" });
+  assert.match(manha, /\*RETIRADA NA GRÁFICA HOJE \(23\/11\)\*\n- Rodrigo Grupo · 956 slots · 54 páginas - viagem a partir das 10:00, retirada prevista 17:00/);
+  assert.doesNotMatch(manha, /Feito|Outra coluna|Outro dia/);
+  const vespera = lembretesRetirada({ listas, cards, agoraMs: br("2026-11-19T17:00:00"), periodo: "tarde" }); // qui 19 -> sex 20 é feriado -> seg 23
+  assert.match(vespera, /PRÓXIMO DIA ÚTIL \(23\/11\)/);
+  assert.match(vespera, /Planeje a viagem/);
+  assert.equal(lembretesRetirada({ listas, cards, agoraMs: br("2026-11-18T17:00:00"), periodo: "tarde" }), null); // véspera de 19/11: nada
+  assert.doesNotMatch(vespera, /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u);
+});
