@@ -37,6 +37,16 @@ const Drive = (() => {
   const conectado = () => !!token;
   const sair = () => { if (token && window.google) google.accounts.oauth2.revoke(token, () => {}); token = null; raizId = null; };
 
+  // token vigente (renova se preciso), para o Worker confirmar quem está usando a página
+  async function tokenAtual() {
+    if (!token) return null;
+    if (Date.now() > expira && cliente) await new Promise((res, rej) => {
+      cliente.callback = (r) => (r.error ? rej(new Error(r.error)) : ((token = r.access_token), (expira = Date.now() + (r.expires_in - 60) * 1000), res()));
+      cliente.requestAccessToken({ prompt: "" });
+    });
+    return token;
+  }
+
   async function req(url, opts = {}) {
     if (!token) throw new Error("Entre com o Google primeiro.");
     if (Date.now() > expira && cliente) await new Promise((res, rej) => {
@@ -95,5 +105,5 @@ const Drive = (() => {
     return (await r.json()).id;
   }
 
-  return { entrar, conectado, sair, listar, raiz, pedidos, baixar, criarPasta, copiar, mover, enviar, PASTA, NOME_RAIZ };
+  return { entrar, conectado, tokenAtual, sair, listar, raiz, pedidos, baixar, criarPasta, copiar, mover, enviar, PASTA, NOME_RAIZ };
 })();

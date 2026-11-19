@@ -4,6 +4,7 @@
 import { diaUtil } from "./prazos.js";
 import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
+import { autorizado } from "./auth.js";
 import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEventos, estadoOAuth, urlAutorizacao, trocarCodigo } from "./agenda.js";
 
 const T = "https://api.trello.com/1";
@@ -94,8 +95,8 @@ async function rotaCard(req, env) {
   const h = cors(origem);
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
   if (req.method !== "POST") return new Response("método inválido", { status: 405, headers: h });
-  if (!env.PAGINA_SECRET || req.headers.get("authorization") !== `Bearer ${env.PAGINA_SECRET}`)
-    return new Response(JSON.stringify({ erro: "senha incorreta" }), { status: 401, headers: { ...h, "content-type": "application/json" } });
+  if (!(await autorizado(req, env)))
+    return new Response(JSON.stringify({ erro: "não autorizado: entre com o Google (conta autorizada) ou use a senha da página" }), { status: 401, headers: { ...h, "content-type": "application/json" } });
   const b = await req.json().catch(() => null);
   if (!b) return new Response(JSON.stringify({ erro: "corpo inválido" }), { status: 400, headers: { ...h, "content-type": "application/json" } });
   const { name, desc } = montarCard(b);

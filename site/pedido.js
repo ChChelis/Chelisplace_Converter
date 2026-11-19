@@ -897,11 +897,16 @@ checarVersao(); setInterval(checarVersao, 5 * 60 * 1000);
 
 
 // ---------- Trello: cria/atualiza o card do pedido pelo Worker (senha só neste navegador) ----------
-["t-url", "t-senha"].forEach((id) => { $("#" + id).value = guardado.ler(id); $("#" + id).addEventListener("input", () => guardado.gravar(id, $("#" + id).value.trim())); });
+const WORKER_PADRAO = "https://chelisplace-avisos.shrill-mountain-e326.workers.dev"; // endereço público (não é segredo)
+["t-url", "t-senha"].forEach((id) => { $("#" + id).value = guardado.ler(id) || (id === "t-url" ? WORKER_PADRAO : ""); $("#" + id).addEventListener("input", () => guardado.gravar(id, $("#" + id).value.trim())); });
+// Conectado ao Google (Drive): o Worker confere a conta, sem senha. Sem Drive, vale a senha da página.
+setInterval(() => { const el = $("#t-modo"); if (el) el.textContent = Drive.conectado() ? "Conta Google conectada: não precisa de senha." : "Sem Google conectado: use a senha da página."; }, 1000);
 $("#t-criar").onclick = async () => {
   const av = $("#t-aviso"), btn = $("#t-criar");
-  const base = $("#t-url").value.trim().replace(/\/+$/, ""), senha = $("#t-senha").value.trim();
-  if (!/^https:\/\//.test(base) || !senha) { av.textContent = " Preencha o endereço do Worker (https://…) e a senha."; $("#t-det").open = true; return; }
+  const base = ($("#t-url").value.trim() || WORKER_PADRAO).replace(/\/+$/, ""), senha = $("#t-senha").value.trim();
+  const credencial = Drive.conectado() ? await Drive.tokenAtual().catch(() => null) : null;
+  const bearer = credencial || senha;
+  if (!/^https:\/\//.test(base) || !bearer) { av.textContent = " Conecte o Google (Drive) ou preencha a senha da página."; $("#t-det").open = true; return; }
   if (!ultimoOrc || !(valorFinal() > 0)) { av.textContent = " Faça o orçamento antes (valor cobrado e slots)."; return; }
   const slots = ultimoOrc.slots, alts = pedido.alteracoes.filter((a) => a.titulo.trim()).map((a) => `${a.titulo.trim()}: ${a.itens.map((i) => i.texto.trim()).filter(Boolean).join("; ")}`);
   const corpo = {
@@ -911,7 +916,7 @@ $("#t-criar").onclick = async () => {
   };
   btn.disabled = true; av.textContent = " Enviando…";
   try {
-    const r = await fetch(base + "/card", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + senha }, body: JSON.stringify(corpo) });
+    const r = await fetch(base + "/card", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + bearer }, body: JSON.stringify(corpo) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.erro || "erro " + r.status);
     pedido.cardId = d.id; btn.textContent = "Atualizar card no Trello";
