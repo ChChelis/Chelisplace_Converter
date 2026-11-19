@@ -126,50 +126,54 @@ test("Prazo manual vale na coluna de origem e some depois de um movimento", () =
   assert.notEqual(prazoDe("Gráfica", br("2026-11-19T10:00:00"), info), br("2026-11-19T17:00:00")); // card foi movido
 });
 
-import { previsaoEntrega, setLinha, textoPrevisao, dataHoraBR } from "../src/avisos.js";
-test("previsão: mesmo expediente até a gráfica, retirada no mesmo expediente e colagem na janela do colador", () => {
-  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
-  const p = previsaoEntrega("Novos pedidos", br("2026-11-18T10:00:00"), info, br("2026-11-18T10:00:00"));
-  assert.equal(p, br("2026-11-23T20:00:00")); // Novos/Montagem/envio no mesmo expediente; gráfica libera seg 23 (20/11 feriado) às 17h; 3h de colagem
+import { linhaPrevisao, aplicarPrevisao, pegadaGrafica, setLinha, dataHoraBR } from "../src/avisos.js";
+const info18 = () => lerCard({ id: "x", name: "A · 18 slots", desc: "" });
+test("entrar na Montagem: só o prazo limite para montar (1 expediente)", () => {
+  assert.equal(linhaPrevisao("Montagem", br("2026-11-18T10:00:00"), info18(), 0), "Prazo limite para montar: 18/11/2026 17:00");
+  assert.equal(linhaPrevisao("Montagem", br("2026-11-18T15:00:00"), info18(), 0), "Prazo limite para montar: 19/11/2026 15:00");
 });
-test("previsão a partir da Gráfica respeita o Prazo manual e a Colagem por página (5 páginas = 90 slots)", () => {
+test("entrar na Gráfica: previsão de retirada = 3º dia útil (entrada = dia 1) às 17h, mesmo expediente", () => {
+  assert.equal(linhaPrevisao("Gráfica", br("2026-11-18T11:26:00"), info18(), br("2026-11-18T11:26:00")), "Previsão de retirada da gráfica: 23/11/2026 17:00");
+});
+test("Gráfica com Prazo manual e prazo vencido (parte de agora)", () => {
   const { desc } = montarCard({ cliente: "L", slots: 86, paginas: 5, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
   const info = lerCard({ id: "x", name: "L · 86 slots", desc });
-  assert.equal(info.slotsPrazo, 90);
-  assert.equal(previsaoEntrega("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-19T09:00:00")), br("2026-11-19T20:00:00")); // libera 19/11 17h (prazo manual) + 3h de colagem
+  assert.equal(pegadaGrafica(br("2026-11-18T11:26:00"), info, br("2026-11-19T09:00:00")), br("2026-11-19T17:00:00"));
+  assert.equal(pegadaGrafica(br("2026-11-18T11:26:00"), info18(), br("2026-11-30T12:00:00")), br("2026-11-30T12:00:00")); // já vencido: agora (dentro do expediente)
 });
-test("prazo da coluna atual vencido: etapas seguintes partem de agora", () => {
-  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
-  const agora = br("2026-12-01T10:00:00");
-  const p = previsaoEntrega("Montagem", br("2026-11-18T10:00:00"), info, agora);
-  assert.ok(p > agora);
+test("entrar na Colagem: prazo máximo de colagem pelo tamanho (Rodrigo: 54 páginas = 27h na janela do colador)", () => {
+  const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260 });
+  const info = lerCard({ id: "x", name: "Rodrigo Grupo · 956 slots", desc });
+  assert.equal(linhaPrevisao("Colagem", br("2026-11-23T17:00:00"), info, 0), "Prazo máximo de colagem: 25/11/2026 22:00");
 });
-test("sem previsão para colunas fora do fluxo; pronto/finalizado viram texto", () => {
-  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
-  assert.equal(previsaoEntrega("Qualquer", 0, info, 0), null);
-  assert.equal(textoPrevisao("Pronto para entrega", 0, info, 0), "pronto para entrega");
-  assert.equal(textoPrevisao("Finalizado", 0, info, 0), "entregue");
+test("sem previsão em Novos pedidos, Retirada, Pronto para entrega e Finalizado", () => {
+  for (const c of ["Novos pedidos", "Retirada", "Pronto para entrega", "Finalizado", "Qualquer"]) assert.equal(linhaPrevisao(c, 0, info18(), 0), null, c);
+});
+test("aplicarPrevisao troca a linha da etapa anterior e apaga quando não há mais", () => {
+  const d = "A: 1\nPrazo limite para montar: x\n\nAlterações:\n- z";
+  assert.equal(aplicarPrevisao(d, "Previsão de retirada da gráfica: y"), "A: 1\nPrevisão de retirada da gráfica: y\n\nAlterações:\n- z");
+  assert.equal(aplicarPrevisao("A: 1\nPrevisão de entrega: antiga", null), "A: 1");
 });
 test("setLinha substitui ou acrescenta antes das Alterações", () => {
-  assert.equal(setLinha("A: 1\nPrevisão de entrega: x", "Previsão de entrega", "y"), "A: 1\nPrevisão de entrega: y");
-  assert.equal(setLinha("A: 1\n\nAlterações:\n- z", "Previsão de entrega", "y"), "A: 1\nPrevisão de entrega: y\n\nAlterações:\n- z");
+  assert.equal(setLinha("A: 1\nB: x", "B", "y"), "A: 1\nB: y");
+  assert.equal(setLinha("A: 1\n\nAlterações:\n- z", "B", "y"), "A: 1\nB: y\n\nAlterações:\n- z");
   assert.equal(setLinha("A: 1", "B", "2"), "A: 1\nB: 2");
 });
 test("aviso de movimento e de novo pedido mostram a previsão (vai no texto encaminhado ao grupo)", () => {
-  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc: "Telefone: +55 31 9" }, previsao: "27/11/2026 13:00" });
-  assert.match(m.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
-  assert.match(decodeURIComponent(m.botoes[1][0].url), /Previsão de entrega: 27\/11\/2026 13:00/);
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc: "Telefone: +55 31 9" }, previsao: "Previsão de retirada da gráfica: 23/11/2026 17:00" });
+  assert.match(m.texto, /Previsão de retirada da gráfica: 23\/11\/2026 17:00/);
+  assert.match(decodeURIComponent(m.botoes[1][0].url), /Previsão de retirada da gráfica: 23\/11\/2026 17:00/);
   assert.doesNotMatch(decodeURIComponent(m.botoes[0][0].url), /Previsão/); // mensagem ao cliente não leva
-  const n = avisoNovo({ card: { name: "Ana · 18 slots", desc: "Previsão de entrega: 27/11/2026 13:00" }, coluna: "Novos pedidos" });
-  assert.match(n.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
+  const n = avisoNovo({ card: { name: "Ana · 18 slots", desc: "Prazo limite para montar: 18/11/2026 17:00" }, coluna: "Montagem" });
+  assert.match(n.texto, /Prazo limite para montar: 18\/11\/2026 17:00/);
 });
 test("dataHoraBR formata em Brasília", () => assert.equal(dataHoraBR(br("2026-11-27T13:00:00")), "27/11/2026 13:00"));
 
 test("avisos não usam emojis e trazem a descrição do card sem linhas de controle", () => {
   const desc = "Cliente: Ana\nTelefone: +55 31 9\nSlots: 18\nPáginas: 1\nValor cobrado: R$ 30,00\nEntrou na coluna: 18/11/2026 11:26\nPrazo: 19/11/2026 17:00\nPrevisão de entrega: antiga\n\nAlterações:\n- Troca de arte";
-  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc }, previsao: "27/11/2026 13:00" });
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc }, previsao: "Prazo máximo de colagem: 27/11/2026 13:00" });
   assert.match(m.texto, /Dados do pedido:\nCliente: Ana\nTelefone: \+55 31 9/);
-  assert.match(m.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
+  assert.match(m.texto, /Prazo máximo de colagem: 27\/11\/2026 13:00/);
   assert.match(m.texto, /- Troca de arte/);
   assert.doesNotMatch(m.texto, /Entrou na coluna|Prazo:|antiga/);
   const emoji = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{25A0}-\u{25FF}]/u;
@@ -187,14 +191,9 @@ test("link do grupo cabe no limite de URL do Telegram mesmo com texto longo e ac
   assert.match(url, /^https:\/\/wa\.me\/\?text=/);
 });
 
-test("Rodrigo Grupo (956 slots, 54 páginas, na Gráfica desde 18/11 11:26): sai seg 23 às 17h e a colagem de 27h termina qua 25/11 às 22h", () => {
-  const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260, entrouEm: "2026-11-18T11:26:00-03:00" });
-  const info = lerCard({ id: "x", name: "Rodrigo Grupo · 956 slots", desc });
-  assert.equal(previsaoEntrega("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-19T10:00:00")), br("2026-11-25T22:00:00"));
-});
 test("mensagem interna: sem valor cobrado, com valor de colagem (páginas x 18 x 0,13)", () => {
   const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260 });
-  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Rodrigo Grupo · 956 slots", desc }, previsao: "25/11/2026 22:00" });
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Rodrigo Grupo · 956 slots", desc }, previsao: "Prazo máximo de colagem: 25/11/2026 22:00" });
   assert.doesNotMatch(m.texto, /Valor cobrado|1\.?260/);
   assert.match(m.texto, /Valor de colagem: R\$ 126/);
   assert.match(desc, /Valor cobrado: R\$ 1260,00/); // o card mantém o valor cobrado

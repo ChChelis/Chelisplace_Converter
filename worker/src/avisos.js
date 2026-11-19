@@ -5,6 +5,10 @@ export { feriadosNacionais };
 
 export const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+// Linhas de prazo/previsão por etapa (uma só aparece no card, conforme a coluna atual).
+export const ROTULOS = ["Prazo limite para montar", "Previsão de retirada da gráfica", "Prazo máximo de colagem", "Previsão de entrega"];
+const RE_PREVISAO = new RegExp("^\\s*(?:" + ROTULOS.join("|") + ")\\s*:.*$", "im");
+
 // Dados que a página grava no card (título "Cliente · N slots"; linhas "Chave: valor" na descrição).
 export function lerCard(card) {
   const desc = card.desc || "";
@@ -25,7 +29,7 @@ export function lerCard(card) {
     id: card.id,
     entrouEm, prazoManual, paginas,
     slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
-    previsao: linha("Previsão de entrega"),
+    previsao: (desc.match(RE_PREVISAO) || [""])[0].trim(), // linha de prazo/previsão da etapa atual, se houver
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
     telefone: linha("Telefone"),
     slots,
@@ -45,25 +49,29 @@ export const dataHoraBR = (ms) => {
   return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 };
 
-// Previsão de entrega = fim da Colagem. Novos pedidos, Montagem e envio à gráfica acontecem no mesmo expediente da loja;
-// a gráfica libera ao fim do 3º dia útil (17h, ainda no expediente da loja); a retirada é no mesmo expediente da liberação
-// ou no seguinte; depois soma-se a colagem pelo tamanho do pedido, na janela do colador. Se um prazo já venceu, parte de "agora".
-export function previsaoEntrega(coluna, entradaMs, info, agoraMs) {
+// O que informar ao entrar em cada coluna (depois da Colagem e antes da Montagem não há previsão):
+//  Montagem -> prazo limite para montar; Gráfica -> previsão de retirada da gráfica; Colagem -> prazo máximo de colagem.
+// A retirada da gráfica: a gráfica libera ao fim do 3º dia útil (entrada = dia 1) às 17h, ainda no expediente da loja, e a
+// retirada é no mesmo expediente ou no seguinte. Prazo já vencido: a previsão parte de "agora".
+export function pegadaGrafica(entradaMs, info, agoraMs) {
+  const liberacao = info.prazoManual && info.entrouEm === entradaMs ? info.prazoManual : fimDiaUtil(entradaMs, 3, EXPEDIENTE.fim);
+  return alinharLoja(Math.max(liberacao, agoraMs));
+}
+export function linhaPrevisao(coluna, entradaMs, info, agoraMs) {
   const n = norm(coluna);
   const slots = info.slotsPrazo ?? info.slots;
-  let pegada; // quando o pedido é retirado da gráfica e segue para a colagem
-  if (n.includes("novo") || n.includes("montagem")) {
-    const inicio = alinharLoja(Math.max(entradaMs, agoraMs));
-    pegada = alinharLoja(fimDiaUtil(inicio, 3, EXPEDIENTE.fim));
-  } else if (n.includes("grafica")) {
-    const liberacao = info.prazoManual && info.entrouEm === entradaMs ? info.prazoManual : fimDiaUtil(entradaMs, 3, EXPEDIENTE.fim);
-    pegada = alinharLoja(Math.max(liberacao, agoraMs));
-  } else if (n.includes("retirada")) {
-    pegada = alinharLoja(Math.max(entradaMs, agoraMs));
-  } else if (n.includes("colagem")) {
-    return Math.max(somarUtil(entradaMs, minutosColagem(slots), COLADOR), agoraMs);
-  } else return null;
-  return somarUtil(pegada, minutosColagem(slots), COLADOR);
+  if (n.includes("montagem")) return `${ROTULOS[0]}: ${dataHoraBR(prazoDe(coluna, entradaMs, info))}`;
+  if (n.includes("grafica")) return `${ROTULOS[1]}: ${dataHoraBR(pegadaGrafica(entradaMs, info, agoraMs))}`;
+  if (n.includes("colagem")) return `${ROTULOS[2]}: ${dataHoraBR(somarUtil(entradaMs, minutosColagem(slots), COLADOR))}`;
+  return null;
+}
+
+// Tira as linhas de prazo/previsão e, se houver, coloca a da etapa atual.
+export function aplicarPrevisao(desc, linha) {
+  let d = (desc || "").split("\n").filter((l) => !RE_PREVISAO.test(l)).join("\n");
+  if (!linha) return d.trimEnd();
+  const [chave, ...resto] = linha.split(": ");
+  return setLinha(d.trimEnd(), chave, resto.join(": "));
 }
 
 // Substitui (ou acrescenta) uma linha "Chave: valor" na descrição.
@@ -172,8 +180,7 @@ export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
       const atr = prazo !== null && agoraMs > prazo;
       total++; if (atr) atrasados++;
       const extra = atr ? ` - ATRASADO (prazo era ${fmtBR(prazo)})` : "";
-      const pv = previsaoEntrega(l.name, ent, info, agoraMs);
-      linhas.push(`- ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} - há ${duracao(agoraMs - ent)}${extra}${pv ? ` - entrega prevista ${fmtBR(pv).slice(0, 5)}` : ""}`);
+      linhas.push(`- ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} - há ${duracao(agoraMs - ent)}${extra}`);
     }
   }
   if (!total) linhas.push("", "Nenhum pedido no quadro.");
@@ -204,17 +211,17 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
 export const COLAGEM_POR_SLOT = 0.13;
 export const valorColagem = (info) => Math.round((info.paginas || Math.ceil(info.slots / 18)) * 18 * COLAGEM_POR_SLOT);
 
-// Descrição do card para os avisos: sem as linhas de controle do Worker nem o valor cobrado; com valor de colagem e previsão atual.
-export function descricaoParaAviso(desc, previsao) {
+// Descrição do card para os avisos: sem as linhas de controle do Worker nem o valor cobrado; com valor de colagem e a linha da etapa.
+export function descricaoParaAviso(desc, linha) {
   const info = lerCard({ name: "", desc });
   let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
   if (info.slots || info.paginas) d = setLinha(d, "Valor de colagem", `R$ ${valorColagem(info)}`);
-  if (previsao) d = setLinha(d, "Previsão de entrega", previsao);
+  d = aplicarPrevisao(d, linha);
   return d.length > 900 ? d.slice(0, 900).trimEnd() + "..." : d;
 }
 
 // Texto do aviso de movimento de card + botões opcionais (sem emojis: colam mal no WhatsApp).
-export function avisoMovimento({ cardNome, de, para, card, previsao }) {
+export function avisoMovimento({ cardNome, de, para, card, previsao }) { // previsao: linha "Rótulo: data" ou null
   const info = lerCard(card || { name: cardNome, desc: "" });
   const dados = descricaoParaAviso(card?.desc, previsao);
   const texto = `PEDIDO MOVIDO: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nDe "${de}" para "${para}".` + (dados ? `\n\nDados do pedido:\n${dados}` : "");
@@ -267,7 +274,7 @@ export function montarCard(b) {
 // Aviso de card novo (criado pela página ou à mão no Trello).
 export function avisoNovo({ card, coluna, previsao }) {
   const info = lerCard(card);
-  const dados = descricaoParaAviso(card.desc, previsao || info.previsao);
+  const dados = descricaoParaAviso(card.desc, previsao === undefined ? info.previsao : previsao);
   const texto = `NOVO PEDIDO: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna "${coluna}".` + (dados ? `\n\nDados do pedido:\n${dados}` : "");
   return { texto, botoes: [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]] };
 }
