@@ -165,8 +165,14 @@ export default {
       }
       if (acao === "registrar-webhook") {
         const cb = `${url.origin}/trello/${env.ADMIN_SECRET}`;
+        // remove os webhooks antigos deste Worker (por exemplo, com a senha anterior no endereço) antes de criar o novo
+        const antigos = await trello(env, `/tokens/${env.TRELLO_TOKEN}/webhooks`);
+        const removidos = [];
+        for (const w of antigos) {
+          if (w.description === "chelisplace-avisos") { await trello(env, `/webhooks/${w.id}`, {}, "DELETE"); removidos.push(w.id); }
+        }
         const r = await trello(env, "/webhooks", { callbackURL: cb, idModel: env.TRELLO_BOARD_ID, description: "chelisplace-avisos" }, "POST");
-        return json({ ok: true, id: r.id });
+        return json({ ok: true, id: r.id, antigosRemovidos: removidos.length });
       }
       if (acao === "vencimentos") { // grava o vencimento (retirada prevista) nos cards que já estão na Gráfica e ainda não têm
         const q = await carregarQuadro(env), agora = Date.now(), feitos = [], refazer = url.searchParams.get("refazer") === "1", daDescricao = url.searchParams.get("usarDescricao") === "1";
