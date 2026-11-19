@@ -1,5 +1,5 @@
 // Lógica pura dos avisos (sem rede): leitura de cards, resumo, mensagens, links.
-import { prazoFinal, atrasado } from "./prazos.js";
+import { prazoFinal, atrasado, somarUtil, regraDaColuna } from "./prazos.js";
 import { feriadosNacionais } from "./feriados.js";
 export { feriadosNacionais };
 
@@ -18,11 +18,14 @@ export function lerCard(card) {
     const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
     return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], (+m[4] || 0) + 3, +m[5] || 0) : null; // hora de Brasília -> UTC
   };
+  const paginas = parseInt(linha("Páginas"), 10) || 0;
   const entrouEm = dataBR(linha("Entrou na coluna"));
   const prazoManual = dataBR(linha("Prazo"));
   return {
     id: card.id,
-    entrouEm, prazoManual,
+    entrouEm, prazoManual, paginas,
+    slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
+    previsao: linha("Previsão de entrega"),
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
     telefone: linha("Telefone"),
     slots,
@@ -34,7 +37,49 @@ export function lerCard(card) {
 // (entrada = a data "Entrou na coluna"); depois de qualquer movimento volta a regra da coluna.
 export function prazoDe(coluna, entradaMs, info) {
   if (info.prazoManual && info.entrouEm && info.entrouEm === entradaMs) return info.prazoManual;
-  return prazoFinal(coluna, entradaMs, info.slots);
+  return prazoFinal(coluna, entradaMs, info.slotsPrazo ?? info.slots);
+}
+
+export const dataHoraBR = (ms) => {
+  const d = new Date(ms - 3 * 3600e3), p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+};
+
+// Etapas na ordem do fluxo; "Pronto para entrega" e "Finalizado" já estão depois da Colagem.
+export const ETAPAS = ["Novos pedidos", "Montagem", "Gráfica", "Retirada", "Colagem"];
+
+// Previsão de entrega = fim da Colagem: prazo da coluna atual + etapas seguintes encadeadas em horário útil.
+// Se o prazo da coluna atual já passou, as etapas seguintes partem de "agora".
+export function previsaoEntrega(coluna, entradaMs, info, agoraMs) {
+  const n = norm(coluna);
+  const i = ETAPAS.findIndex((e) => n.includes(norm(e).split(" ")[0].slice(0, 5)));
+  if (i < 0) return null;
+  let t = prazoDe(coluna, entradaMs, info);
+  if (t === null) return null;
+  t = Math.max(t, agoraMs);
+  for (const nome of ETAPAS.slice(i + 1)) {
+    const r = regraDaColuna(nome, info.slotsPrazo ?? info.slots);
+    t = somarUtil(t, r.min, r.janela);
+  }
+  return t;
+}
+
+// Substitui (ou acrescenta) uma linha "Chave: valor" na descrição.
+export function setLinha(desc, chave, valor) {
+  const re = new RegExp("^\\s*" + chave + "\\s*:.*$", "im");
+  const nova = `${chave}: ${valor}`;
+  if (re.test(desc)) return desc.replace(re, nova);
+  const i = desc.indexOf("\n\nAlterações:");
+  return i >= 0 ? desc.slice(0, i) + "\n" + nova + desc.slice(i) : (desc ? desc + "\n" : "") + nova;
+}
+
+// Texto da previsão de um card numa coluna: data, "pronto" ou "entregue".
+export function textoPrevisao(coluna, entradaMs, info, agoraMs) {
+  const n = norm(coluna);
+  if (n.includes("finalizad")) return "entregue";
+  if (n.includes("pronto")) return "pronto para entrega";
+  const p = previsaoEntrega(coluna, entradaMs, info, agoraMs);
+  return p === null ? null : dataHoraBR(p);
 }
 
 // Instante em que o card entrou na coluna atual (a partir das ações do quadro, mais novas primeiro).
@@ -122,7 +167,8 @@ export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
       const atr = prazo !== null && agoraMs > prazo;
       total++; if (atr) atrasados++;
       const extra = atr ? ` ⚠️ ATRASADO (prazo era ${fmtBR(prazo)})` : "";
-      linhas.push(`• ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} — há ${duracao(agoraMs - ent)}${extra}`);
+      const pv = previsaoEntrega(l.name, ent, info, agoraMs);
+      linhas.push(`• ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""} — há ${duracao(agoraMs - ent)}${extra}${pv ? ` — entrega ~ ${fmtBR(pv).slice(0, 5)}` : ""}`);
     }
   }
   if (!total) linhas.push("", "Nenhum pedido no quadro.");
@@ -150,9 +196,9 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
 }
 
 // Texto do aviso de movimento de card + botões opcionais.
-export function avisoMovimento({ cardNome, de, para, card }) {
+export function avisoMovimento({ cardNome, de, para, card, previsao }) {
   const info = lerCard(card || { name: cardNome, desc: "" });
-  const texto = `📦 ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\n${de} → ${para}`;
+  const texto = `📦 ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\n${de} → ${para}${previsao ? `\nPrevisão de entrega: ${previsao}` : ""}`;
   const botoes = [];
   const gerar = msgClientePorColuna(para);
   if (gerar) {
@@ -200,8 +246,8 @@ export function montarCard(b) {
 }
 
 // Aviso de card novo (criado pela página ou à mão no Trello).
-export function avisoNovo({ card, coluna }) {
+export function avisoNovo({ card, coluna, previsao }) {
   const info = lerCard(card);
-  const texto = `🆕 Novo pedido: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna: ${coluna}`;
+  const texto = `🆕 Novo pedido: ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nColuna: ${coluna}${previsao || info.previsao ? `\nPrevisão de entrega: ${previsao || info.previsao}` : ""}`;
   return { texto, botoes: [[{ text: "Encaminhar ao grupo do WhatsApp", url: linkWaGrupo(texto) }]] };
 }

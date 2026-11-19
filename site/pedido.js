@@ -915,7 +915,7 @@ $("#t-criar").onclick = async () => {
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.erro || "erro " + r.status);
     pedido.cardId = d.id; btn.textContent = "Atualizar card no Trello";
-    av.innerHTML = ` Card ${corpo.cardId ? "atualizado" : "criado"}: <a href="${esc(d.url)}" target="_blank" rel="noopener">abrir no Trello</a>`;
+    av.innerHTML = ` Card ${corpo.cardId ? "atualizado" : "criado"}: <a href="${esc(d.url)}" target="_blank" rel="noopener">abrir no Trello</a>${d.previsao ? ` · previsão de entrega: <b>${esc(d.previsao)}</b>` : ""}`;
   } catch (e) { av.textContent = " Não deu: " + e.message; }
   btn.disabled = false;
 };

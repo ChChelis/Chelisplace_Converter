@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, textoPrevisao } from "./avisos.js";
 
 const T = "https://api.trello.com/1";
 
@@ -73,17 +73,30 @@ async function rotaCard(req, env) {
   const b = await req.json().catch(() => null);
   if (!b) return new Response(JSON.stringify({ erro: "corpo inválido" }), { status: 400, headers: { ...h, "content-type": "application/json" } });
   const { name, desc } = montarCard(b);
-  let card;
+  let card, previsao = null;
   if (b.cardId && /^[0-9a-f]{24}$/.test(b.cardId)) {
-    card = await trello(env, `/cards/${b.cardId}`, { name, desc }, "PUT");
+    // atualização: preserva as linhas de controle do Worker (entrada, prazo manual, previsão) do card atual
+    const atual = await trello(env, `/cards/${b.cardId}`, { fields: "desc" });
+    let novo = desc;
+    for (const k of ["Entrou na coluna", "Prazo", "Previsão de entrega"]) {
+      const m = (atual.desc || "").match(new RegExp("^\\s*" + k + "\\s*:\\s*(.+)$", "im"));
+      if (m) novo = setLinha(novo, k, m[1].trim());
+    }
+    card = await trello(env, `/cards/${b.cardId}`, { name, desc: novo }, "PUT");
+    previsao = lerCard({ name, desc: novo }).previsao || null;
   } else {
     const listas = await trello(env, `/boards/${env.TRELLO_BOARD_ID}/lists`, { fields: "name" });
     const alvo = norm(String(b.coluna || "novo"));
     const novos = listas.find((l) => norm(l.name).includes(alvo));
     if (!novos) return new Response(JSON.stringify({ erro: `coluna '${String(b.coluna || "Novos pedidos").slice(0, 40)}' não encontrada`, colunas: listas.map((l) => l.name) }), { status: 500, headers: { ...h, "content-type": "application/json" } });
-    card = await trello(env, "/cards", { idList: novos.id, name, desc, pos: "bottom" }, "POST");
+    const info = lerCard({ name, desc });
+    const t = b.entrouEm ? (typeof b.entrouEm === "number" ? b.entrouEm : Date.parse(b.entrouEm)) : NaN;
+    const entrada = Number.isFinite(t) ? t : Date.now();
+    previsao = textoPrevisao(novos.name, entrada, info, Date.now());
+    const descFinal = previsao ? setLinha(desc, "Previsão de entrega", previsao) : desc;
+    card = await trello(env, "/cards", { idList: novos.id, name, desc: descFinal, pos: "bottom" }, "POST");
   }
-  return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url }), { headers: { ...h, "content-type": "application/json" } });
+  return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url, previsao }), { headers: { ...h, "content-type": "application/json" } });
 }
 
 const json = (o, s = 200) => new Response(JSON.stringify(o, null, 2), { status: s, headers: { "content-type": "application/json; charset=utf-8" } });
@@ -101,14 +114,27 @@ export default {
       const a = corpo?.action;
       if (a?.type === "updateCard" && a.data?.listBefore && a.data?.listAfter) {
         const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc" }).catch(() => ({ name: a.data.card.name, desc: "" }));
+        // recalcula a previsão de entrega a partir da coluna nova e grava no card
+        const info = lerCard(card);
+        const quando = Date.parse(a.date) || Date.now();
+        const previsao = textoPrevisao(a.data.listAfter.name, quando, info, Date.now());
+        if (previsao && previsao !== info.previsao) {
+          await trello(env, `/cards/${a.data.card.id}`, { desc: setLinha(card.desc || "", "Previsão de entrega", previsao) }, "PUT").catch(() => {});
+        }
         const { texto, botoes } = avisoMovimento({
-          cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card,
+          cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card, previsao,
         });
         await enviar(env, texto, botoes);
       }
       if ((a?.type === "createCard" || a?.type === "copyCard") && a.data?.card?.id) {
         const card = await trello(env, `/cards/${a.data.card.id}`, { fields: "name,desc" }).catch(() => ({ id: a.data.card.id, name: a.data.card.name, desc: "" }));
-        const { texto, botoes } = avisoNovo({ card, coluna: a.data.list?.name || "?" });
+        const coluna = a.data.list?.name || "?";
+        let previsao = lerCard(card).previsao;
+        if (!previsao) { // card feito à mão no Trello: calcula e grava
+          previsao = textoPrevisao(coluna, Date.parse(a.date) || Date.now(), lerCard(card), Date.now());
+          if (previsao) await trello(env, `/cards/${a.data.card.id}`, { desc: setLinha(card.desc || "", "Previsão de entrega", previsao) }, "PUT").catch(() => {});
+        }
+        const { texto, botoes } = avisoNovo({ card, coluna, previsao });
         await enviar(env, texto, botoes);
       }
       return new Response("ok");

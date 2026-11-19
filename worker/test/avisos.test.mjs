@@ -125,3 +125,42 @@ test("Prazo manual vale na coluna de origem e some depois de um movimento", () =
   assert.equal(prazoDe("Gráfica", ent, info), br("2026-11-19T17:00:00"));
   assert.notEqual(prazoDe("Gráfica", br("2026-11-19T10:00:00"), info), br("2026-11-19T17:00:00")); // card foi movido
 });
+
+import { previsaoEntrega, setLinha, textoPrevisao, dataHoraBR } from "../src/avisos.js";
+test("previsão encadeia as etapas em horário útil, pulando fim de semana e feriado", () => {
+  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
+  const p = previsaoEntrega("Novos pedidos", br("2026-11-18T10:00:00"), info, br("2026-11-18T10:00:00"));
+  assert.equal(p, br("2026-11-27T13:00:00")); // 18/11 Novos -> Montagem -> Gráfica (20/11 feriado) -> Retirada -> Colagem
+});
+test("previsão a partir da Gráfica respeita o Prazo manual e a Colagem por página (5 páginas = 90 slots)", () => {
+  const { desc } = montarCard({ cliente: "L", slots: 86, paginas: 5, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
+  const info = lerCard({ id: "x", name: "L · 86 slots", desc });
+  assert.equal(info.slotsPrazo, 90);
+  assert.equal(previsaoEntrega("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-19T09:00:00")), br("2026-11-24T13:00:00"));
+});
+test("prazo da coluna atual vencido: etapas seguintes partem de agora", () => {
+  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
+  const agora = br("2026-12-01T10:00:00");
+  const p = previsaoEntrega("Montagem", br("2026-11-18T10:00:00"), info, agora);
+  assert.ok(p > agora);
+});
+test("sem previsão para colunas fora do fluxo; pronto/finalizado viram texto", () => {
+  const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
+  assert.equal(previsaoEntrega("Qualquer", 0, info, 0), null);
+  assert.equal(textoPrevisao("Pronto para entrega", 0, info, 0), "pronto para entrega");
+  assert.equal(textoPrevisao("Finalizado", 0, info, 0), "entregue");
+});
+test("setLinha substitui ou acrescenta antes das Alterações", () => {
+  assert.equal(setLinha("A: 1\nPrevisão de entrega: x", "Previsão de entrega", "y"), "A: 1\nPrevisão de entrega: y");
+  assert.equal(setLinha("A: 1\n\nAlterações:\n- z", "Previsão de entrega", "y"), "A: 1\nPrevisão de entrega: y\n\nAlterações:\n- z");
+  assert.equal(setLinha("A: 1", "B", "2"), "A: 1\nB: 2");
+});
+test("aviso de movimento e de novo pedido mostram a previsão (vai no texto encaminhado ao grupo)", () => {
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Ana · 18 slots", desc: "Telefone: +55 31 9" }, previsao: "27/11/2026 13:00" });
+  assert.match(m.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
+  assert.match(decodeURIComponent(m.botoes[1][0].url), /Previsão de entrega: 27\/11\/2026 13:00/);
+  assert.doesNotMatch(decodeURIComponent(m.botoes[0][0].url), /Previsão/); // mensagem ao cliente não leva
+  const n = avisoNovo({ card: { name: "Ana · 18 slots", desc: "Previsão de entrega: 27/11/2026 13:00" }, coluna: "Novos pedidos" });
+  assert.match(n.texto, /Previsão de entrega: 27\/11\/2026 13:00/);
+});
+test("dataHoraBR formata em Brasília", () => assert.equal(dataHoraBR(br("2026-11-27T13:00:00")), "27/11/2026 13:00"));
