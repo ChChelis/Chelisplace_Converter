@@ -309,3 +309,25 @@ test("prazo que vence exatamente às 17h (hora cheia do resumo) é pego pelo ale
   assert.equal(recemAtrasados({ listas, cards, entradas, agoraMs: br("2026-11-19T18:00:00") }).length, 1);
   assert.equal(recemAtrasados({ listas, cards, entradas, agoraMs: br("2026-11-19T19:00:00") }).length, 0);
 });
+
+import { relatorioColagem } from "../src/avisos.js";
+test("relatório de colagem: finalizados da janela atual com valor por pedido, total e previsão do que está em andamento", () => {
+  const listas = [{ id: "F", name: "Finalizado" }, { id: "G", name: "Gráfica" }];
+  const mk = (id, nome, desc, idList) => ({ id, name: nome, desc, idList });
+  const cards = [
+    mk("a", "Vandré · 337 slots", "Slots: 337\nPáginas: 19", "F"),
+    mk("b", "Cláudio · 10 slots", "Slots: 10\nPáginas: 1", "F"),
+    mk("c", "Caixas · 0 slots", "Slots: 0\nPáginas: 14", "F"),
+    mk("d", "Antigo · 108 slots", "Slots: 108\nPáginas: 6", "F"),
+    mk("e", "Rodrigo · 956 slots", "Slots: 956\nPáginas: 54", "G"),
+  ];
+  const entradas = { a: br("2026-11-14T12:00:00"), b: br("2026-11-13T12:00:00"), c: br("2026-11-15T12:00:00"), d: br("2026-11-03T12:00:00"), e: br("2026-11-18T11:26:00") };
+  const r = relatorioColagem({ listas, cards, entradas, agoraMs: br("2026-11-19T10:00:00") });
+  assert.match(r, /\*Colagem: janela desde 09\/11\*/);
+  assert.match(r, /Próximo pagamento: 07\/12/);
+  assert.match(r, /- Cláudio - 1 páginas - R\$ 2\n- Vandré - 19 páginas - R\$ 44\n- Caixas - 14 páginas - R\$ 0/);
+  assert.doesNotMatch(r, /Antigo/);
+  assert.match(r, /\*Total a pagar: R\$ 46\* \(3 pedido\(s\)\)/);
+  assert.match(r, /Em andamento \(ainda não finalizados\): 1 pedido\(s\), R\$ 126 previstos/);
+  assert.doesNotMatch(r, /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u);
+});

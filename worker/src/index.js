@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 import { autorizado } from "./auth.js";
 import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEventos, estadoOAuth, urlAutorizacao, trocarCodigo } from "./agenda.js";
@@ -178,6 +178,20 @@ export default {
       return new Response("ok");
     }
 
+    // Comandos do bot no grupo (webhook do Telegram): /colagem, /resumo, /ajuda. Só o grupo configurado é atendido.
+    if (partes[0] === "telegram" && partes[1] === env.ADMIN_SECRET && req.method === "POST") {
+      if (req.headers.get("x-telegram-bot-api-secret-token") !== (await estadoOAuth({ ADMIN_SECRET: "telegram:" + env.ADMIN_SECRET }))) return new Response("não autorizado", { status: 403 });
+      const msg = (await req.json().catch(() => ({})))?.message;
+      if (!msg?.text || String(msg.chat?.id) !== String(env.TELEGRAM_CHAT_ID).trim()) return new Response("ok");
+      const cmd = msg.text.trim().split(/\s+/)[0].split("@")[0].toLowerCase();
+      try {
+        if (cmd === "/colagem") { const q = await carregarQuadro(env); await enviar(env, relatorioColagem({ ...q, agoraMs: Date.now() })); }
+        else if (cmd === "/resumo") await resumo(env, Date.now(), "*Resumo agora*");
+        else if (cmd === "/ajuda" || cmd === "/start") await enviar(env, "*Comandos*\n/colagem - quanto pagar de colagem na janela atual\n/resumo - resumo dos pedidos agora");
+      } catch (e) { await enviar(env, `Não consegui responder ao comando (${e.message}).`).catch(() => {}); }
+      return new Response("ok");
+    }
+
     // Retorno da autorização do Google: troca o código pelo refresh token e o mostra uma vez, para o Chelis colar no painel.
     if (partes[0] === "google" && partes[1] === "callback") {
       const code = url.searchParams.get("code"), state = url.searchParams.get("state");
@@ -252,6 +266,13 @@ export default {
         if (!agendaConfigurada(env)) return json({ ok: false, erro: "faltam segredos do Google (GOOGLE_CALENDAR_ID e GOOGLE_SA_JSON, ou GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET e GOOGLE_REFRESH_TOKEN)" }, 400);
         try { return json({ ok: true, eventos: await sincronizarAgenda(env, await carregarQuadro(env)) }); }
         catch (e) { return json({ ok: false, erro: e.message }, 500); }
+      }
+      if (acao === "telegram-webhook") { // liga os comandos do bot (desliga o getUpdates, usado só para descobrir o chat-id)
+        const r = await telegram(env, "setWebhook", {
+          url: `${url.origin}/telegram/${env.ADMIN_SECRET}`, allowed_updates: ["message"],
+          secret_token: await estadoOAuth({ ADMIN_SECRET: "telegram:" + env.ADMIN_SECRET }),
+        });
+        return json({ ok: r.ok, descricao: r.description || "webhook do Telegram registrado" });
       }
       if (acao === "teste") { await enviar(env, "Chelisplace Avisos conectado."); return json({ ok: true }); }
       if (acao === "lembretes") { // teste manual: simula o lembrete de retirada (?periodo=manha|tarde)

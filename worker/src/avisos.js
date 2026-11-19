@@ -226,7 +226,7 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
 
 // Valor da colagem (custo pago ao colador): páginas x 18 x R$ 0,13, arredondado (mesma regra do orçamento).
 export const COLAGEM_POR_SLOT = 0.13;
-export const valorColagem = (info) => Math.round((info.paginas || Math.ceil(info.slots / 18)) * 18 * COLAGEM_POR_SLOT);
+export const valorColagem = (info) => (info.slots ? Math.round((info.paginas || Math.ceil(info.slots / 18)) * 18 * COLAGEM_POR_SLOT) : 0); // sem adesivos (ex.: caixas), sem colagem
 
 // Descrição do card para os avisos: sem as linhas de controle do Worker, o telefone nem o valor cobrado; com valor de colagem e a linha da etapa.
 export function descricaoParaAviso(desc, linha) {
@@ -327,4 +327,22 @@ export function lembretesRetirada({ listas, cards, agoraMs, periodo }) {
     return `- ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}${info.paginas ? ` · ${info.paginas} páginas` : ""} - viagem a partir das ${viagem}${ret && ret !== viagem ? `, retirada prevista ${ret}` : ""}`;
   });
   return [titulo, ...linhas, "", periodo === "manha" ? "_Hoje será preciso fazer a viagem à gráfica._" : "_Planeje a viagem à gráfica para esse dia._"].join("\n");
+}
+
+// Relatório do que se paga ao colador: pedidos finalizados na janela atual (desde o 5º dia útil mais recente),
+// com o valor de colagem de cada um, o total e a previsão dos que ainda estão em andamento.
+export function relatorioColagem({ listas, cards, entradas, agoraMs }) {
+  const ini = inicioJanelaFinalizados(agoraMs);
+  const l = new Date(ini - 3 * 3600e3);
+  const proxima = quintoDiaUtil(l.getUTCMonth() === 11 ? l.getUTCFullYear() + 1 : l.getUTCFullYear(), (l.getUTCMonth() + 1) % 12);
+  const fin = new Set(listas.filter((x) => norm(x.name).includes("finalizad")).map((x) => x.id));
+  const feitos = cards.filter((c) => fin.has(c.idList) && entradas[c.id] >= ini).sort((a, b) => entradas[a.id] - entradas[b.id]);
+  const andamento = cards.filter((c) => !fin.has(c.idList));
+  const linha = (c) => { const i = lerCard(c); return `- ${i.cliente} - ${i.paginas ? `${i.paginas} páginas` : `${i.slots} slots`} - R$ ${valorColagem(i)}`; };
+  const soma = (cs) => cs.reduce((t, c) => t + valorColagem(lerCard(c)), 0);
+  const saida = [`*Colagem: janela desde ${fmtBR(ini).slice(0, 5)}*`, `_Próximo pagamento: ${fmtBR(proxima).slice(0, 5)} (5º dia útil)_`, ""];
+  saida.push(feitos.length ? feitos.map(linha).join("\n") : "Nenhum pedido finalizado nesta janela.");
+  saida.push("", `*Total a pagar: R$ ${soma(feitos)}* (${feitos.length} pedido(s))`);
+  if (andamento.length) saida.push("", `_Em andamento (ainda não finalizados): ${andamento.length} pedido(s), R$ ${soma(andamento)} previstos._`);
+  return saida.join("\n");
 }
