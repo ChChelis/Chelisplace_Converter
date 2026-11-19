@@ -169,16 +169,16 @@ export default {
         return json({ ok: true, id: r.id });
       }
       if (acao === "vencimentos") { // grava o vencimento (retirada prevista) nos cards que já estão na Gráfica e ainda não têm
-        const q = await carregarQuadro(env), agora = Date.now(), feitos = [], refazer = url.searchParams.get("refazer") === "1";
+        const q = await carregarQuadro(env), agora = Date.now(), feitos = [], refazer = url.searchParams.get("refazer") === "1", daDescricao = url.searchParams.get("usarDescricao") === "1";
         for (const c of q.cards) {
           const l = q.listas.find((x) => x.id === c.idList);
           if (!l || (c.due && !refazer) || c.dueComplete) continue;
-          const info = lerCard(c), due = vencimentoGrafica(l.name, q.entradas[c.id], info, agora);
+          const info = lerCard(c), entrada = daDescricao && info.entrouEm ? info.entrouEm : q.entradas[c.id], due = vencimentoGrafica(l.name, entrada, info, agora);
           if (!due) continue;
           await trello(env, `/cards/${c.id}`, { due, dueComplete: "false" }, "PUT");
           feitos.push({
             cliente: info.cliente, vencimento: due,
-            diagnostico: { entradaUsada: new Date(q.entradas[c.id]).toISOString(), entrouEmDaDescricao: info.entrouEm ? new Date(info.entrouEm).toISOString() : null, prazoManual: info.prazoManual ? new Date(info.prazoManual).toISOString() : null, ultimaAtividade: c.dateLastActivity },
+            diagnostico: { entradaUsada: new Date(entrada).toISOString(), entrouEmDaDescricao: info.entrouEm ? new Date(info.entrouEm).toISOString() : null, prazoManual: info.prazoManual ? new Date(info.prazoManual).toISOString() : null, ultimaAtividade: c.dateLastActivity },
           });
         }
         return json({ ok: true, atualizados: feitos });
