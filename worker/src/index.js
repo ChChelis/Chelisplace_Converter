@@ -4,7 +4,7 @@
 import { diaUtil } from "./prazos.js";
 import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
-import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEventos } from "./agenda.js";
+import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEventos, estadoOAuth, urlAutorizacao, trocarCodigo } from "./agenda.js";
 
 const T = "https://api.trello.com/1";
 
@@ -177,6 +177,19 @@ export default {
       return new Response("ok");
     }
 
+    // Retorno da autorização do Google: troca o código pelo refresh token e o mostra uma vez, para o Chelis colar no painel.
+    if (partes[0] === "google" && partes[1] === "callback") {
+      const code = url.searchParams.get("code"), state = url.searchParams.get("state");
+      if (!code || !state || state !== (await estadoOAuth(env))) return new Response("não autorizado", { status: 403 });
+      try {
+        const d = await trocarCodigo(env, code, `${url.origin}/google/callback`);
+        const corpo = d.refresh_token
+          ? `<p>Autorizado. Copie o valor abaixo e crie, no painel da Cloudflare, o segredo <b>GOOGLE_REFRESH_TOKEN</b> (tipo Segredo). Não compartilhe e feche esta página depois.</p><textarea rows="4" cols="80" readonly onclick="this.select()">${d.refresh_token}</textarea>`
+          : `<p>O Google não devolveu o token (talvez esta conta já tenha autorizado antes). Remova o acesso do app em myaccount.google.com/permissions e abra de novo o endereço de autorização.</p>`;
+        return new Response(`<!doctype html><meta charset="utf-8"><title>Google Agenda</title><body style="font-family:sans-serif;padding:24px">${corpo}</body>`, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+      } catch (e) { return new Response("Falha ao autorizar: " + e.message, { status: 500 }); }
+    }
+
     if (partes[0] === "card" && partes.length === 1) return rotaCard(req, env).catch((e) => new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: { ...cors(req.headers.get("origin") || ""), "content-type": "application/json" } }));
 
     // Utilidades do Chelis (abrir no navegador): /admin/<ADMIN_SECRET>/<acao>
@@ -230,8 +243,12 @@ export default {
         }
         return json({ ok: true, confirmadaEm: agora, cards: feitos });
       }
+      if (acao === "google-autorizar") { // abre a tela de consentimento do Google (uma vez)
+        if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return json({ ok: false, erro: "GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET ainda não foram criados como segredos" }, 400);
+        return Response.redirect(urlAutorizacao(env, `${url.origin}/google/callback`, await estadoOAuth(env)), 302);
+      }
       if (acao === "agenda") { // cria/atualiza no Google Agenda o evento de cada card da Gráfica com vencimento
-        if (!agendaConfigurada(env)) return json({ ok: false, erro: "GOOGLE_SA_JSON e GOOGLE_CALENDAR_ID ainda não foram criados como segredos" }, 400);
+        if (!agendaConfigurada(env)) return json({ ok: false, erro: "faltam segredos do Google (GOOGLE_CALENDAR_ID e GOOGLE_SA_JSON, ou GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET e GOOGLE_REFRESH_TOKEN)" }, 400);
         try { return json({ ok: true, eventos: await sincronizarAgenda(env, await carregarQuadro(env)) }); }
         catch (e) { return json({ ok: false, erro: e.message }, 500); }
       }

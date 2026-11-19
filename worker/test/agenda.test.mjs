@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
-import { montarEventos, idsDoCard, idEvento, assinarJwt, criarOuAtualizarEvento, removerEvento, agendaConfigurada } from "../src/agenda.js";
+import { montarEventos, idsDoCard, idEvento, assinarJwt, criarOuAtualizarEvento, removerEvento, agendaConfigurada, estadoOAuth, urlAutorizacao, trocarCodigo } from "../src/agenda.js";
 import { diaUtilAnterior17 } from "../src/prazos.js";
 
 const br = (s) => Date.parse(s + "-03:00");
@@ -29,7 +29,7 @@ test("montarEventos: viagem às 10h, aviso da véspera (17h do dia útil anterio
   assert.equal(manha.start.dateTime, "2026-11-23T08:00:00-03:00");
   assert.match(manha.summary, /hoje é dia de viagem à gráfica - Rodrigo Grupo/);
   assert.deepEqual(evs.map((e) => e.id), idsDoCard(cardRodrigo.id));
-  for (const e of evs) { assert.match(e.id, /^[a-v0-9]{5,1024}$/); assert.deepEqual(e.reminders, { useDefault: true }); }
+  for (const e of evs) { assert.match(e.id, /^[a-v0-9]{5,1024}$/); assert.deepEqual(e.reminders, { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] }); }
   assert.match(viagem.description, /Páginas: 54/); assert.match(viagem.description, /https:\/\/trello\.com\/c\/abc/);
   assert.doesNotMatch(JSON.stringify(evs), /8825|1260|Valor/);
 });
@@ -81,3 +81,35 @@ test("criar evento: POST; se já existe (409) faz PUT; remover ignora 404", asyn
   assert.ok(g[0][1].includes(encodeURIComponent("chelis@exemplo.com")));
   assert.equal(g[0][2], "Bearer tok");
   });
+
+test("OAuth do Chelis: configurado sem conta de serviço, token por refresh_token e evento gravado com ele", async () => {
+  const env = { GOOGLE_CLIENT_ID: "cid", GOOGLE_CLIENT_SECRET: "csec", GOOGLE_REFRESH_TOKEN: "rtok", GOOGLE_CALENDAR_ID: "cal@exemplo.com" };
+  assert.equal(agendaConfigurada(env), true);
+  assert.equal(agendaConfigurada({ ...env, GOOGLE_REFRESH_TOKEN: "" }), false);
+  const original = globalThis.fetch, chamadas = [];
+  globalThis.fetch = async (url, op = {}) => {
+    chamadas.push([String(url), op.body ? String(op.body) : "", op.headers?.authorization]);
+    if (String(url).includes("oauth2.googleapis.com")) return new Response(JSON.stringify({ access_token: "tokUsuario", expires_in: 3600 }));
+    return new Response("{}", { status: 200 });
+  };
+  try { assert.deepEqual(await criarOuAtualizarEvento(env, { id: "trelloxyz" }), { ok: true }); } finally { globalThis.fetch = original; }
+  const tok = chamadas.find(([u]) => u.includes("oauth2.googleapis.com"));
+  assert.match(tok[1], /grant_type=refresh_token/); assert.match(tok[1], /refresh_token=rtok/); assert.match(tok[1], /client_id=cid/);
+  assert.equal(chamadas.find(([u]) => u.includes("/calendar/"))[2], "Bearer tokUsuario");
+});
+test("autorização única: URL de consentimento offline com escopo de eventos; state não revela a senha", async () => {
+  const env = { GOOGLE_CLIENT_ID: "cid", ADMIN_SECRET: "segredoAdmin123" };
+  const state = await estadoOAuth(env);
+  assert.match(state, /^[0-9a-f]{64}$/); assert.ok(!state.includes("segredoAdmin123"));
+  assert.equal(await estadoOAuth(env), state);
+  const u = new URL(urlAutorizacao(env, "https://w.test/google/callback", state));
+  assert.equal(u.searchParams.get("access_type"), "offline"); assert.equal(u.searchParams.get("prompt"), "consent");
+  assert.equal(u.searchParams.get("scope"), "https://www.googleapis.com/auth/calendar.events");
+  assert.equal(u.searchParams.get("redirect_uri"), "https://w.test/google/callback");
+});
+test("trocarCodigo envia o código e devolve o refresh token", async () => {
+  const original = globalThis.fetch; let corpo = "";
+  globalThis.fetch = async (url, op) => { corpo = String(op.body); return new Response(JSON.stringify({ refresh_token: "RT", access_token: "AT" })); };
+  try { const d = await trocarCodigo({ GOOGLE_CLIENT_ID: "cid", GOOGLE_CLIENT_SECRET: "csec" }, "COD", "https://w.test/google/callback"); assert.equal(d.refresh_token, "RT"); } finally { globalThis.fetch = original; }
+  assert.match(corpo, /grant_type=authorization_code/); assert.match(corpo, /code=COD/);
+});

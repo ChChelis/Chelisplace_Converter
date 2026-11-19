@@ -1,5 +1,7 @@
 // Google Agenda: um evento por retirada na gráfica (criado na API do Google com uma conta de serviço).
-// Segredos do Worker: GOOGLE_SA_JSON (chave JSON da conta de serviço) e GOOGLE_CALENDAR_ID (agenda do Chelis).
+// Autenticação (uma das duas): conta de serviço (GOOGLE_SA_JSON) ou o próprio Chelis via OAuth (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+// GOOGLE_REFRESH_TOKEN). Com OAuth os eventos são gravados como o Chelis e os lembretes de cada evento chegam a ele.
+// Em ambos: GOOGLE_CALENDAR_ID (a agenda onde os eventos nascem).
 import { diaUtilAnterior17 } from "./prazos.js";
 import { lerCard, dataHoraBR } from "./avisos.js";
 
@@ -34,7 +36,7 @@ function eventoBase({ card, trelloUrl }, id, summary, inicioMs, duracaoMs) {
     id, summary: summary.replace("{cliente}", info.cliente), description: linhas.join("\n"),
     start: { dateTime: isoBR(inicioMs), timeZone: "America/Sao_Paulo" },
     end: { dateTime: isoBR(inicioMs + duracaoMs), timeZone: "America/Sao_Paulo" },
-    reminders: { useDefault: true },
+    reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] }, // notifica no horário do evento
   };
 }
 
@@ -62,21 +64,46 @@ export async function assinarJwt(sa, agoraS, escopo) {
 }
 
 let cacheToken = null;
+export const ESCOPO = "https://www.googleapis.com/auth/calendar.events";
+const modoOAuth = (env) => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REFRESH_TOKEN);
+
 async function token(env) {
-  if (cacheToken && cacheToken.exp > Date.now() + 60e3) return cacheToken.valor;
-  const sa = JSON.parse(env.GOOGLE_SA_JSON);
-  const jwt = await assinarJwt(sa, Math.floor(Date.now() / 1000), "https://www.googleapis.com/auth/calendar.events");
-  const r = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
-  });
+  const chave = modoOAuth(env) ? env.GOOGLE_REFRESH_TOKEN : env.GOOGLE_SA_JSON; // o cache vale para a credencial que o gerou
+  if (cacheToken && cacheToken.chave === chave && cacheToken.exp > Date.now() + 60e3) return cacheToken.valor;
+  let corpo;
+  if (modoOAuth(env)) {
+    corpo = new URLSearchParams({ grant_type: "refresh_token", client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, refresh_token: env.GOOGLE_REFRESH_TOKEN });
+  } else {
+    const sa = JSON.parse(env.GOOGLE_SA_JSON);
+    corpo = new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: await assinarJwt(sa, Math.floor(Date.now() / 1000), ESCOPO) });
+  }
+  const r = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: corpo });
   if (!r.ok) throw new Error(`Google token ${r.status}`);
   const d = await r.json();
-  cacheToken = { valor: d.access_token, exp: Date.now() + (d.expires_in || 3600) * 1000 };
+  cacheToken = { chave, valor: d.access_token, exp: Date.now() + (d.expires_in || 3600) * 1000 };
   return cacheToken.valor;
 }
 
-export const agendaConfigurada = (env) => !!(env.GOOGLE_SA_JSON && env.GOOGLE_CALENDAR_ID);
+// Autorização única do Chelis (OAuth): gera o refresh token que ele cola como segredo no painel da Cloudflare.
+export async function estadoOAuth(env) { // "state" derivado da senha de administração, sem revelá-la
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("google-oauth:" + env.ADMIN_SECRET));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+export function urlAutorizacao(env, redirectUri, state) {
+  const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  for (const [k, v] of Object.entries({ client_id: env.GOOGLE_CLIENT_ID, redirect_uri: redirectUri, response_type: "code", scope: ESCOPO, access_type: "offline", prompt: "consent", state })) u.searchParams.set(k, v);
+  return u.toString();
+}
+export async function trocarCodigo(env, code, redirectUri) {
+  const r = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, redirect_uri: redirectUri }),
+  });
+  if (!r.ok) throw new Error(`Google token ${r.status}`);
+  return r.json();
+}
+
+export const agendaConfigurada = (env) => !!((env.GOOGLE_SA_JSON || modoOAuth(env)) && env.GOOGLE_CALENDAR_ID);
 
 async function google(env, metodo, caminho, corpo) {
   const r = await fetch(`${API}/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID)}/events${caminho}`, {
