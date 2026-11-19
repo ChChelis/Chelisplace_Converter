@@ -26,7 +26,7 @@ test("gráfica: 3 dias úteis, 9h–18h (com feriado 20/11 no meio)", () => {
 });
 test("colagem: 108 slots = 3h; 109 slots = 6h", () => {
   assert.equal(prazoFinal("Colagem", br("2026-11-18T10:00:00"), 108), br("2026-11-18T13:00:00"));
-  assert.equal(prazoFinal("Colagem", br("2026-11-18T10:00:00"), 109), br("2026-11-18T16:00:00"));
+  assert.equal(prazoFinal("Colagem", br("2026-11-18T10:00:00"), 109), br("2026-11-18T18:00:00")); // 3h + almoço 13h–15h + 3h
   assert.equal(prazoFinal("Colagem", br("2026-11-18T10:00:00"), 0), br("2026-11-18T13:00:00"));
 });
 test("sem prazo para Pronto para entrega e Finalizado", () => {
@@ -48,4 +48,24 @@ test("gráfica pula feriado: entrada qua 18/11 9h, 3 dias úteis (qua, qui, seg)
 });
 test("entrada em feriado começa no próximo dia útil", () => {
   assert.equal(prazoFinal("Retirada", br("2026-11-20T11:00:00")), br("2026-11-23T17:00:00"));
+});
+
+import { fimDiaUtil, alinharLoja, COLADOR } from "../src/prazos.js";
+test("gráfica: entrada às 11h26 de 18/11 -> 3º dia útil (18, 19, 23) até 18h", () => {
+  assert.equal(prazoFinal("Gráfica", br("2026-11-18T11:26:00")), br("2026-11-23T18:00:00"));
+  assert.equal(fimDiaUtil(br("2026-11-18T11:26:00"), 3, 17 * 60), br("2026-11-23T17:00:00"));
+});
+test("gráfica: entrada depois das 18h começa a contar no dia útil seguinte", () => {
+  assert.equal(prazoFinal("Gráfica", br("2026-11-18T19:00:00")), br("2026-11-24T18:00:00"));
+});
+test("alinharLoja: dentro do expediente fica; antes das 10h vai para 10h; depois das 17h vai para o próximo dia útil", () => {
+  assert.equal(alinharLoja(br("2026-11-23T11:00:00")), br("2026-11-23T11:00:00"));
+  assert.equal(alinharLoja(br("2026-11-23T17:00:00")), br("2026-11-23T17:00:00"));
+  assert.equal(alinharLoja(br("2026-11-23T09:30:00")), br("2026-11-23T10:00:00"));
+  assert.equal(alinharLoja(br("2026-11-23T18:00:00")), br("2026-11-24T10:00:00"));
+  assert.equal(alinharLoja(br("2026-11-27T18:00:00")), br("2026-11-30T10:00:00"));
+});
+test("colador: 10h–23h com almoço 13h–15h", () => {
+  assert.equal(somarUtil(br("2026-11-23T17:00:00"), 6 * 60, COLADOR), br("2026-11-23T23:00:00"));
+  assert.equal(somarUtil(br("2026-11-24T10:00:00"), 11 * 60, COLADOR), br("2026-11-24T23:00:00"));
 });

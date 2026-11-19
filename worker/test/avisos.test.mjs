@@ -127,16 +127,16 @@ test("Prazo manual vale na coluna de origem e some depois de um movimento", () =
 });
 
 import { previsaoEntrega, setLinha, textoPrevisao, dataHoraBR } from "../src/avisos.js";
-test("previsão encadeia as etapas em horário útil, pulando fim de semana e feriado", () => {
+test("previsão: mesmo expediente até a gráfica, retirada no mesmo expediente e colagem na janela do colador", () => {
   const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
   const p = previsaoEntrega("Novos pedidos", br("2026-11-18T10:00:00"), info, br("2026-11-18T10:00:00"));
-  assert.equal(p, br("2026-11-27T13:00:00")); // 18/11 Novos -> Montagem -> Gráfica (20/11 feriado) -> Retirada -> Colagem
+  assert.equal(p, br("2026-11-23T20:00:00")); // Novos/Montagem/envio no mesmo expediente; gráfica libera seg 23 (20/11 feriado) às 17h; 3h de colagem
 });
 test("previsão a partir da Gráfica respeita o Prazo manual e a Colagem por página (5 páginas = 90 slots)", () => {
   const { desc } = montarCard({ cliente: "L", slots: 86, paginas: 5, entrouEm: "2026-11-18T11:26:00-03:00", prazo: "2026-11-19T17:00:00-03:00" });
   const info = lerCard({ id: "x", name: "L · 86 slots", desc });
   assert.equal(info.slotsPrazo, 90);
-  assert.equal(previsaoEntrega("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-19T09:00:00")), br("2026-11-24T13:00:00"));
+  assert.equal(previsaoEntrega("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-19T09:00:00")), br("2026-11-19T20:00:00")); // libera 19/11 17h (prazo manual) + 3h de colagem
 });
 test("prazo da coluna atual vencido: etapas seguintes partem de agora", () => {
   const info = lerCard({ id: "x", name: "A · 18 slots", desc: "" });
@@ -185,4 +185,17 @@ test("link do grupo cabe no limite de URL do Telegram mesmo com texto longo e ac
   const url = linkWaGrupo("Alteração ção ".repeat(400));
   assert.ok(url.length <= 1900, String(url.length));
   assert.match(url, /^https:\/\/wa\.me\/\?text=/);
+});
+
+test("Rodrigo Grupo (956 slots, 54 páginas, na Gráfica desde 18/11 11:26): sai seg 23 às 17h e a colagem de 27h termina qua 25/11 às 22h", () => {
+  const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260, entrouEm: "2026-11-18T11:26:00-03:00" });
+  const info = lerCard({ id: "x", name: "Rodrigo Grupo · 956 slots", desc });
+  assert.equal(previsaoEntrega("Gráfica", br("2026-11-18T11:26:00"), info, br("2026-11-19T10:00:00")), br("2026-11-25T22:00:00"));
+});
+test("mensagem interna: sem valor cobrado, com valor de colagem (páginas x 18 x 0,13)", () => {
+  const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260 });
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: { name: "Rodrigo Grupo · 956 slots", desc }, previsao: "25/11/2026 22:00" });
+  assert.doesNotMatch(m.texto, /Valor cobrado|1\.?260/);
+  assert.match(m.texto, /Valor de colagem: R\$ 126/);
+  assert.match(desc, /Valor cobrado: R\$ 1260,00/); // o card mantém o valor cobrado
 });

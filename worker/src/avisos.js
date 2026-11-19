@@ -1,5 +1,5 @@
 // Lógica pura dos avisos (sem rede): leitura de cards, resumo, mensagens, links.
-import { prazoFinal, atrasado, somarUtil, regraDaColuna } from "./prazos.js";
+import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE } from "./prazos.js";
 import { feriadosNacionais } from "./feriados.js";
 export { feriadosNacionais };
 
@@ -45,23 +45,25 @@ export const dataHoraBR = (ms) => {
   return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 };
 
-// Etapas na ordem do fluxo; "Pronto para entrega" e "Finalizado" já estão depois da Colagem.
-export const ETAPAS = ["Novos pedidos", "Montagem", "Gráfica", "Retirada", "Colagem"];
-
-// Previsão de entrega = fim da Colagem: prazo da coluna atual + etapas seguintes encadeadas em horário útil.
-// Se o prazo da coluna atual já passou, as etapas seguintes partem de "agora".
+// Previsão de entrega = fim da Colagem. Novos pedidos, Montagem e envio à gráfica acontecem no mesmo expediente da loja;
+// a gráfica libera ao fim do 3º dia útil (17h, ainda no expediente da loja); a retirada é no mesmo expediente da liberação
+// ou no seguinte; depois soma-se a colagem pelo tamanho do pedido, na janela do colador. Se um prazo já venceu, parte de "agora".
 export function previsaoEntrega(coluna, entradaMs, info, agoraMs) {
   const n = norm(coluna);
-  const i = ETAPAS.findIndex((e) => n.includes(norm(e).split(" ")[0].slice(0, 5)));
-  if (i < 0) return null;
-  let t = prazoDe(coluna, entradaMs, info);
-  if (t === null) return null;
-  t = Math.max(t, agoraMs);
-  for (const nome of ETAPAS.slice(i + 1)) {
-    const r = regraDaColuna(nome, info.slotsPrazo ?? info.slots);
-    t = somarUtil(t, r.min, r.janela);
-  }
-  return t;
+  const slots = info.slotsPrazo ?? info.slots;
+  let pegada; // quando o pedido é retirado da gráfica e segue para a colagem
+  if (n.includes("novo") || n.includes("montagem")) {
+    const inicio = alinharLoja(Math.max(entradaMs, agoraMs));
+    pegada = alinharLoja(fimDiaUtil(inicio, 3, EXPEDIENTE.fim));
+  } else if (n.includes("grafica")) {
+    const liberacao = info.prazoManual && info.entrouEm === entradaMs ? info.prazoManual : fimDiaUtil(entradaMs, 3, EXPEDIENTE.fim);
+    pegada = alinharLoja(Math.max(liberacao, agoraMs));
+  } else if (n.includes("retirada")) {
+    pegada = alinharLoja(Math.max(entradaMs, agoraMs));
+  } else if (n.includes("colagem")) {
+    return Math.max(somarUtil(entradaMs, minutosColagem(slots), COLADOR), agoraMs);
+  } else return null;
+  return somarUtil(pegada, minutosColagem(slots), COLADOR);
 }
 
 // Substitui (ou acrescenta) uma linha "Chave: valor" na descrição.
@@ -198,9 +200,15 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
   return out;
 }
 
-// Descrição do card para os avisos: sem as linhas de controle do Worker, com a previsão atual.
+// Valor da colagem (custo pago ao colador): páginas x 18 x R$ 0,13, arredondado (mesma regra do orçamento).
+export const COLAGEM_POR_SLOT = 0.13;
+export const valorColagem = (info) => Math.round((info.paginas || Math.ceil(info.slots / 18)) * 18 * COLAGEM_POR_SLOT);
+
+// Descrição do card para os avisos: sem as linhas de controle do Worker nem o valor cobrado; com valor de colagem e previsão atual.
 export function descricaoParaAviso(desc, previsao) {
-  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo)\s*:/i.test(l)).join("\n").trim();
+  const info = lerCard({ name: "", desc });
+  let d = (desc || "").split("\n").filter((l) => !/^\s*(Entrou na coluna|Prazo|Valor cobrado|Valor de colagem)\s*:/i.test(l)).join("\n").trim();
+  if (info.slots || info.paginas) d = setLinha(d, "Valor de colagem", `R$ ${valorColagem(info)}`);
   if (previsao) d = setLinha(d, "Previsão de entrega", previsao);
   return d.length > 900 ? d.slice(0, 900).trimEnd() + "..." : d;
 }
