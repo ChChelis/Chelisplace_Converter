@@ -315,7 +315,7 @@ function desenharEnvioBot() {
     const nCartas = f.frentes.length, nLinhas = listaParaBot(f.frentes).trim().split("\n").length;
     caixa.innerHTML = `<b>${esc(f.titulo)}</b> <span class="suave">${nCartas} cartas, ${nLinhas} linhas</span><br><label>Nome do pedido no bot <input type="text" size="28" value="${esc(f.nomeBot || (listas.length > 1 ? base + "-" + (i + 1) : base))}"></label> <button class="acao">Enviar ao bot</button><div class="suave msg"></div>`;
     const inp = caixa.querySelector("input"), btn = caixa.querySelector("button"), msg = caixa.querySelector(".msg");
-    if (f.enviadoBot) { inp.value = f.enviadoBot; inp.disabled = btn.disabled = true; btn.textContent = "Enviado ✓"; msg.textContent = "Já está no bot: abra a conferência dele ou use o XML quando estiver pronto."; }
+    if (f.enviadoBot) { inp.value = f.enviadoBot; inp.disabled = btn.disabled = true; btn.textContent = "Enviado ✓"; msg.innerHTML = `Já está no bot. <a href="${MOTOR}/#pedido=${encodeURIComponent(f.enviadoBot)}" target="_blank" rel="noopener">Abrir a conferência deste pedido</a>`; }
     btn.onclick = async () => {
       const nome = nomeParaBot(inp.value); inp.value = nome; btn.disabled = true; msg.textContent = "Enviando…";
       try {
@@ -333,7 +333,7 @@ async function procurarBot() {
   alvo.textContent = "Procurando o bot…"; lista.innerHTML = ""; $("#b-enviar").innerHTML = "";
   try {
     const est = await (await fetch(MOTOR + "/api/estado")).json();
-    alvo.innerHTML = `<span class="ok">Bot conectado</span> <span class="suave">(versão ${esc(est.versao)})</span> <button class="peq" id="b-de-novo">Atualizar</button> <a href="${MOTOR}/" target="_blank" rel="noopener">Abrir a conferência do bot</a>`;
+    alvo.innerHTML = `<span class="ok">Bot conectado</span> <span class="suave">(versão ${esc(est.versao)})</span> <button class="peq" id="b-de-novo">Atualizar</button> <a href="${MOTOR}/${(pedido.fontes.find((f) => f.enviadoBot) || {}).enviadoBot ? "#pedido=" + encodeURIComponent(pedido.fontes.find((f) => f.enviadoBot).enviadoBot) : ""}" target="_blank" rel="noopener">Abrir a conferência do bot</a>`;
     $("#b-de-novo").onclick = procurarBot;
     alvo.insertAdjacentHTML("beforeend", ` <button class="peq" id="b-sair">Fechar o bot</button>`);
     $("#b-sair").onclick = async () => { try { await fetch(MOTOR + "/api/sair", { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } }); } catch {} clearInterval(pingBot); pingBot = null; setTimeout(procurarBot, 800); };

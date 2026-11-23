@@ -68,6 +68,7 @@
     var prev = S.dec[c.id] ? JSON.parse(JSON.stringify(S.dec[c.id])) : null;
     var ms = Date.now() - S.t0;
     var doc = { status: status, accept: accept, note: (S.dec[c.id] && S.dec[c.id].note) || "", via: via || "individual", conferido: conferido !== false, ms: ms > 0 && ms < 3600000 ? ms : null };
+    if (prev && prev.msg !== undefined) doc.msg = prev.msg;
     S.dec[c.id] = doc; S.undo.push({ id: c.id, prev: prev });
     api("PUT", "/api/pedidos/" + S.nome + "/decisoes/" + encodeURIComponent(c.id), doc).catch(function (e) { toast("Não consegui salvar: " + e.message); });
     return doc;
@@ -87,6 +88,13 @@
     var d = S.dec[c.id] || { status: "pendente", accept: [], via: "individual", conferido: true };
     d.note = text; S.dec[c.id] = d;
     api("PUT", "/api/pedidos/" + S.nome + "/decisoes/" + encodeURIComponent(c.id), d).catch(function () {});
+  }
+  /* marca "vai na mensagem ao cliente": explícita (true/false) ou, sem marca, as cartas sem versão próxima e as com anotação */
+  function inMsg(c) { var d = S.dec[c.id]; if (c.face) return false; if (d && d.msg !== undefined) return !!d.msg; return c.prop.conf === "nenhum" || !!(d && d.note); }
+  function setMsg(c, v) {
+    var d = S.dec[c.id] || { status: "pendente", accept: [], note: "", via: "individual", conferido: true };
+    d.msg = !!v; S.dec[c.id] = d;
+    api("PUT", "/api/pedidos/" + S.nome + "/decisoes/" + encodeURIComponent(c.id), d).catch(function (e) { toast("Não consegui salvar: " + e.message); });
   }
   function acceptSuggestion(c) { var n = chosenN(c); if (n == null) { decide(c, "nenhum", [], "individual"); } else decide(c, "ok", [n], "individual"); }
 
@@ -109,10 +117,25 @@
       if ((!hasIdx() || S.live) && S.mode === "alertas") S.mode = "todas";  // processando: ainda não dá para filtrar alertas
       $("#filters").hidden = false; $("#ov").hidden = false;
       renderAll(); renderLive(); if (S.live) liveTick();
-    }).catch(function (e) {
-      $("#main").innerHTML = '<div class="empty">Esse pedido ainda não tem cartas prontas (' + esc(e.message) + ').<br><br><button class="btn pri" id="bCont">Continuar o processamento</button></div>';
+    }).catch(function () {
       $("#ov").hidden = true; $("#filters").hidden = true;
+      aguardarPedido(nome);
     });
+  }
+  /* pedido sem cartas prontas ainda: acompanha o processamento e abre sozinho quando a primeira carta sai (sem recarregar a página) */
+  function aguardarPedido(nome) {
+    stopLive();
+    loadTabs().then(function (ps) {
+      if (S.nome !== nome) return;
+      var p = ps.filter(function (x) { return x.nome === nome; })[0] || {};
+      if (p.unidades) { openPedido(nome); return; }
+      if (p.processando) {
+        $("#main").innerHTML = '<div class="loading"><div class="spin"></div>Processando ' + esc(nome) + ": as cartas aparecem aqui sozinhas (" + (p.job && p.job.feito || 0) + " de " + (p.linhas || "?") + ").</div>";
+        S.liveT = setTimeout(function () { aguardarPedido(nome); }, 3000);
+      } else {
+        $("#main").innerHTML = '<div class="empty">Esse pedido ainda não tem cartas prontas.<br><br><button class="btn pri" id="bCont">Continuar o processamento</button></div>';
+      }
+    }).catch(function () { S.liveT = setTimeout(function () { aguardarPedido(nome); }, 3000); });
   }
 
   /* ---------- andamento: mostra as cartas prontas enquanto o resto processa ---------- */
@@ -137,6 +160,7 @@
         if (S.nome !== nome) return;
         var id = F[S.idx] && F[S.idx].id, scroll = ($(".gridwrap") || {}).scrollTop || 0;
         S.cards = r.cards; S.byId = {}; S.cards.forEach(function (c) { S.byId[c.id] = c; }); S.order = r.order || {}; S.job = r.job; S.live = !!r.vivo;
+        loadTabs().catch(function () {});
         F = filtered(); var k = F.findIndex(function (c) { return c.id === id; }); S.idx = k >= 0 ? k : Math.min(S.idx, Math.max(0, F.length - 1));
         renderOverview(); renderFilters(); renderLive();
         if (S.view === "car") { if ($("#reel")) { layoutReel(); renderInfo(); } else mountCarousel(); }
@@ -285,9 +309,11 @@
           '<img loading="lazy" src="' + x.img + '" alt=""><span class="n">' + x.n + '</span><div class="s">' + esc(x.source) + " · " + x.dpi + " dpi" + (x.sc != null ? " · " + x.sc : "") + "</div></div>";
       }).join("") + "</div>" + (list.length > lim ? '<button class="btn" id="bMore">Mostrar mais (' + (list.length - lim) + ")</button>" : "") +
       '<input class="notein" type="text" id="note" placeholder="Anotação (opcional)" value="' + esc((S.dec[c.id] && S.dec[c.id].note) || "") + '" aria-label="Anotação">' +
+      '<label class="meta" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="msgchk"' + (inMsg(c) ? " checked" : "") + '> Incluir na mensagem e no PDF do cliente</label>' +
       '<div class="nav"><button class="btn" data-g="-1">↑ Anterior</button><button class="btn" data-g="1">Próxima ↓</button><button class="btn" id="bToGrid">Ver grade</button></div>' +
       '<div class="keys"><kbd>↑</kbd> <kbd>↓</kbd> cartas · <kbd>←</kbd> <kbd>→</kbd> candidatos · <kbd>Enter</kbd> aceita o candidato em vista · <kbd>N</kbd> nenhum · <kbd>D</kbd> dúvida · <kbd>Backspace</kbd> limpa · <kbd>Z</kbd> desfaz · <kbd>G</kbd> grade · <kbd>T</kbd> triagem</div>';
     var note = $("#note"); if (note) note.addEventListener("change", function () { saveNote(c, note.value); });
+    var mc = $("#msgchk"); if (mc) mc.addEventListener("change", function () { setMsg(c, mc.checked); });
     var mot = $(".mot", box); if (mot) mot.addEventListener("toggle", function () { LS.set("motivo", mot.open ? "1" : "0"); });
   }
   function actCur(a) {
@@ -412,7 +438,8 @@
       '<div><button class="btn pri" id="mkxml">Gerar XML</button></div><div class="info-t" id="xmlmsg"></div><div id="xmlDl"></div></div>' +
       '<div class="box"><h3>Baixar as imagens</h3><label>Pasta de destino (vazio = dentro dos dados do aplicativo)<input type="text" id="pasta" placeholder="C:\\Users\\você\\Downloads\\pedido" value="' + esc(LS.get("pasta", "")) + '"></label>' +
       '<div><button class="btn" id="mkimg">Baixar imagens do XML</button></div><div class="prog" id="imgProg" hidden><i style="width:0%"></i></div><div class="info-t" id="imgMsg"></div></div>' +
-      '<div class="box"><h3>Mensagem para o cliente</h3><div class="info-t">Cartas sem versão próxima e as suas anotações.</div><div><button class="btn" id="mkmsg">Montar mensagem</button></div><textarea id="cmsg" rows="8" hidden readonly></textarea></div>';
+      '<div class="box"><h3>Mensagem para o cliente</h3><div class="info-t">Entram as cartas marcadas com “Incluir na mensagem e no PDF do cliente” (no carrossel). Sem marca, entram as sem versão próxima e as com anotação.</div><div id="msgList"></div><div><button class="btn" id="mkmsg">Montar mensagem</button> <button class="btn pri" id="mkpdf">Gerar PDF para o cliente</button></div><div class="info-t" id="pdfMsg"></div><textarea id="cmsg" rows="8" hidden readonly></textarea></div>';
+    renderMsgList();
   }
   function gerarXml() {
     $("#xmlmsg").textContent = "Gerando…";
@@ -430,8 +457,76 @@
       if (j.estado === "rodando") setTimeout(pollImg, 1500);
     }).catch(function () {});
   }
+  function msgItems() { return S.cards.filter(inMsg); }
+  function renderMsgList() {
+    var el = $("#msgList"); if (!el) return; var its = msgItems();
+    el.innerHTML = its.length ? its.map(function (c) { var k = candN(c, chosenN(c));
+      return '<label class="info-t" style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-mc="' + esc(c.id) + '" checked> ' + esc(c.name) + " (" + esc(c.set) + " " + esc(c.cn) + ")" + (k ? "" : " · sem versão") + "</label>"; }).join("") : '<div class="info-t">Nenhuma carta marcada para a mensagem.</div>';
+    $$("[data-mc]", el).forEach(function (i) { i.addEventListener("change", function () { setMsg(S.byId[i.dataset.mc], i.checked); }); });
+  }
+  /* ---------- PDF para o cliente: o que ele pediu × a versão que vamos usar (montado na página, sem servidor) ---------- */
+  function loadImg(u) { return new Promise(function (ok) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = u; }); }
+  function wrapText(g, text, maxW) {
+    var words = String(text).split(/\s+/), lines = [], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + " " + w : w; if (g.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+    if (cur) lines.push(cur); return lines;
+  }
+  function pdfDe(jpegs, W, H) {  // PDF mínimo: uma imagem JPEG por página A4
+    var enc = new TextEncoder(), parts = [], off = 0, xref = [];
+    function put(x) { var b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); off += b.length; }
+    function obj(n, body) { xref[n] = off; put(n + " 0 obj\n"); put(body); put("\nendobj\n"); }
+    var n = jpegs.length; put("%PDF-1.4\n");
+    obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+    obj(2, "<< /Type /Pages /Kids [" + jpegs.map(function (_, i) { return (3 + i * 3) + " 0 R"; }).join(" ") + "] /Count " + n + " >>");
+    jpegs.forEach(function (j, i) {
+      var pg = 3 + i * 3, ct = pg + 1, im = pg + 2, cs = "q 595 0 0 842 0 0 cm /Im0 Do Q";
+      obj(pg, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 " + im + " 0 R >> >> /Contents " + ct + " 0 R >>");
+      obj(ct, "<< /Length " + cs.length + " >>\nstream\n" + cs + "\nendstream");
+      xref[im] = off; put(im + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + W + " /Height " + H + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + j.length + " >>\nstream\n"); put(j); put("\nendstream\nendobj\n");
+    });
+    var total = 3 + n * 3, x0 = off; put("xref\n0 " + total + "\n0000000000 65535 f \n");
+    for (var i = 1; i < total; i++) put(("0000000000" + xref[i]).slice(-10) + " 00000 n \n");
+    put("trailer\n<< /Size " + total + " /Root 1 0 R >>\nstartxref\n" + x0 + "\n%%EOF");
+    return new Blob(parts, { type: "application/pdf" });
+  }
+  function gerarPdfCliente() {
+    var its = msgItems(), msg = $("#pdfMsg"); if (!its.length) { msg.textContent = "Nenhuma carta marcada para a mensagem."; return; }
+    var W = 1240, H = 1754, M = 80, PER = 2, pages = [], cv = document.createElement("canvas"); cv.width = W; cv.height = H; var g = cv.getContext("2d");
+    var FONT = '"Segoe UI", Arial, sans-serif', imgW = 460, imgH = Math.round(imgW * 1.395), rowH = 800, top = 225;
+    function newPage(n, tot) {
+      g.fillStyle = "#fff"; g.fillRect(0, 0, W, H); g.fillStyle = "#111"; g.font = "bold 44px " + FONT; g.textBaseline = "alphabetic";
+      g.fillText("Cartas do seu pedido", M, 105); g.font = "24px " + FONT; g.fillStyle = "#555";
+      g.fillText("O que você pediu × a versão que vamos usar" + (tot > 1 ? " · página " + n + " de " + tot : ""), M, 148);
+    }
+    function fit(im, x, y) { if (!im) { g.fillStyle = "#eee"; g.fillRect(x, y, imgW, imgH); g.fillStyle = "#777"; g.font = "24px " + FONT; g.fillText("imagem indisponível", x + 90, y + imgH / 2); return; } g.drawImage(im, x, y, imgW, imgH); g.strokeStyle = "#bbb"; g.lineWidth = 2; g.strokeRect(x, y, imgW, imgH); }
+    var tot = Math.ceil(its.length / PER), i = 0; msg.textContent = "Montando o PDF… 0/" + its.length;
+    function nextPage() {
+      var grupo = its.slice(i, i + PER), pn = i / PER + 1; newPage(pn, tot);
+      return grupo.reduce(function (pr, c, r) {
+        return pr.then(function () {
+          var k = candN(c, chosenN(c)), d = S.dec[c.id] || {}, usar = k && d.status !== "nenhum";
+          return Promise.all([loadImg(c.ref), usar ? loadImg(k.img) : Promise.resolve(null)]).then(function (ims) {
+            var y0 = top + r * rowH, x2 = W - M - imgW;
+            g.fillStyle = "#111"; g.font = "bold 30px " + FONT; g.fillText(c.name + (c.qty > 1 ? "  ×" + c.qty : ""), M, y0 - 10);
+            g.font = "22px " + FONT; g.fillStyle = "#555"; g.fillText("O que você pediu", M, y0 + imgH + 34); g.fillText(usar ? "Versão que vamos usar" : "Sem versão disponível", x2, y0 + imgH + 34);
+            fit(ims[0], M, y0);
+            if (usar) fit(ims[1], x2, y0); else { g.fillStyle = "#f4f4f4"; g.fillRect(x2, y0, imgW, imgH); g.fillStyle = "#777"; g.font = "26px " + FONT; g.fillText("ficou de fora", x2 + 140, y0 + imgH / 2); }
+            g.fillStyle = "#111"; g.font = "bold 40px " + FONT; g.fillText("→", W / 2 - 20, y0 + imgH / 2);
+            if (d.note) { g.fillStyle = "#222"; g.font = "24px " + FONT; wrapText(g, d.note, W - 2 * M).slice(0, 3).forEach(function (l, n) { g.fillText(l, M, y0 + imgH + 76 + n * 32); }); }
+            msg.textContent = "Montando o PDF… " + (i + r + 1) + "/" + its.length;
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        return new Promise(function (ok) { cv.toBlob(function (b) { b.arrayBuffer().then(function (ab) { pages.push(new Uint8Array(ab)); ok(); }); }, "image/jpeg", 0.92); });
+      }).then(function () { i += PER; if (i < its.length) return nextPage(); });
+    }
+    nextPage().then(function () {
+      var blob = pdfDe(pages, W, H), a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = S.nome + "_cartas_cliente.pdf"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      msg.textContent = "PDF gerado com " + its.length + " carta(s) em " + pages.length + " página(s).";
+    }).catch(function (e) { msg.textContent = "Não consegui gerar o PDF: " + e.message; });
+  }
   function clientMsg() {
-    var items = S.cards.filter(function (c) { return !c.face && (c.prop.conf === "nenhum" || (S.dec[c.id] && S.dec[c.id].note)); });
+    var items = msgItems();
     var box = $("#cmsg"); box.hidden = false;
     box.value = items.length ? "Oi! Sobre estas cartas:\n\n" + items.map(function (c) {
       var k = candN(c, chosenN(c)), n = S.dec[c.id] && S.dec[c.id].note;
@@ -550,6 +645,7 @@
     if (t.id === "mkmsg") return clientMsg();
     if (t.id === "firstNew") { $("#nProg").hidden = true; $("#nErro").textContent = ""; openModal("mNovo"); return; }
     if (t.id === "nGo") return startNovo();
+    if (t.id === "mkpdf") return gerarPdfCliente();
     if (t.id === "bCont") { api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/continuar", {}).then(function () { return loadTabs(); }).then(function () { openPedido(S.nome); }); return; }
     if (t.id === "uplall") { S.showAllUpl = !S.showAllUpl; renderUpl(); return; }
     var u = t.closest("[data-u]"); if (u) { S.T[u.dataset.u] = !S.T[u.dataset.u]; saveTrust(); return; }
@@ -593,9 +689,13 @@
   });
 
   /* ---------- início ---------- */
+  function hashPedido() { var m = location.hash.match(/pedido=([A-Za-z0-9_-]+)/); return m ? m[1] : ""; }
+  window.addEventListener("hashchange", function () { var n = hashPedido(); if (n && n !== S.nome) loadTabs().then(function () { openPedido(n); }); });
   api("GET", "/api/estado").then(function (j) { ((j.uploaders || {}).trusted || []).forEach(function (n) { S.T[n] = true; }); $("#cntU").textContent = trustList().length; }).catch(function () {});
   loadTabs().then(function (p) {
-    var pronto = p.filter(function (x) { return x.pronto || x.unidades; }), last = LS.get("pedido", ""), pick = pronto.filter(function (x) { return x.nome === last; })[0] || pronto[pronto.length - 1];
+    var pronto = p.filter(function (x) { return x.pronto || x.unidades; }), last = LS.get("pedido", ""), hp = hashPedido();
+    // o pedido pedido na página (endereço com #pedido=nome) ou o que está processando agora vem primeiro; depois o último usado
+    var pick = p.filter(function (x) { return x.nome === hp; })[0] || p.filter(function (x) { return x.processando; })[0] || pronto.filter(function (x) { return x.nome === last; })[0] || pronto[pronto.length - 1] || p[p.length - 1];
     if (pick) openPedido(pick.nome); else $("#main").innerHTML = '<div class="empty">Nenhum pedido ainda.<br><br><button class="btn pri" id="firstNew">Criar o primeiro pedido</button></div>';
     var fn = $("#firstNew"); if (fn) fn.addEventListener("click", function () { openModal("mNovo"); });
   }).catch(function (e) { $("#main").innerHTML = '<div class="empty">Não consegui falar com o servidor local (' + esc(e.message) + ").</div>"; });
