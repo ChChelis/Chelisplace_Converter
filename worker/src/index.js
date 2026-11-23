@@ -9,12 +9,12 @@ import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEvento
 
 const T = "https://api.trello.com/1";
 
-async function trello(env, caminho, params = {}, metodo = "GET") {
+async function trello(env, caminho, params = {}, metodo = "GET", formulario = null) {
   const u = new URL(T + caminho);
   u.searchParams.set("key", env.TRELLO_KEY);
   u.searchParams.set("token", env.TRELLO_TOKEN);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
-  const r = await fetch(u, { method: metodo });
+  const r = await fetch(u, { method: metodo, ...(formulario ? { body: new URLSearchParams(formulario), headers: { "content-type": "application/x-www-form-urlencoded" } } : {}) });
   if (!r.ok) throw new Error(`Trello ${r.status} em ${caminho}`);
   return r.json();
 }
@@ -88,6 +88,15 @@ const cors = (origem) => ({
   "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "POST, OPTIONS",
 });
 
+// Comentários das alterações: um por tópico. Em atualização, só posta os que ainda não existem (o texto igual não se repete).
+async function postarComentarios(env, cardId, textos) {
+  if (!textos.length) return 0;
+  const ja = new Set((await trello(env, `/cards/${cardId}/actions`, { filter: "commentCard", limit: "1000" }).catch(() => [])).map((a) => a?.data?.text));
+  let n = 0;
+  for (const text of textos) { if (ja.has(text)) continue; await trello(env, `/cards/${cardId}/actions/comments`, {}, "POST", { text }); n++; }
+  return n;
+}
+
 // POST /card: cria (ou atualiza, com cardId) o card do pedido. Exige origem da página + senha da página.
 async function rotaCard(req, env) {
   const origem = req.headers.get("origin") || "";
@@ -99,7 +108,7 @@ async function rotaCard(req, env) {
     return new Response(JSON.stringify({ erro: "não autorizado: entre com o Google (conta autorizada) ou use a senha da página" }), { status: 401, headers: { ...h, "content-type": "application/json" } });
   const b = await req.json().catch(() => null);
   if (!b) return new Response(JSON.stringify({ erro: "corpo inválido" }), { status: 400, headers: { ...h, "content-type": "application/json" } });
-  const { name, desc } = montarCard(b);
+  const { name, desc, comentarios } = montarCard(b);
   let card, previsao = null;
   if (b.cardId && /^[0-9a-f]{24}$/.test(b.cardId)) {
     // atualização: preserva as linhas de controle do Worker (entrada, prazo manual, previsão) do card atual
@@ -125,7 +134,9 @@ async function rotaCard(req, env) {
     card = await trello(env, "/cards", { idList: novos.id, name, desc: descFinal, pos: "bottom", ...(due ? { due } : {}) }, "POST");
     if (due) await agendaRetirada(env, { id: card.id, name, desc: descFinal }, due, card.shortUrl || card.url);
   }
-  return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url, previsao }), { headers: { ...h, "content-type": "application/json" } });
+  let comentou = 0, erroComentarios = null;
+  try { comentou = await postarComentarios(env, card.id, comentarios); } catch (e) { erroComentarios = String(e.message || e).slice(0, 120); }  // o card já existe: falha nos comentários não derruba a criação
+  return new Response(JSON.stringify({ id: card.id, url: card.shortUrl || card.url, previsao, comentarios: comentou, ...(erroComentarios ? { erroComentarios } : {}) }), { headers: { ...h, "content-type": "application/json" } });
 }
 
 const json = (o, s = 200) => new Response(JSON.stringify(o, null, 2), { status: s, headers: { "content-type": "application/json; charset=utf-8" } });

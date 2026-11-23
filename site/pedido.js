@@ -695,12 +695,13 @@ function desenharPend(nExtras) {
   const falta = Math.max(0, pend.length - nExtras);
   const lista = `<ul>${pend.slice(0, 20).map((c) => `<li>${esc(c.nome)}${c.set ? ` <span class="suave">(${esc(c.set.toUpperCase())} ${esc(c.cn)})</span>` : ""}</li>`).join("")}${pend.length > 20 ? `<li class="suave">… e mais ${pend.length - 20}</li>` : ""}</ul>`;
   el.innerHTML = falta
-    ? `<div class="conf"><b class="aviso">${falta} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>); se vierem sem sangria, use <b>Corrigir sangria…</b>. Depois clique em <b>Conferir</b>.${lista}</div>`
+    ? `<div class="conf"><b class="aviso">${falta} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b> (ele lista também o que estiver em <code>completar/</code>).<br><button class="acao sec" id="p-reler">Reler a pasta</button>${lista}</div>`
     : `<div class="conf"><b class="ok">Os ${pend.length} slot(s) pendentes do bot já têm imagem na pasta.</b></div>`;
 }
 async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras"), chave = chaveExtras(itens);
   desenharPend(itens.length);
+  const br = $("#p-reler"); if (br) br.onclick = async () => { br.disabled = true; br.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { /* mantém */ } if (window.conferir) conferir(); };
   const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
   if (!itens.length) {
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
@@ -762,7 +763,7 @@ const nomePng = (n) => n.replace(/\.[A-Za-z0-9]+$/, "") + ".png";
 function sgAtualizarLista() {
   const p = sessao.pasta, ja = new Map(SG.itens.map((i) => [i.chave, i]));
   const daPasta = [];
-  if (p) for (const it of [...p.raiz, ...p.pares]) {
+  if (p) for (const it of [...p.raiz, ...p.pares, ...(p.completar || [])]) {  // completar/ também: é onde as imagens de outra fonte costumam ser subidas
     if (!SG.mostrarComId && !semIdNoNome(it.nome)) continue;  // imagens com ID de 20+ caracteres já são do MPCFill
     const chave = (it.em || "raiz") + "/" + it.nome;
     daPasta.push(ja.get(chave) || { chave, nome: it.nome, item: it, incluir: true, modo: "borda" });
@@ -863,9 +864,10 @@ async function sgEnviarDrive() {
   } catch (e) { if (e.message !== "cancelado") st.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
 }
 const sgNaMontagem = () => ($("#sg").parentElement || {}).id === "m-sg-host";
-$("#sg-abrir").onclick = () => { $("#c-extras").after($("#sg")); sgAtualizarLista(); sgDesenhar(); };
+const sgReler = async (box) => { box.hidden = false; box.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { box.innerHTML = `<span class="alerta">Não consegui reler a pasta: ${esc(e.message)}</span>`; await new Promise((r) => setTimeout(r, 1200)); } };
+$("#sg-abrir").onclick = async () => { $("#c-extras").after($("#sg")); await sgReler($("#sg")); sgAtualizarLista(); sgDesenhar(); };
 // Montagem: o mesmo painel aparece embaixo do plano (o botão fica junto do aviso de imagens pendentes)
-window.abrirSangriaMontagem = () => { $("#m-sg-host").append($("#sg")); sgAtualizarLista(); sgDesenhar(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+window.abrirSangriaMontagem = async () => { $("#m-sg-host").append($("#sg")); await sgReler($("#sg")); sgAtualizarLista(); sgDesenhar(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
 
 // ---------- Etapas: não passa para a próxima com pendência ----------
 const ORDEM = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];
@@ -986,7 +988,7 @@ $("#t-criar").onclick = async () => {
   const bearer = credencial || senha;
   if (!/^https:\/\//.test(base) || !bearer) { av.textContent = " Conecte o Google (Drive) ou preencha a senha da página."; $("#t-det").open = true; return; }
   if (!ultimoOrc || !(valorFinal() > 0)) { av.textContent = " Faça o orçamento antes (valor cobrado e slots)."; return; }
-  const slots = ultimoOrc.slots, alts = pedido.alteracoes.filter((a) => a.titulo.trim()).map((a) => `${a.titulo.trim()}: ${a.itens.map((i) => i.texto.trim()).filter(Boolean).join("; ")}`);
+  const slots = ultimoOrc.slots, alts = pedido.alteracoes.filter((a) => a.titulo.trim() && a.itens.some((i) => i.texto.trim())).map((a) => ({ titulo: a.titulo.trim(), itens: a.itens.map((i) => i.texto.trim()).filter(Boolean) }));  // o Worker põe o resumo na descrição e o texto inteiro em comentários
   const corpo = {
     cliente: $("#f-cliente").value.trim(), telefone: $("#f-tel").value.trim(), slots, paginas: Math.ceil(slots / 18), valor: valorFinal(),
     pastaUrl: sessao.pasta && sessao.pasta.drive ? `https://drive.google.com/drive/folders/${sessao.pasta.drive.id}` : "",

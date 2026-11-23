@@ -449,3 +449,13 @@ class BotPendentes(unittest.TestCase):
         self.assertEqual([c.find("slots").text for c in raiz.findall("pendentes/card")], ["2"])  # pendente vem depois, sem buracos
         self.assertEqual(raiz.find("pendentes/card/set").text, "tsr")
         self.assertEqual(r["fora"], ["Duvida ×1"])                        # só dúvida/não decidida fica de fora
+
+
+class FichaPdfQuebra(unittest.TestCase):
+    def test_item_comprido_quebra_linha_e_nao_passa_da_margem(self):
+        from PIL import ImageChops
+        md = ("### Pedido: 5 slots\n#### 1. Lista → 5 slots\n### Alterações\n#### Imagens de outra fonte\n"
+              "1. Slip On the Ring (SLD 1293): não existe no MPCFill; a imagem vem de outra fonte — " + "Não tem essa arte no MPCFill, peguei do Scryfall; " * 4 + "\n")
+        paginas = ficha_pdf.desenhar(md)
+        direita = max(ImageChops.invert(p.convert("L")).getbbox()[2] for p in paginas)
+        self.assertLessEqual(direita, ficha_pdf.W - ficha_pdf.DIR_)

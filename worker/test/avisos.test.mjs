@@ -47,7 +47,7 @@ test("coluna sem mensagem ao cliente só tem botão do grupo", () => {
 });
 test("linkWaCliente sem telefone devolve null", () => assert.equal(linkWaCliente("", "oi"), null));
 
-import { montarCard } from "../src/avisos.js";
+import { montarCard, comentariosAlteracoes } from "../src/avisos.js";
 test("montarCard usa só campos permitidos e nunca vaza custo/lucro/pix", () => {
   const { name, desc } = montarCard({ cliente: "Ana", telefone: "+55 31 9", slots: 216, paginas: 12, valor: 270, pastaUrl: "https://drive.google.com/drive/folders/abc",
     custo: 99, lucro: 50, chavePix: "segredo@pix", descontos: "x", alteracoes: ["Troca de arte X"] });
@@ -61,6 +61,21 @@ test("montarCard rejeita pasta que não é do Drive e lida com lixo", () => {
   const { desc } = montarCard({ cliente: "B", slots: "abc", valor: -5, pastaUrl: "https://evil.example/x" });
   assert.doesNotMatch(desc, /evil/);
   assert.match(desc, /Slots: 0/);
+});
+
+test("alterações em objeto: descrição só com o resumo e um comentário por tópico (nada cortado)", () => {
+  const longo = "Gemstone Caverns (EOS 61): não existe no MPCFill; a imagem vem de outra fonte — " + "texto ".repeat(80);
+  const { desc, comentarios } = montarCard({ cliente: "Ana", slots: 5, alteracoes: [{ titulo: "Imagens de outra fonte", itens: [longo, "Lotus Field (EOS 68)"] }, { titulo: "Artes alteradas", itens: ["Sol Ring: arte igual"] }] });
+  assert.match(desc, /- Imagens de outra fonte: 2 item\(ns\), detalhes nos comentários do card/);
+  assert.doesNotMatch(desc, /Gemstone/);
+  assert.equal(comentarios.length, 2);
+  assert.ok(comentarios[0].startsWith("**Imagens de outra fonte**") && comentarios[0].includes(longo.trim()) && comentarios[0].includes("- Lotus Field (EOS 68)"));
+});
+test("tópico muito longo vira vários comentários, cada um com o título", () => {
+  const itens = Array.from({ length: 40 }, (_, i) => `Carta ${i} ` + "x".repeat(400));
+  const cs = comentariosAlteracoes("Muitas", itens);
+  assert.ok(cs.length > 1 && cs.every((c) => c.length < 7500) && cs[1].startsWith("**Muitas** (continuação)"));
+  assert.equal(cs.join("").match(/- Carta \d+/g).length, 40);
 });
 
 import { quintoDiaUtil, inicioJanelaFinalizados, avisoNovo } from "../src/avisos.js";

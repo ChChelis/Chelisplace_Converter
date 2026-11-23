@@ -32,7 +32,7 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
   if (window.podeAbrirAba && !window.podeAbrirAba(b.dataset.aba)) return;  // não deixa pular uma etapa que ainda tem pendência
   document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", x === b));
   document.querySelectorAll("main > section").forEach((s) => (s.hidden = s.id !== b.dataset.aba));
-  if (b.dataset.aba === "montagem") prepararMontagem();
+  if (b.dataset.aba === "montagem") relerPasta().catch(() => {}).then(() => prepararMontagem());  // sempre com a pasta atual (o que você subiu no Drive aparece)
   if (window.aoAbrirAba) window.aoAbrirAba(b.dataset.aba);
 }));
 
@@ -65,7 +65,7 @@ async function lerHandle(handle) {
     const raiz = [], pares = [], completar = [];
     const varrer = async (dir, nivel) => {  // completar/ pode ter subpastas (uma por loja, por exemplo)
       for await (const [n, h] of dir.entries()) {
-        if (h.kind === "file" && IMG.test(n)) completar.push({ nome: n, em: "completar", ler: () => h.getFile() });
+        if (h.kind === "file" && IMG.test(n)) completar.push({ nome: n, em: "completar", ler: () => h.getFile(), pai: dir });
         else if (h.kind === "directory" && nivel < 3) await varrer(h, nivel + 1);
       }
     };
@@ -81,7 +81,7 @@ async function lerHandle(handle) {
       recarregar: () => lerHandle(handle),
       // guarda a original em originais_sem_sangria/ e coloca a corrigida no lugar dela (ou só adiciona, se não havia original)
       async inserirCorrigida(item, nomeNovo, bytes) {
-        const dir = item && item.em === "pares" ? await handle.getDirectoryHandle("pares") : handle;
+        const dir = item && item.pai ? item.pai : item && item.em === "pares" ? await handle.getDirectoryHandle("pares") : handle;  // completar/ (e subpastas): a corrigida fica ao lado da original
         if (item) {
           const backup = await handle.getDirectoryHandle("originais_sem_sangria", { create: true });
           const f = await (await dir.getFileHandle(item.nome)).getFile();
@@ -314,6 +314,11 @@ function baixar(blob, nome) {
 // Ordem dos slots: cartas do XML, (brancos), pares, extras. Extras = imagens da pasta que não estão no XML.
 const MONT = { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null, ignorarPend: false, chavePend: "" };
 
+// Relê a pasta do pedido (Drive ou computador): pega o que foi subido/alterado depois que ela foi escolhida.
+async function relerPasta() {
+  if (sessao.pasta && sessao.pasta.recarregar) { sessao.pasta = await sessao.pasta.recarregar(); sessao.conferencia = null; atualizarRotulos(); }
+}
+window.relerPasta = relerPasta;
 async function prepararMontagem() {
   const p = sessao.pasta, plano = $("#m-plano");
   $("#m-trocar").open = !p;
@@ -364,8 +369,8 @@ async function prepararMontagem() {
     h += `</div>`;
   }
   if (pendFalta) {
-    h += `<div class="conf"><b class="alerta">Faltam imagens para ${pendFalta} de ${pend.length} slot(s) pendente(s) do bot</b> (nenhum serviu; já estão no orçamento): ${esc(pend.slice(0, 12).map((c) => c.nome).join("; "))}${pend.length > 12 ? "…" : ""}<br>Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>), ou adicione aqui. Se vierem sem sangria, corrija antes.<br>`;
-    h += `<button class="acao sec" id="m-sg">Corrigir sangria…</button> <input id="m-add-pend" type="file" accept="image/*" multiple> `;
+    h += `<div class="conf"><b class="alerta">Faltam imagens para ${pendFalta} de ${pend.length} slot(s) pendente(s) do bot</b> (nenhum serviu; já estão no orçamento): ${esc(pend.slice(0, 12).map((c) => c.nome).join("; "))}${pend.length > 12 ? "…" : ""}<br>Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>, ou adicione daqui do computador. Se vierem sem sangria, use <b>Corrigir sangria…</b> (ele lista também o que estiver em <code>completar/</code>).<br>`;
+    h += `<button class="acao sec" id="m-reler">Reler a pasta</button> <button class="acao sec" id="m-sg">Corrigir sangria…</button> <input id="m-add-pend" type="file" accept="image/*" multiple> `;
     h += MONT.ignorarPend ? `<span class="suave">Vai montar sem essas ${pendFalta} imagem(ns).</span> <button class="peq" id="m-pend-nao">Desfazer</button>` : `<button class="acao sec" id="m-pend-ignorar">Montar sem elas</button>`;
     h += `</div>`;
   }
@@ -396,6 +401,7 @@ async function prepararMontagem() {
   liga("m-add-limpar", () => (MONT.adicionadas = []));
   liga("m-pend-ignorar", () => (MONT.ignorarPend = true));
   liga("m-pend-nao", () => (MONT.ignorarPend = false));
+  const brl = $("#m-reler"); if (brl) brl.onclick = async () => { brl.disabled = true; brl.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { /* mantém a pasta atual */ } await prepararMontagem(); };
   const bsg = $("#m-sg"); if (bsg) bsg.onclick = () => window.abrirSangriaMontagem && window.abrirSangriaMontagem();
   const addp = $("#m-add-pend"); if (addp) addp.onchange = async () => { MONT.adicionadas.push(...addp.files); await prepararMontagem(); };
   const add = $("#m-add");

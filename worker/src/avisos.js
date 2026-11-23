@@ -263,6 +263,20 @@ export function avisoMovimento({ cardNome, de, para, card, previsao }) { // prev
 // Card criado pela página: só estes campos entram (nunca custo, lucro, desconto ou Pix).
 const txt = (v, n) => String(v ?? "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, n);
 const num = (v) => (Number.isFinite(+v) && +v >= 0 ? +v : 0);
+// Comentários do card com as alterações completas (um por tópico; tópico muito longo é dividido). O Trello limita a descrição, e linhas longas ficavam cortadas.
+const LIMITE_COMENTARIO = 7000;
+export function comentariosAlteracoes(titulo, itens) {
+  const cab = `**${titulo}**`, saida = [];
+  let atual = [];
+  const tam = () => atual.reduce((n, l) => n + l.length + 1, 0);
+  for (const it of itens) {
+    const linha = "- " + it;
+    if (atual.length && tam() + linha.length > LIMITE_COMENTARIO) { saida.push(atual); atual = []; }
+    atual.push(linha);
+  }
+  if (atual.length || !saida.length) saida.push(atual);
+  return saida.map((ls, i) => `${cab}${i ? " (continuação)" : ""}\n\n${ls.join("\n")}`.trim());
+}
 export function montarCard(b) {
   const cliente = txt(b.cliente, 80) || "Cliente sem nome";
   const slots = Math.round(num(b.slots));
@@ -289,9 +303,16 @@ export function montarCard(b) {
   if (/^https:\/\/drive\.google\.com\//.test(pasta)) linhas.push(`Pasta do Drive: ${pasta}`);
   const obs = txt(b.obs, 400);
   if (obs) linhas.push(`Obs: ${obs}`);
-  const alts = (Array.isArray(b.alteracoes) ? b.alteracoes : []).slice(0, 30).map((a) => txt(a, 200)).filter(Boolean);
+  const alts = [], comentarios = [];
+  for (const a of (Array.isArray(b.alteracoes) ? b.alteracoes : []).slice(0, 30)) {
+    if (typeof a === "string") { const t = txt(a, 200); if (t) alts.push(t); continue; }  // formato antigo: uma linha por tópico
+    const titulo = txt(a && a.titulo, 120), itens = (Array.isArray(a && a.itens) ? a.itens : []).slice(0, 300).map((i) => txt(i, 1000)).filter(Boolean);
+    if (!itens.length) continue;
+    alts.push(`${titulo || "Alterações"}: ${itens.length} item(ns), detalhes nos comentários do card`);
+    comentarios.push(...comentariosAlteracoes(titulo || "Alterações", itens));
+  }
   if (alts.length) linhas.push("", "Alterações:", ...alts.map((a) => "- " + a));
-  return { name: `${cliente} · ${slots} slots`, desc: linhas.join("\n") };
+  return { name: `${cliente} · ${slots} slots`, desc: linhas.join("\n"), comentarios };
 }
 
 // Aviso de card novo (criado pela página ou à mão no Trello).

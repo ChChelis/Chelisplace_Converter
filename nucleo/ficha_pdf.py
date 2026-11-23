@@ -83,8 +83,8 @@ class _Folha:
         self.d.text((x, self.y), texto, fill=cor, font=fonte(tam, negrito))
         self.y += passo
 
-    def quebrar(self, texto, tam):
-        f, largura, linhas, atual = fonte(tam), W - ESQ - DIR_, [], ""
+    def quebrar(self, texto, tam, recuo=0):
+        f, largura, linhas, atual = fonte(tam), W - ESQ - DIR_ - recuo, [], ""
         for pal in texto.split():
             teste = (atual + " " + pal).strip()
             if self.d.textlength(teste, font=f) <= largura or not atual:
@@ -96,6 +96,16 @@ class _Folha:
 
 def gerar(md, imagens=None, miniaturas=None, matriz=None, saida=None):
     """md: texto da ficha. imagens: {url: bytes}. miniaturas: {texto do item: [url, ...]}. matriz: QR (0/1) ou None."""
+    paginas = desenhar(md, imagens, miniaturas, matriz)
+    buf = io.BytesIO()
+    paginas[0].save(buf, "PDF", resolution=DPI, save_all=True, append_images=paginas[1:])
+    if saida:
+        Path(saida).write_bytes(buf.getvalue())
+    return buf.getvalue()
+
+
+def desenhar(md, imagens=None, miniaturas=None, matriz=None):
+    """Desenha a ficha e devolve as páginas (imagens PIL)."""
     imagens, miniaturas = imagens or {}, miniaturas or {}
     p = _Folha()
     em_pix = pulando = apos_item = False
@@ -119,11 +129,13 @@ def gerar(md, imagens=None, miniaturas=None, matriz=None, saida=None):
             continue
         it = re.match(r"^\s*(\d+)\.\s+(.*)$", t)
         if it:
-            p.cabe(PASSO_ITEM)
             num = it.group(1) + "."
-            p.d.text((ESQ + RECUO - 8 - p.d.textlength(num, font=fonte(TAM["txt"])), p.y), num, fill=CINZA, font=fonte(TAM["txt"]))
-            p.d.text((ESQ + RECUO, p.y), it.group(2), fill="black", font=fonte(TAM["txt"]))
-            p.y += PASSO_ITEM
+            for k, parte in enumerate(p.quebrar(it.group(2), TAM["txt"], RECUO) or [""]):  # item comprido continua na linha de baixo, alinhado ao texto
+                p.cabe(PASSO_ITEM)
+                if k == 0:
+                    p.d.text((ESQ + RECUO - 8 - p.d.textlength(num, font=fonte(TAM["txt"])), p.y), num, fill=CINZA, font=fonte(TAM["txt"]))
+                p.d.text((ESQ + RECUO, p.y), parte, fill="black", font=fonte(TAM["txt"]))
+                p.y += PASSO_ITEM
             apos_item = True
             urls = [u for u in miniaturas.get(it.group(2).strip(), []) if u]
             if urls:
@@ -151,8 +163,4 @@ def gerar(md, imagens=None, miniaturas=None, matriz=None, saida=None):
         p.cabe(lado + 20)
         p.y += 10
         p.img.paste(_qr(matriz, lado).resize((lado, lado), Image.NEAREST), (ESQ, p.y))
-    buf = io.BytesIO()
-    p.paginas[0].save(buf, "PDF", resolution=DPI, save_all=True, append_images=p.paginas[1:])
-    if saida:
-        Path(saida).write_bytes(buf.getvalue())
-    return buf.getvalue()
+    return p.paginas
