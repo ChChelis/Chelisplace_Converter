@@ -113,3 +113,6 @@ Uma imagem **sobrando** (cópia a mais de um ID que o XML já pede) pode ser a s
 
 ### Colagem pela página inteira
 O custo de colagem (confidencial, no orçamento e no `.md`) agora é `páginas × 18 adesivos × R$ 0,13` (`nucleo/orcamento.py`), e não `slots × 0,13`: os adesivos que completam a última página também são colados, às custas do pedido. Ex.: 194 slots = 11 páginas = 198 adesivos → R$ 26 (antes R$ 25) e lucro R$ 105 (antes R$ 106). O `.md` mostra “Colagem: 11 páginas x 18 adesivos x0,13 = 26”.
+
+## Listas coladas (Moxfield, Archidekt) e impressão adivinhada (nov/2026)
+`site/lista.js` (`lerLista`, `marcarFicha`; testes: `node --test site/test/*.test.mjs`) lê o texto exportado: `1 Nome (SET) num`, `1x Nome (set) num [Categoria] ^Tag^`, `*F*`. Guarda `set`/`numero` por carta; sem eles a carta é **adivinhada** (o bot usa a primeira edição em papel, a mais antiga, via `scripts/deck_parse.py`). A página não consulta o Scryfall nem baixa imagem: a escolha da arte continua no bot/MPCFill. Na ficha (e no PDF do cliente) a fonte ganha uma nota; o `*` por carta só aparece quando a lista mistura cartas com e sem set. O bot (`deck_parse.parse_line`) também ignora `[Categoria]` e `^Tag^`. LigaMagic (HTML salvo) e nomes em português: **ainda não feito** (falta exemplo real).

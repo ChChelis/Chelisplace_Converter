@@ -30,7 +30,8 @@ def norm(name):
 
 
 def parse_line(line):
-    m = LINE.match(line.strip())
+    # Archidekt acrescenta [Categoria] e ^Tag^ no fim da linha; não fazem parte da carta
+    m = LINE.match(re.sub(r"(?:\s+(?:\[[^\]]*\]|\^[^^]*\^))+\s*$", "", line.strip()))
     if not m:
         return None
     qty, name, sset, cn = m.groups()
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     assert parse_line("1 Undercity / The Initiative (TCLB) 20")["name"] == "Undercity // The Initiative"
     assert parse_line("1x Sol Ring (C21) 263 *F*")["cn"] == "263"
     assert parse_line("3 Island")["set"] is None
+    assert parse_line("1x Sol Ring (c21) 263 [Ramp] ^Have,#37d67a^")["cn"] == "263"
     for line in open(sys.argv[1], encoding="utf-8"):
         if line.strip():
             r = resolve(parse_line(line))

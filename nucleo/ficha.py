@@ -65,6 +65,8 @@ def gerar(cliente, telefone, fontes, alteracoes, conclusao, modo, precos, chave_
     for n, f in enumerate(fontes, 1):
         fr, ve = f.get("frentes", []), f.get("versos", [])
         L.append(f"#### {n}. {f['titulo']} → {len(fr) + len(ve)} slots")
+        if f.get("nota"):
+            L.append(f["nota"])
         if ve:
             L += ["##### Frentes", _lista(fr), "##### Versos", _lista(ve)]
         else:

@@ -412,3 +412,21 @@ class TestImagemMontagem(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FichaNota(unittest.TestCase):
+    def test_nota_da_fonte_aparece_logo_abaixo_do_titulo(self):
+        md, _ = ficha.gerar("X", "1", [{"titulo": "Lista", "frentes": ["Island *"], "versos": [], "nota": "Impressão adivinhada: teste"}], [], "", "normal", None)
+        linhas = md.splitlines()
+        i = next(k for k, l in enumerate(linhas) if l.startswith("#### 1. Lista"))
+        self.assertEqual(linhas[i + 1], "Impressão adivinhada: teste")
+
+
+class BotArchidekt(unittest.TestCase):
+    def test_parse_line_ignora_categoria_e_tag(self):
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+        import deck_parse
+        r = deck_parse.parse_line("1x Sol Ring (c21) 263 [Ramp] ^Have,#37d67a^")
+        self.assertEqual((r["name"], r["set"], r["cn"]), ("Sol Ring", "c21", "263"))
+        self.assertIsNone(deck_parse.parse_line("3x Island [Land]")["set"])

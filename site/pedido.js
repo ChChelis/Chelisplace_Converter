@@ -7,17 +7,6 @@ const RE_ID_ARQ = new RegExp("\\(([A-Za-z0-9_-]{20,})\\)" + SUFIXO_COPIA + "\\.[
 const lerJson = (k, pad) => { try { return JSON.parse(guardado.ler(k)) || pad; } catch { return pad; } };
 
 // ---------- entrada ----------
-const LINHA = /^\s*(\d+)\s*x?\s+(.+?)\s*$/i;
-function lerLista(texto) {
-  const nomes = [];
-  for (const bruta of texto.split(/\r?\n/)) {
-    const m = bruta.match(LINHA);
-    if (!m) continue;
-    const nome = m[2].replace(/\s*\([A-Za-z0-9]{2,6}\)\s*\S*\s*(\*F\*)?$/, "").replace(/\s+\*F\*$/, "").trim();
-    for (let i = 0; i < +m[1]; i++) nomes.push({ nome });
-  }
-  return nomes;
-}
 function lerXmlMpc(buf) {
   const txt = new TextDecoder().decode(buf);
   if (/<!DOCTYPE|<!ENTITY/i.test(txt)) throw new Error("XML recusado (DOCTYPE/ENTITY).");
@@ -433,7 +422,7 @@ async function renderFicha() {
   try {
     const r = await chamar("ficha", {
       cliente: $("#f-cliente").value.trim() || "<CLIENTE>", telefone: $("#f-tel").value.trim() || "<TELEFONE>",
-      fontes: pedido.fontes.map((f) => ({ titulo: f.titulo, frentes: f.frentes.map((x) => x.nome), versos: f.versos.map((x) => x.nome) })),
+      fontes: pedido.fontes.map((f) => { const mk = marcarFicha(f.frentes); return { titulo: f.titulo, frentes: mk.frentes, versos: f.versos.map((x) => x.nome), nota: mk.nota }; }),
       alteracoes: alts, conclusao: $("#f-conclusao").value.trim(), modo: pedido.modo, precos: precosEfetivos(pedido.modo),
       chave_pix: $("#p-chave").value.trim() || "<CHAVE_PIX>", pago: ultimoOrc ? valorFinal() : null,
       descontos: { slot: +$("#d-slot").value || null, pct: $("#d-pct").value === "" ? 10 : +$("#d-pct").value }, slots_orc: ultimoOrc ? ultimoOrc.slots : null,
