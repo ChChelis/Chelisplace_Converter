@@ -304,9 +304,33 @@ async function abrirBot(alvo) {
   }
   alvo.innerHTML = `<span class="aviso">O bot não abriu.</span> Se é a primeira vez, baixe e abra o programa uma vez pelo botão abaixo.`;
 }
+// Manda a lista do passo 1 direto ao bot como pedido novo (sem colar de novo): o bot cria o pedido e já começa a processar.
+function desenharEnvioBot() {
+  const alvo = $("#b-enviar"); alvo.innerHTML = "";
+  const listas = pedido.fontes.filter((f) => f.origem === "lista");
+  if (!listas.length) return;
+  const base = nomeParaBot($("#f-cliente").value.trim() || "pedido");
+  listas.forEach((f, i) => {
+    const caixa = Object.assign(document.createElement("div"), { className: "conf" });
+    const nCartas = f.frentes.length, nLinhas = listaParaBot(f.frentes).trim().split("\n").length;
+    caixa.innerHTML = `<b>${esc(f.titulo)}</b> <span class="suave">${nCartas} cartas, ${nLinhas} linhas</span><br><label>Nome do pedido no bot <input type="text" size="28" value="${esc(f.nomeBot || (listas.length > 1 ? base + "-" + (i + 1) : base))}"></label> <button class="acao">Enviar ao bot</button><div class="suave msg"></div>`;
+    const inp = caixa.querySelector("input"), btn = caixa.querySelector("button"), msg = caixa.querySelector(".msg");
+    if (f.enviadoBot) { inp.value = f.enviadoBot; inp.disabled = btn.disabled = true; btn.textContent = "Enviado ✓"; msg.textContent = "Já está no bot: abra a conferência dele ou use o XML quando estiver pronto."; }
+    btn.onclick = async () => {
+      const nome = nomeParaBot(inp.value); inp.value = nome; btn.disabled = true; msg.textContent = "Enviando…";
+      try {
+        const r = await fetch(MOTOR + "/api/pedidos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome, lista: listaParaBot(f.frentes) }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.erro || "o bot recusou o pedido");
+        f.enviadoBot = nome; f.nomeBot = nome; procurarBot();
+      } catch (e) { btn.disabled = false; msg.innerHTML = `<span class="aviso">${esc(e.message)}</span>`; }
+    };
+    alvo.append(caixa);
+  });
+}
 async function procurarBot() {
   const alvo = $("#b-estado"), lista = $("#b-pedidos");
-  alvo.textContent = "Procurando o bot…"; lista.innerHTML = "";
+  alvo.textContent = "Procurando o bot…"; lista.innerHTML = ""; $("#b-enviar").innerHTML = "";
   try {
     const est = await (await fetch(MOTOR + "/api/estado")).json();
     alvo.innerHTML = `<span class="ok">Bot conectado</span> <span class="suave">(versão ${esc(est.versao)})</span> <button class="peq" id="b-de-novo">Atualizar</button> <a href="${MOTOR}/" target="_blank" rel="noopener">Abrir a conferência do bot</a>`;
@@ -314,6 +338,7 @@ async function procurarBot() {
     alvo.insertAdjacentHTML("beforeend", ` <button class="peq" id="b-sair">Fechar o bot</button>`);
     $("#b-sair").onclick = async () => { try { await fetch(MOTOR + "/api/sair", { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } }); } catch {} clearInterval(pingBot); pingBot = null; setTimeout(procurarBot, 800); };
     manterBot();
+    desenharEnvioBot();
     const peds = await (await fetch(MOTOR + "/api/pedidos")).json();
     lista.innerHTML = peds.length ? "<h3>Pedidos do bot</h3>" : `<p class="suave">O bot ainda não tem pedidos. Abra-o e use “+ Novo pedido”.</p>`;
     for (const p of peds) {

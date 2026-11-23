@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-const { lerLista, marcarFicha } = createRequire(import.meta.url)("../lista.js");
+const { lerLista, marcarFicha, listaParaBot, nomeParaBot } = createRequire(import.meta.url)("../lista.js");
 
 test("Moxfield: quantidade, set e número; *F* ignorado; / vira //", () => {
   const r = lerLista("2 Avenging Hunter (CLB) 215\n1 Sol Ring (C21) 263 *F*\n1 Undercity / The Initiative (TCLB) 20");
@@ -30,4 +30,14 @@ test("ficha: asterisco só quando a lista é mista", () => {
   assert.deepEqual(toda.frentes, ["Island", "Island"]);
   assert.match(toda.nota, /adivinhada/);
   assert.equal(marcarFicha(lerLista("1 Sol Ring (C21) 263")).nota, "");
+});
+
+test("lista para o bot: agrupa cópias iguais, mantém set/número e a ordem", () => {
+  const t = listaParaBot(lerLista("2 Island\n1 Sol Ring (C21) 263 *F*\n1 Island\n1x Sol Ring (c21) 263 [Ramp]\n1 Sol Ring"));
+  assert.equal(t, "3 Island\n2 Sol Ring (C21) 263\n1 Sol Ring\n");
+});
+test("nome do pedido aceito pelo bot", () => {
+  assert.equal(nomeParaBot("João da Silva / Deck #2"), "Joao_da_Silva_Deck_2");
+  assert.equal(nomeParaBot(""), "pedido");
+  assert.ok(/^[A-Za-z0-9_-]{1,60}$/.test(nomeParaBot("x".repeat(100) + "ção")));
 });

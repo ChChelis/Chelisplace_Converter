@@ -30,4 +30,19 @@ function marcarFicha(frentes) {
   return { frentes: frentes.map((c) => c.nome + (c.adivinhada && n < frentes.length ? " *" : "")), nota };
 }
 
-if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha };
+// Texto no formato que o bot lê (uma linha "qtd Nome (SET) num" por carta distinta, na ordem em que aparecem).
+function listaParaBot(frentes) {
+  const linhas = new Map();
+  for (const c of frentes) {
+    const k = c.nome + "|" + (c.set || "") + "|" + (c.numero || "");
+    const e = linhas.get(k) || { c, n: 0 };
+    e.n++; linhas.set(k, e);
+  }
+  return [...linhas.values()].map(({ c, n }) => `${n} ${c.nome}${c.set ? ` (${c.set.toUpperCase()}) ${c.numero}` : ""}`).join("\n") + "\n";
+}
+// Nome de pedido aceito pelo bot: letras, números, "_" e "-" (até 60).
+function nomeParaBot(txt) {
+  return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "pedido";
+}
+
+if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot };
