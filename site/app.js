@@ -312,7 +312,7 @@ function baixar(blob, nome) {
 
 // ---------- montagem ----------
 // Ordem dos slots: cartas do XML, (brancos), pares, extras. Extras = imagens da pasta que não estão no XML.
-const MONT = { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null };
+const MONT = { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null, ignorarPend: false, chavePend: "" };
 
 async function prepararMontagem() {
   const p = sessao.pasta, plano = $("#m-plano");
@@ -340,13 +340,17 @@ async function prepararMontagem() {
   const dec = sessao.extrasDecisao;  // já decidido na etapa 4 (Conferir), junto com o orçamento: não pergunta de novo
   if (extras.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
   if (!extras.length) MONT.incluirExtras = false;  // nada a perguntar
+  const pend = window.pendentesBot ? window.pendentesBot() : [];  // slots do bot sem imagem (nenhuma serviu): as imagens extras são as deles
+  if (pend.length && MONT.incluirExtras === null && extras.length && extras.length <= pend.length) MONT.incluirExtras = true;
   const extrasUsados = MONT.incluirExtras ? extras : [];
   const nExtras = extrasUsados.length + MONT.adicionadas.length;
   const total = raizXml.length + p.pares.length + nExtras;
-  const resto = total % 18, falta = resto ? 18 - resto : 0;
+  const resto = total % 18, pendFalta = Math.max(0, pend.length - nExtras), falta = resto ? 18 - resto : 0;
+  if (MONT.chavePend !== String(pendFalta)) { MONT.chavePend = String(pendFalta); MONT.ignorarPend = false; }
+  const aguardando = pendFalta > 0 && !MONT.ignorarPend;  // enquanto faltam imagens dos pendentes, os brancos da última página ainda não fazem sentido
   if (MONT.chaveBranco !== String(falta)) { MONT.chaveBranco = String(falta); MONT.permitirBranco = false; }
   MONT.plano = { raizXml, pares: p.pares, extras: extrasUsados };
-  MONT.pronta = total > 0 && MONT.incluirExtras !== null && (falta === 0 || MONT.permitirBranco);
+  MONT.pronta = total > 0 && MONT.incluirExtras !== null && !aguardando && (falta === 0 || MONT.permitirBranco);
 
   let h = `<p><b>${raizXml.length}</b> carta(s) do pedido + <b>${p.pares.length}</b> de pares + <b>${nExtras}</b> extra(s) = <b>${total}</b> slot(s) → <b>${Math.ceil(total / 18) || 0}</b> página(s) de 18.</p>`;
   if (ignorados) h += `<p class="suave">${ignorados} par(es) ignorado(s) na Checagem: não entram na montagem.</p>`;
@@ -359,13 +363,19 @@ async function prepararMontagem() {
       : `<span class="suave">${MONT.incluirExtras ? "Entram nos últimos slots, depois dos pares." : "Não entram na montagem."}</span> <button class="peq" id="m-extras-mudar">Mudar</button>`;
     h += `</div>`;
   }
-  if (falta) {
+  if (pendFalta) {
+    h += `<div class="conf"><b class="alerta">Faltam imagens para ${pendFalta} de ${pend.length} slot(s) pendente(s) do bot</b> (nenhum serviu; já estão no orçamento): ${esc(pend.slice(0, 12).map((c) => c.nome).join("; "))}${pend.length > 12 ? "…" : ""}<br>Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>), ou adicione aqui. Se vierem sem sangria, corrija antes.<br>`;
+    h += `<button class="acao sec" id="m-sg">Corrigir sangria…</button> <input id="m-add-pend" type="file" accept="image/*" multiple> `;
+    h += MONT.ignorarPend ? `<span class="suave">Vai montar sem essas ${pendFalta} imagem(ns).</span> <button class="peq" id="m-pend-nao">Desfazer</button>` : `<button class="acao sec" id="m-pend-ignorar">Montar sem elas</button>`;
+    h += `</div>`;
+  }
+  if (falta && !aguardando) {
     h += `<div class="conf"><b class="alerta">A última página tem ${resto} de 18 slots: faltam ${falta}.</b><br>Adicione ${falta} imagem(ns) para completar (entram depois dos pares) ou monte assim mesmo, com ${falta} slot(s) em branco <b>só na última página</b> (as demais saem cheias).`;
     if (MONT.adicionadas.length) h += `<br><span class="suave">${MONT.adicionadas.length} imagem(ns) adicionada(s): ${esc(MONT.adicionadas.map((f) => f.name).join(", "))}</span> <button class="peq" id="m-add-limpar">Remover as adicionadas</button>`;
     h += `<br><input id="m-add" type="file" accept="image/*" multiple> `;
     h += MONT.permitirBranco ? `<span class="suave">Vai montar com ${falta} slot(s) em branco.</span> <button class="peq" id="m-branco-nao">Desfazer</button>` : `<button class="acao sec" id="m-branco">Montar com ${falta} slot(s) em branco</button>`;
     h += `</div>`;
-  } else if (total) h += `<p class="ok">As páginas fecham em múltiplos de 18.</p>`;
+  } else if (total && !aguardando) h += `<p class="ok">As páginas fecham em múltiplos de 18.</p>`;
   // o que da pasta NÃO entra na montagem (para conferir antes de gerar)
   const fora = [...padrao.map((x) => [x.nome, "verso padrão"]), ...(MONT.incluirExtras === false ? extras.map((x) => [x.nome, "extra não incluído"]) : [])];
   if (fora.length) h += `<details class="conf"><summary class="suave">${fora.length} imagem(ns) da pasta <b>não entram</b> na montagem</summary><ul>${fora.slice(0, 40).map(([n, why]) => `<li>${esc(n)} <span class="suave">(${why})</span></li>`).join("")}${fora.length > 40 ? `<li class="suave">… e mais ${fora.length - 40}</li>` : ""}</ul></details>`;
@@ -373,7 +383,8 @@ async function prepararMontagem() {
   const motivos = [];
   if (!total) motivos.push("não há nenhuma imagem para montar");
   if (MONT.incluirExtras === null) motivos.push("responda sobre as imagens fora do XML");
-  if (falta && !MONT.permitirBranco) motivos.push(`complete os ${falta} slot(s) que faltam ou escolha montar com slots em branco`);
+  if (aguardando) motivos.push(`faltam imagens para ${pendFalta} slot(s) pendente(s) do bot: suba-as ou escolha montar sem elas`);
+  else if (falta && !MONT.permitirBranco) motivos.push(`complete os ${falta} slot(s) que faltam ou escolha montar com slots em branco`);
   if (motivos.length) h += `<p class="aviso">Montar PDFs está travado: ${motivos.join("; ")}.</p>`;
   plano.innerHTML = h;
   const liga = (id, fn) => { const el = $("#" + id); if (el) el.onclick = async () => { fn(); await prepararMontagem(); }; };
@@ -383,6 +394,10 @@ async function prepararMontagem() {
   liga("m-branco", () => (MONT.permitirBranco = true));
   liga("m-branco-nao", () => (MONT.permitirBranco = false));
   liga("m-add-limpar", () => (MONT.adicionadas = []));
+  liga("m-pend-ignorar", () => (MONT.ignorarPend = true));
+  liga("m-pend-nao", () => (MONT.ignorarPend = false));
+  const bsg = $("#m-sg"); if (bsg) bsg.onclick = () => window.abrirSangriaMontagem && window.abrirSangriaMontagem();
+  const addp = $("#m-add-pend"); if (addp) addp.onchange = async () => { MONT.adicionadas.push(...addp.files); await prepararMontagem(); };
   const add = $("#m-add");
   if (add) add.onchange = async () => { MONT.adicionadas.push(...add.files); await prepararMontagem(); };
   atualizarRotulos();

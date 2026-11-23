@@ -60,12 +60,14 @@ def montar(od, D, conferido=False, cards=None):
         by.setdefault(c["entry"], {})[c["face"]] = c
     json.dump(gab, open(os.path.join(od, "gabarito.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
-    slot, fr, bk, used, skipped = 0, "", "", 0, []
+    slot, fr, bk, used, skipped, pend = 0, "", "", 0, [], []
     for e in sorted(by):
         f, b = by[e].get(0), by[e].get(1)
         kf = f and pick(f)
         if not kf:
-            if f: skipped.append(f"{f['name']} ×{f['qty']}")
+            # "Nenhum serve": o cliente continua querendo a carta, a imagem virá de outra fonte. Vai no XML como pendente (sem imagem), não some do pedido.
+            if f and D.get(f["id"], {}).get("status") == "nenhum": pend.append(f)
+            elif f: skipped.append(f"{f['name']} ×{f['qty']}")
             continue
         slots = list(range(slot, slot + f["qty"])); slot += f["qty"]; used += f["qty"]
         fr += card_xml(kf, slots, f["name"])
@@ -73,11 +75,18 @@ def montar(od, D, conferido=False, cards=None):
         if kb: bk += card_xml(kb, slots, b["name"])
         elif b: skipped.append(f"{b['name']} (verso)")
     bracket = next((v for v in BR if v >= used), BR[-1])
+    pend_xml, pend_info = "", []
+    for f in pend:  # os slots pendentes vêm depois dos slots com imagem (a numeração das cartas do XML continua de 0 a N-1, sem buracos)
+        slots = list(range(slot, slot + f["qty"])); slot += f["qty"]
+        pend_xml += (f"    <card>\n      <slots>{','.join(map(str, slots))}</slots>\n      <name>{escape(f['name'])}</name>\n      <query>{escape(f['name'].lower())}</query>\n"
+                     f"      <set>{escape(str(f.get('set') or ''))}</set>\n      <number>{escape(str(f.get('cn') or ''))}</number>\n    </card>\n")
+        pend_info.append({"nome": f["name"], "qtd": f["qty"], "set": f.get("set"), "cn": f.get("cn")})
     xml = (f'<?xml version="1.0" encoding="UTF-8"?>\n<order>\n  <details>\n    <quantity>{used}</quantity>\n    <bracket>{bracket}</bracket>\n    <stock>(S30) Standard Smooth</stock>\n'
-           f'    <foil>false</foil>\n  </details>\n  <fronts>\n{fr}  </fronts>\n' + (f"  <backs>\n{bk}  </backs>\n" if bk else "") + f"  <cardback>{CARDBACK}</cardback>\n</order>\n")
+           f'    <foil>false</foil>\n  </details>\n  <fronts>\n{fr}  </fronts>\n' + (f"  <backs>\n{bk}  </backs>\n" if bk else "") + f"  <cardback>{CARDBACK}</cardback>\n"
+           + (f"  <pendentes>\n{pend_xml}  </pendentes>\n" if pend_xml else "") + "</order>\n")
     open(os.path.join(od, "pedido.xml"), "w", encoding="utf-8").write(xml)
     notas = [(c["name"], D[c["id"]]["note"]) for c in cards if D.get(c["id"], {}).get("note")]
-    return {"xml": xml, "decisoes": len(gab), "em_lote": len(BULK), "usadas": used, "moldura": bracket, "fora": skipped, "notas": notas}
+    return {"xml": xml, "decisoes": len(gab), "em_lote": len(BULK), "usadas": used, "moldura": bracket, "fora": skipped, "pendentes": pend_info, "notas": notas}
 
 
 if __name__ == "__main__":

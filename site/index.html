@@ -105,6 +105,7 @@
   <button class="acao sec" id="sg-abrir">Corrigir sangria…</button>
   <div id="c-resultado"></div>
   <div id="c-trocas"></div>
+  <div id="c-pend"></div>
   <div id="c-extras"></div>
   <div id="sg" class="conf" hidden></div>
 </section>
@@ -119,6 +120,7 @@
   <p class="suave">Troca de arte, item removido, cartas sem versão próxima: registre aqui com as miniaturas. Cole o link do Drive (ou o ID) da imagem pedida e da usada.</p>
   <div id="f-alt"></div>
   <button class="acao sec" id="f-alt-add">+ alteração</button>
+  <button class="acao sec" id="f-alt-bot">Trazer alterações do bot</button> <span id="f-alt-bot-msg" class="suave"></span>
   <label for="f-conclusao">Conclusão (texto ao cliente)</label>
   <textarea id="f-conclusao" rows="3"></textarea>
   <h3>Prévia</h3>
@@ -157,6 +159,7 @@
   <p class="suave">Imagens soltas na pasta formam o pedido; a subpasta <b>pares</b> vai para os últimos slots (na ordem do XML). Cada página é um PDF A3 com 18 cartas.</p>
   <p id="m-resumo"></p>
   <div id="m-plano"></div>
+  <div id="m-sg-host"></div>
   <details id="m-trocar"><summary>Escolher ou trocar a pasta e o XML</summary>
     <div class="linha suave">
       <label><input type="radio" name="fonte-m" value="pc" checked> Computador</label>

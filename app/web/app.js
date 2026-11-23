@@ -479,7 +479,7 @@
   function gerarXml() {
     $("#xmlmsg").textContent = "Gerando…";
     api("POST", "/api/pedidos/" + encodeURIComponent(S.nome) + "/xml", {}).then(function (r) {
-      $("#xmlmsg").innerHTML = "<b>" + r.usadas + "</b> cartas entram (moldura de " + r.moldura + ")." + (r.fora.length ? " Ficam de fora, para resolver à mão: " + esc(r.fora.join("; ")) + "." : " Nenhuma carta fica de fora.") + (r.em_lote ? " " + r.em_lote + " aceitas em lote sem conferir (não entram no treino)." : "");
+      $("#xmlmsg").innerHTML = "<b>" + r.usadas + "</b> cartas entram (moldura de " + r.moldura + ")." + (r.pendentes && r.pendentes.length ? " <b>" + r.pendentes.reduce(function (n, x) { return n + x.qtd; }, 0) + " slot(s) sem imagem</b> (nenhum serve) seguem no XML como pendentes, para subir de outra fonte: " + esc(r.pendentes.map(function (x) { return x.nome; }).join("; ")) + "." : "") + (r.fora.length ? " Ficam de fora (não decididas/dúvida), para resolver à mão: " + esc(r.fora.join("; ")) + "." : " Nenhuma carta fica de fora.") + (r.em_lote ? " " + r.em_lote + " aceitas em lote sem conferir (não entram no treino)." : "");
       $("#xmlDl").innerHTML = '<a class="btn" href="/api/pedidos/' + encodeURIComponent(S.nome) + '/xml" download="' + esc(S.nome) + '.xml" style="display:inline-block;text-decoration:none">Baixar o XML</a>';
       loadTabs();
     }).catch(function (e) { $("#xmlmsg").textContent = "Erro: " + e.message; });

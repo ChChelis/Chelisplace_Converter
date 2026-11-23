@@ -430,3 +430,22 @@ class BotArchidekt(unittest.TestCase):
         r = deck_parse.parse_line("1x Sol Ring (c21) 263 [Ramp] ^Have,#37d67a^")
         self.assertEqual((r["name"], r["set"], r["cn"]), ("Sol Ring", "c21", "263"))
         self.assertIsNone(deck_parse.parse_line("3x Island [Land]")["set"])
+
+
+class BotPendentes(unittest.TestCase):
+    def test_nenhum_serve_vai_no_xml_como_pendente(self):
+        import sys, tempfile
+        import xml.etree.ElementTree as ET
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+        import export_order as EX
+        cards = [{"id": "a", "entry": 0, "face": 0, "name": "Sol Ring", "qty": 2, "set": "c21", "cn": "263", "prop": {"conf": "alta"}, "cands": [{"n": 1, "id": "X" * 33, "name": "Sol Ring", "t": "CARD"}]},
+                 {"id": "b", "entry": 1, "face": 0, "name": "Lotus Bloom", "qty": 1, "set": "tsr", "cn": "411", "prop": {"conf": "nenhum"}, "cands": []},
+                 {"id": "c", "entry": 2, "face": 0, "name": "Duvida", "qty": 1, "set": "x", "cn": "1", "prop": {"conf": "media"}, "cands": []}]
+        dec = {"a": {"status": "ok", "accept": [1]}, "b": {"status": "nenhum", "accept": []}, "c": {"status": "duvida", "accept": []}}
+        r = EX.montar(tempfile.mkdtemp(), dec, True, cards)
+        raiz = ET.fromstring(r["xml"])
+        self.assertEqual(r["usadas"], 2)                                  # quantity/slots das cartas com imagem não mudam
+        self.assertEqual(raiz.find("fronts/card/slots").text, "0,1")
+        self.assertEqual([c.find("slots").text for c in raiz.findall("pendentes/card")], ["2"])  # pendente vem depois, sem buracos
+        self.assertEqual(raiz.find("pendentes/card/set").text, "tsr")
+        self.assertEqual(r["fora"], ["Duvida ×1"])                        # só dúvida/não decidida fica de fora

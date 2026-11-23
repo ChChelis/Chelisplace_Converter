@@ -24,6 +24,13 @@ function lerXmlMpc(buf) {
     return saida;
   };
   const frentes = cartas("fronts"), todosVersos = cartas("backs");
+  // <pendentes> (XML do bot): cartas em que nenhuma imagem serviu. Contam como slots do pedido (orçamento, ficha), mas não têm imagem: a imagem vem de outra fonte.
+  const pendentes = [];
+  for (const c of doc.querySelectorAll("pendentes > card")) {
+    const nome = (c.querySelector("name")?.textContent || "").trim(), set = (c.querySelector("set")?.textContent || "").trim(), cn = (c.querySelector("number")?.textContent || "").trim();
+    const slots = (c.querySelector("slots")?.textContent || "").split(",").map((x) => x.trim()).filter((x) => x !== "");
+    for (const s of slots) pendentes.push({ nome, id: "", pendente: true, set, cn, slot: +s });
+  }
   // Verso padrão: o da tag <cardback> e o verso repetido em quase todo o pedido (ex.: “Back WUBRG” em 186 slots).
   // Ele não conta como slot, não entra na ficha e sai da pasta no processo; só versos de dupla-face contam.
   const cardback = (doc.querySelector("cardback")?.textContent || "").trim();
@@ -33,7 +40,7 @@ function lerXmlMpc(buf) {
   const porId = new Map();
   for (const v of todosVersos) { const e = porId.get(v.id) || { nome: v.nome, qtd: 0, frentes: new Set() }; e.qtd++; if (frentePorSlot.has(v.slot)) e.frentes.add(frentePorSlot.get(v.slot)); porId.set(v.id, e); }
   const padraoIds = new Set([...porId].filter(([id, e]) => id === cardback || e.frentes.size >= 3 || e.qtd >= Math.max(5, frentes.length * 0.5)).map(([id]) => id));
-  return { frentes, versos: todosVersos.filter((v) => !padraoIds.has(v.id)), xmlTexto: txt, padraoIds: [...padraoIds],
+  return { frentes: frentes.concat(pendentes), versos: todosVersos.filter((v) => !padraoIds.has(v.id)), xmlTexto: txt, padraoIds: [...padraoIds],
     versoPadrao: [...porId].filter(([id]) => padraoIds.has(id)).map(([, e]) => e) };
 }
 // Vários pedidos no mesmo pedido: a checagem e a montagem leem UM XML só, juntando os dos pedidos (slots em sequência).
@@ -79,6 +86,8 @@ function sincronizarXml() {
   sessao.conferencia = null;  // o XML mudou: conferir de novo
   atualizarRotulos();
 }
+const pendentesBot = () => pedido.fontes.flatMap((f) => f.frentes.filter((c) => c.pendente));  // slots do pedido sem imagem (nenhuma serviu no bot)
+window.pendentesBot = pendentesBot;
 const assinatura = (f) => [...f.frentes, ...f.versos].map((c) => c.id || c.nome).join("|") + "#" + f.frentes.length;
 function addFonte(f) {
   const i = pedido.fontes.findIndex((x) => assinatura(x) === assinatura(f));
@@ -94,7 +103,7 @@ function renderFontes() {
   $("#e-t-xml").textContent = mais ? "Adicionar outro(s) XML do MPCFill" : "XML do MPCFill";
   $("#e-t-deck").textContent = mais ? "Adicionar outra(s) decklist(s)" : "Imagens + decklist";
   $("#e-mais").innerHTML = mais ? `<p class="aviso">Já há ${pedido.fontes.length} pedido(s) neste pedido. Usar qualquer uma das entradas de novo <b>adiciona outro pedido</b> (não substitui o que já está aí). Para tirar um, use Remover.</p>` : "";
-  c.innerHTML = (pedido.fontes.length > 1 ? `<p class="ok">${pedido.fontes.length} pedidos juntos neste pedido: os slots são somados e os kits incompletos se completam (veja a economia no Orçamento).</p>` : "") + pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
+  c.innerHTML = (pedido.fontes.length > 1 ? `<p class="ok">${pedido.fontes.length} pedidos juntos neste pedido: os slots são somados e os kits incompletos se completam (veja a economia no Orçamento).</p>` : "") + pedido.fontes.map((f, i) => `<div class="fonte"><b>${esc(f.titulo)}</b><span class="suave">${f.frentes.length} frentes${f.versos.length ? " + " + f.versos.length + " versos" : ""}${f.frentes.some((c) => c.pendente) ? " · " + f.frentes.filter((c) => c.pendente).length + " aguardando imagem (outra fonte)" : ""}</span>${(f.versoPadrao || []).map((v) => `<span class="suave">· verso padrão “${esc(v.nome)}” (${v.qtd} slots) não conta</span>`).join("")}<button class="peq" data-rm="${i}">Remover</button></div>`).join("");
   c.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { pedido.fontes.splice(+b.dataset.rm, 1); renderFontes(); }));
   atualizarResumo();
   atualizarPassos();
@@ -354,7 +363,11 @@ async function procurarBot() {
           if (k < 0) k = pedido.fontes.findIndex((f) => f.origem === "lista");
           if (k >= 0) pedido.fontes.splice(k, 1);
           addFonte({ titulo: p.nome + " (bot)", origem: "bot", ...novo });
+          pedido.botNome = p.nome;
           b.textContent = "XML carregado ✓"; b.disabled = true;
+          const pend = novo.frentes.filter((c) => c.pendente).length;
+          if (pend) lista.insertAdjacentHTML("beforeend", `<p class="aviso">${pend} slot(s) sem imagem (nenhum serviu no bot) entraram no pedido como pendentes: a imagem virá de outra fonte (etapas 4 e 6 avisam).</p>`);
+          try { const r = await trazerAlteracoesBot(p.nome); if (r.total) lista.insertAdjacentHTML("beforeend", `<p class="ok">${r.total} alteração(ões) do bot levadas para a etapa 5 (Cliente e ficha).</p>`); } catch { /* o botão da etapa 5 tenta de novo */ }
         } catch (e) { lista.insertAdjacentHTML("beforeend", `<p class="alerta">${esc(e.message)}</p>`); }
       };
       lista.append(b);
@@ -375,25 +388,52 @@ async function procurarBot() {
 }
 
 // Cartas em que o cliente precisa ser avisado, com miniatura do que ele pediu (Scryfall) e do que foi usado (MPCFill).
+// Cartas que o Chelis marcou para a mensagem ao cliente (mesma regra da tela do bot): marca explícita, ou sem marca: sem versão próxima / com anotação.
+function itensDoBot(cat, dec) {
+  const nenhum = [], outras = [];
+  for (const c of cat.cards || []) {
+    if (c.face) continue;  // versos seguem a frente
+    const d = dec[c.id] || {};
+    const incl = d.msg !== undefined ? !!d.msg : (d.status === "nenhum" || (c.prop && c.prop.conf === "nenhum") || !!d.note);
+    if (!incl) continue;
+    const rotulo = `${c.name}${c.set && c.set !== "LIGA" ? ` (${c.set.toUpperCase()} ${c.cn})` : ""}${c.qty > 1 ? ` ×${c.qty}` : ""}`, nota = (d.note || "").trim();
+    if (d.status === "nenhum") {
+      nenhum.push({ texto: `${rotulo}: não existe no MPCFill; a imagem vem de outra fonte${nota ? ` — ${nota}` : ""}`, pedido_img: scryImg(c.set, c.cn), usado_img: "" });
+    } else {
+      const usadoId = d.status === "ok" ? (d.accept_ids && d.accept_ids[0]) || (c.cands[0] && c.cands[0].id) || "" : "";
+      outras.push({ texto: `${rotulo}: ${nota || "não achei a versão pedida; usei a mais próxima"}`, pedido_img: scryImg(c.set, c.cn), usado_img: usadoId ? miniUrl(usadoId) : "" });
+    }
+  }
+  return { nenhum, outras };
+}
+async function lerBot(nome) {
+  const q = encodeURIComponent(nome);
+  const [cat, dec] = await Promise.all([fetch(`${MOTOR}/api/pedidos/${q}/catalogo`).then((r) => r.json()), fetch(`${MOTOR}/api/pedidos/${q}/decisoes`).then((r) => r.json())]);
+  return itensDoBot(cat, dec);
+}
+// Leva para a etapa 5 (Alterações) o que o Chelis anotou/marcou no bot; refazer troca só os grupos que vieram do bot.
+async function trazerAlteracoesBot(nome) {
+  const { nenhum, outras } = await lerBot(nome);
+  pedido.alteracoes = pedido.alteracoes.filter((a) => !a.origemBot);
+  if (nenhum.length) pedido.alteracoes.push({ titulo: "Imagens de outra fonte (sem versão no MPCFill)", itens: nenhum, origemBot: true });
+  if (outras.length) pedido.alteracoes.push({ titulo: "Artes alteradas", itens: outras, origemBot: true });
+  renderAlteracoes(); renderFicha();
+  return { sem: nenhum.length, trocas: outras.length, total: nenhum.length + outras.length };
+}
+$("#f-alt-bot").onclick = async () => {
+  const msg = $("#f-alt-bot-msg"), nome = pedido.botNome || ((pedido.fontes.find((f) => f.origem === "bot") || {}).titulo || "").replace(/ \(bot\)$/, "");
+  if (!nome) { msg.innerHTML = `<span class="aviso">Primeiro use “Usar o XML de …” na etapa 3 (Conferência).</span>`; return; }
+  msg.textContent = "Lendo o bot…";
+  try { const r = await trazerAlteracoesBot(nome); msg.textContent = r.total ? `${r.total} alteração(ões) trazidas do pedido “${nome}” (${r.sem} sem versão, ${r.trocas} artes alteradas).` : `Nada marcado no pedido “${nome}”: nenhuma carta sem versão, com anotação ou marcada para a mensagem.`; }
+  catch (e) { msg.innerHTML = `<span class="aviso">Não consegui ler o bot (${esc(e.message)}). Ele está aberto?</span>`; }
+};
 async function cartasParaAvisar(nome, lista) {
   let caixa = document.getElementById("b-avisar");
   caixa?.remove();
   caixa = Object.assign(document.createElement("div"), { id: "b-avisar", className: "conf", textContent: "Lendo o pedido no bot…" });
   lista.append(caixa);
   try {
-    const q = encodeURIComponent(nome);
-    const [cat, dec] = await Promise.all([fetch(`${MOTOR}/api/pedidos/${q}/catalogo`).then((r) => r.json()), fetch(`${MOTOR}/api/pedidos/${q}/decisoes`).then((r) => r.json())]);
-    const achados = [];
-    for (const c of cat.cards || []) {
-      if (c.face) continue;  // versos seguem a frente
-      const d = dec[c.id] || {};
-      const semProxima = c.prop && c.prop.conf === "nenhum";
-      if (d.status !== "nenhum" && !(semProxima && d.status === "ok")) continue;
-      const usadoId = d.status === "ok" ? (d.accept_ids && d.accept_ids[0]) || (c.cands[0] && c.cands[0].id) || "" : "";
-      const rotulo = `${c.name}${c.set && c.set !== "LIGA" ? ` (${c.set.toUpperCase()} ${c.cn})` : ""}`;
-      achados.push({ texto: d.status === "ok" ? `${rotulo}: não achei a versão pedida; usei a mais próxima` : `${rotulo}: sem versão disponível, ficou de fora`,
-        pedido_img: scryImg(c.set, c.cn), usado_img: usadoId ? miniUrl(usadoId) : "" });
-    }
+    const bot = await lerBot(nome), achados = [...bot.nenhum, ...bot.outras];
     caixa.innerHTML = achados.length ? `<b>${achados.length} carta(s) para avisar o cliente:</b>` : `<span class="ok">Nenhuma carta sem versão próxima nas decisões deste pedido.</span>`;
     if (!achados.length) return;
     for (const it of achados) caixa.insertAdjacentHTML("beforeend", `<div class="item">${it.pedido_img ? `<img src="${esc(it.pedido_img)}" height="64" alt="">` : ""}${it.usado_img ? `<img src="${esc(it.usado_img)}" height="64" alt="">` : ""} ${esc(it.texto)}</div>`);
@@ -649,13 +689,32 @@ window.desenharTrocas = desenharTrocas;
 // ---------- Imagens extras (fora do pedido): completar/ e soltas sem ID ----------
 // Elas mudam o total de slots depois do orçamento: a Conferência pede uma decisão e, se incluir, o pedido, o orçamento e a ficha são atualizados.
 const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(new RegExp("\\s*\\([A-Za-z0-9_-]{20,}\\)" + SUFIXO_COPIA + "\\s*$", "i"), "").trim();
+function desenharPend(nExtras) {
+  const el = $("#c-pend"), pend = pendentesBot(); if (!el) return;
+  if (!pend.length) { el.innerHTML = ""; return; }
+  const falta = Math.max(0, pend.length - nExtras);
+  const lista = `<ul>${pend.slice(0, 20).map((c) => `<li>${esc(c.nome)}${c.set ? ` <span class="suave">(${esc(c.set.toUpperCase())} ${esc(c.cn)})</span>` : ""}</li>`).join("")}${pend.length > 20 ? `<li class="suave">… e mais ${pend.length - 20}</li>` : ""}</ul>`;
+  el.innerHTML = falta
+    ? `<div class="conf"><b class="aviso">${falta} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>); se vierem sem sangria, use <b>Corrigir sangria…</b>. Depois clique em <b>Conferir</b>.${lista}</div>`
+    : `<div class="conf"><b class="ok">Os ${pend.length} slot(s) pendentes do bot já têm imagem na pasta.</b></div>`;
+}
 async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras"), chave = chaveExtras(itens);
+  desenharPend(itens.length);
   const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
   if (!itens.length) {
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
     sessao.extrasDecisao = null; el.innerHTML = ""; renderFontes(); return 0;
   }
+  // as imagens extras que preenchem slots pendentes do bot já estão no orçamento: não pedem decisão nem mudam o valor; só o que passar dos pendentes é pergunta
+  const nPend = pendentesBot().length, cobre = Math.min(itens.length, nPend);
+  if (cobre && cobre === itens.length) {
+    pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");
+    sessao.extrasDecisao = { chave, valor: "incluir" }; renderFontes();
+    el.innerHTML = `<div class="conf"><b class="ok">${itens.length} imagem(ns) extra(s) preenchem slots pendentes do bot</b> (já estão no orçamento e na ficha).</div>`;
+    return 0;
+  }
+  if (cobre) itens = itens.slice(cobre);  // o resto é extra de verdade
   const dec = sessao.extrasDecisao && sessao.extrasDecisao.chave === chave ? sessao.extrasDecisao.valor : (noPedido ? "incluir" : null);
   const lista = `<ul>${itens.slice(0, 12).map((x) => `<li>${esc(x.nome)} <span class="suave">${x.em === "completar" ? "(completar/)" : "(solta na pasta)"}</span></li>`).join("")}${itens.length > 12 ? `<li class="suave">… e mais ${itens.length - 12}</li>` : ""}</ul>`;
   if (dec === "incluir") {
@@ -778,7 +837,9 @@ async function sgInserir() {
     sgLimpar();
     if (sessao.pasta.recarregar) sessao.pasta = await sessao.pasta.recarregar();
     sessao.conferencia = null; atualizarRotulos();
-    $("#sg").innerHTML = `<span class="ok">${fila.length} imagem(ns) corrigida(s) inserida(s).</span> As originais ficaram em <code>originais_sem_sangria</code>. Clique em <b>Conferir</b> de novo.`;
+    const mont = sgNaMontagem();
+    $("#sg").innerHTML = `<span class="ok">${fila.length} imagem(ns) corrigida(s) inserida(s).</span> As originais ficaram em <code>originais_sem_sangria</code>. ${mont ? "O plano da montagem já foi atualizado." : "Clique em <b>Conferir</b> de novo."}`;
+    if (mont && window.prepararMontagem) prepararMontagem();
   } catch (e) { st.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; $("#sg-inserir").disabled = false; }
 }
 async function sgBaixarZip() {
@@ -801,7 +862,10 @@ async function sgEnviarDrive() {
     sessao.conferencia = null;
   } catch (e) { if (e.message !== "cancelado") st.innerHTML = `<span class="alerta">${esc(e.message)}</span>`; }
 }
-$("#sg-abrir").onclick = () => { sgAtualizarLista(); sgDesenhar(); };
+const sgNaMontagem = () => ($("#sg").parentElement || {}).id === "m-sg-host";
+$("#sg-abrir").onclick = () => { $("#c-extras").after($("#sg")); sgAtualizarLista(); sgDesenhar(); };
+// Montagem: o mesmo painel aparece embaixo do plano (o botão fica junto do aviso de imagens pendentes)
+window.abrirSangriaMontagem = () => { $("#m-sg-host").append($("#sg")); sgAtualizarLista(); sgDesenhar(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
 
 // ---------- Etapas: não passa para a próxima com pendência ----------
 const ORDEM = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];
@@ -881,7 +945,7 @@ window.podeAbrirAba = podeAbrirAba;
 
 // ---------- Novo pedido: zera tudo menos o Google Drive e as configurações ----------
 function novoPedido() {
-  pedido.fontes = []; pedido.alteracoes = []; pedido.cardId = null; $("#t-criar").textContent = "Criar card no Trello";
+  pedido.fontes = []; pedido.alteracoes = []; pedido.cardId = null; pedido.botNome = null; $("#t-criar").textContent = "Criar card no Trello";
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
   sessao.extrasDecisao = null; sessao.trocas = {};
