@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
-VERSAO = "0.1"
+VERSAO = "0.1"  # o número base; a compilação acrescenta o commit (app/web/versao.txt), ex.: 0.1+d85048a
 AQUI = os.path.dirname(os.path.abspath(sys.argv[0] if getattr(sys, "frozen", False) else __file__))
 BASE = getattr(sys, "_MEIPASS", None) or os.path.join(AQUI, "..")  # onde estão scripts/ e app/ (dentro do exe ou no repositório)
 DEV = "--dev" in sys.argv
@@ -50,6 +50,10 @@ import make_order as M  # noqa: E402
 
 ORDER = os.path.join(HOME, "order")
 WEB = os.path.join(BASE, "app", "web")
+try:
+    VERSAO = VERSAO + "+" + open(os.path.join(WEB, "versao.txt"), encoding="utf-8").read().strip()[:12]
+except OSError:
+    VERSAO = VERSAO + "-dev"
 LOCK = threading.Lock()
 JOBS = {}  # id -> andamento
 NOME = re.compile(r"^[A-Za-z0-9_-]{1,60}$")

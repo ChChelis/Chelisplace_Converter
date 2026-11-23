@@ -284,8 +284,30 @@
     box.innerHTML = '<figure class="refcard"><img class="refimg" title="Clique para escolher outra edição" src="' + c.ref + '" alt="Referência do pedido" onerror="this.style.visibility=\'hidden\'"><figcaption>Referência do pedido · clique para trocar a edição · ' + esc(c.set) + " " + esc(c.cn) + " · ×" + c.qty + "</figcaption></figure>";
 
   }
+  /* frases prontas para a anotação (as do bot + as que o Chelis salvar; ficam neste navegador) */
+  var FRASES = [
+    "Não existe essa arte no MPCFill, escolhendo a primeira edição lançada",
+    "Não existe essa arte no MPCFill, escolhendo a primeira edição de midframe",
+    "Não existe essa arte no MPCFill, escolhendo a primeira edição de newframe",
+    "Arte igual, frame diferente",
+    "Arte igual, idioma diferente",
+    "Trocando para ser Tournament Legal"
+  ];
+  function minhasFrases() { try { var l = JSON.parse(LS.get("frases", "[]")); return Array.isArray(l) ? l.filter(function (x) { return typeof x === "string" && x; }) : []; } catch (e) { return []; } }
+  function chipsFrases() {
+    return FRASES.map(function (f, i) { return '<button class="chip" data-f="' + i + '" title="Usar esta frase na anotação">' + esc(f) + "</button>"; }).join("") +
+      minhasFrases().map(function (f, i) { return '<span class="chip" style="display:inline-flex;gap:6px;align-items:center"><button data-fm="' + i + '" style="all:unset;cursor:pointer" title="Usar esta frase na anotação">' + esc(f) + '</button><button data-fx="' + i + '" style="all:unset;cursor:pointer;opacity:.7" title="Remover esta frase salva" aria-label="Remover frase salva">×</button></span>'; }).join("") +
+      '<button class="chip" id="fSalvar" title="Guarda o que está escrito na anotação como frase pronta">+ Salvar o que escrevi como frase pronta</button>';
+  }
+  function usarFrase(c, f) {
+    var inp = $("#note"); if (!inp) return; var cur = inp.value.trim();
+    inp.value = cur ? (cur.indexOf(f) >= 0 ? cur : cur.replace(/[.;]\s*$/, "") + "; " + f) : f;
+    saveNote(c, inp.value); renderMsgList();
+  }
   function renderInfo() {
     var box = $("#info"); if (!box) return; var c = F[S.idx];
+    var ant = $("#note"), digitado = null;
+    if (ant && c && ant.dataset.id === c.id) { digitado = { v: ant.value, foco: document.activeElement === ant, ini: ant.selectionStart, fim: ant.selectionEnd }; }
     renderRef(c);
     if (!c) { box.innerHTML = '<div class="empty">Nenhuma carta com esses filtros.</div>'; return; }
     var st = stOf(c.id), k = shownCand(c), als = alertOf(c), list = ordered(c), lim = S.shown ? list.length : 12, i = c.prop.idx;
@@ -308,11 +330,24 @@
         return '<div class="cd' + (sug.indexOf(x.n) >= 0 ? " sug" : near.indexOf(x.n) >= 0 ? " near" : "") + (st === "ok" && sel === x.n ? " sel" : "") + (k && k.n === x.n ? " view" : "") + (tr ? " trusted" : "") + (hide ? " hasno" : "") + '" data-n="' + x.n + '" tabindex="0" role="button" aria-label="Candidato ' + x.n + '">' +
           '<img loading="lazy" src="' + x.img + '" alt=""><span class="n">' + x.n + '</span><div class="s">' + esc(x.source) + " · " + x.dpi + " dpi" + (x.sc != null ? " · " + x.sc : "") + "</div></div>";
       }).join("") + "</div>" + (list.length > lim ? '<button class="btn" id="bMore">Mostrar mais (' + (list.length - lim) + ")</button>" : "") +
-      '<input class="notein" type="text" id="note" placeholder="Anotação (opcional)" value="' + esc((S.dec[c.id] && S.dec[c.id].note) || "") + '" aria-label="Anotação">' +
+      '<input class="notein" type="text" id="note" data-id="' + esc(c.id) + '" placeholder="Anotação (opcional)" value="' + esc((S.dec[c.id] && S.dec[c.id].note) || "") + '" aria-label="Anotação">' +
+      '<div class="chips" id="frases" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">' + chipsFrases() + "</div>" +
       '<label class="meta" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="msgchk"' + (inMsg(c) ? " checked" : "") + '> Incluir na mensagem e no PDF do cliente</label>' +
       '<div class="nav"><button class="btn" data-g="-1">↑ Anterior</button><button class="btn" data-g="1">Próxima ↓</button><button class="btn" id="bToGrid">Ver grade</button></div>' +
       '<div class="keys"><kbd>↑</kbd> <kbd>↓</kbd> cartas · <kbd>←</kbd> <kbd>→</kbd> candidatos · <kbd>Enter</kbd> aceita o candidato em vista · <kbd>N</kbd> nenhum · <kbd>D</kbd> dúvida · <kbd>Backspace</kbd> limpa · <kbd>Z</kbd> desfaz · <kbd>G</kbd> grade · <kbd>T</kbd> triagem</div>';
-    var note = $("#note"); if (note) note.addEventListener("change", function () { saveNote(c, note.value); });
+    var note = $("#note");
+    if (note) {
+      if (digitado) { note.value = digitado.v; if (digitado.foco) { note.focus(); try { note.setSelectionRange(digitado.ini, digitado.fim); } catch (e) { /* tipo sem seleção */ } } }
+      note.addEventListener("change", function () { saveNote(c, note.value); });
+    }
+    $$("#frases [data-f]").forEach(function (b) { b.addEventListener("click", function () { usarFrase(c, FRASES[+b.dataset.f]); }); });
+    $$("#frases [data-fm]").forEach(function (b) { b.addEventListener("click", function () { usarFrase(c, minhasFrases()[+b.dataset.fm]); }); });
+    $$("#frases [data-fx]").forEach(function (b) { b.addEventListener("click", function () { var l = minhasFrases(); l.splice(+b.dataset.fx, 1); LS.set("frases", JSON.stringify(l)); renderInfo(); toast("Frase removida"); }); });
+    var fs = $("#fSalvar"); if (fs) fs.addEventListener("click", function () {
+      var t = (note && note.value || "").trim(); if (!t) { toast("Escreva a anotação primeiro"); return; }
+      var l = minhasFrases(); if (FRASES.indexOf(t) >= 0 || l.indexOf(t) >= 0) { toast("Essa frase já existe"); return; }
+      l.push(t); LS.set("frases", JSON.stringify(l)); saveNote(c, t); renderInfo(); toast("Frase salva");
+    });
     var mc = $("#msgchk"); if (mc) mc.addEventListener("change", function () { setMsg(c, mc.checked); });
     var mot = $(".mot", box); if (mot) mot.addEventListener("toggle", function () { LS.set("motivo", mot.open ? "1" : "0"); });
   }

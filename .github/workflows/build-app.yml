@@ -14,6 +14,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements-app.txt pyinstaller
+      - name: Carimbar a versão (commit) para a tela e a página mostrarem
+        shell: bash
+        run: echo "${GITHUB_SHA::7}" > app/web/versao.txt
       - run: pyinstaller app/build/chelis.spec --noconfirm
       - name: Teste rápido do aplicativo compilado
         run: |
