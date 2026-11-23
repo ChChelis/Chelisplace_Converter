@@ -6,6 +6,8 @@ Repositório: `chchelis/chelisplace_converter`, branch **`claude/language-unders
 
 Leia, nesta ordem: este documento → `docs/site.md` (comportamento detalhado da página, em ordem cronológica) → `docs/nucleo.md` → `docs/referencia_processo.md` (processo e preços) → `docs/drive.md` → `docs/app.md` (bot local) → `docs/memoria_projeto.md` (pipeline do bot). Histórico: `docs/handoff_pagina_final.md`.
 
+> **Próxima etapa: `docs/handoff_listas_moxfield_archidekt_liga.md` (listas do Moxfield, Archidekt e LigaMagic).**
+>
 > **ESTADO (18/11/2026): a integração está pronta e em uso.** Leia `docs/desenho_trello_whatsapp.md` (decisões) e `docs/worker_avisos.md` (Worker `chelisplace-avisos`, deploy, segredos, regras de prazo, feriados, janela de Finalizados, campos do card). A seção 8 abaixo é histórica (já respondida). Resumo: Trello cria/move card (botão no passo 5 + `/card`), avisos e resumos 10h/17h no Telegram com botão "Encaminhar ao grupo do WhatsApp", mensagens ao cliente por `wa.me`. Pendências: observar resumos/atrasos em dia útil real; apagar o Worker antigo `chelisplace-converter-pedidos`; WhatsApp Cloud API em grupo foi descartado (exige OBA, número fora do app Business).
 
 ## 1. O que existe (tudo testado)
