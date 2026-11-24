@@ -105,5 +105,12 @@ const Drive = (() => {
     return (await r.json()).id;
   }
 
-  return { entrar, conectado, tokenAtual, sair, listar, raiz, pedidos, baixar, criarPasta, copiar, mover, enviar, PASTA, NOME_RAIZ };
+  // Compartilhamento por link (a vitrine do cliente usa as miniaturas públicas). Nunca apaga arquivo.
+  const compartilhar = (id) => req(`${API}/files/${id}/permissions?supportsAllDrives=true`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "reader", type: "anyone", allowFileDiscovery: false }) });
+  async function descompartilhar(id) {
+    const j = await (await req(`${API}/files/${id}/permissions?supportsAllDrives=true&fields=permissions(id,type)`)).json();
+    for (const p of (j.permissions || []).filter((x) => x.type === "anyone")) await req(`${API}/files/${id}/permissions/${p.id}?supportsAllDrives=true`, { method: "DELETE" });
+  }
+
+  return { compartilhar, descompartilhar, entrar, conectado, tokenAtual, sair, listar, raiz, pedidos, baixar, criarPasta, copiar, mover, enviar, PASTA, NOME_RAIZ };
 })();

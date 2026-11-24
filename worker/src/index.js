@@ -5,6 +5,7 @@ import { diaUtil } from "./prazos.js";
 import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 import { autorizado } from "./auth.js";
+import { rotaVitrine } from "./vitrine.js";
 import { agendaConfigurada, criarOuAtualizarEventos, removerEvento, montarEventos, estadoOAuth, urlAutorizacao, trocarCodigo } from "./agenda.js";
 
 const T = "https://api.trello.com/1";
@@ -215,6 +216,9 @@ export default {
         return new Response(`<!doctype html><meta charset="utf-8"><title>Google Agenda</title><body style="font-family:sans-serif;padding:24px">${corpo}</body>`, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
       } catch (e) { return new Response("Falha ao autorizar: " + e.message, { status: 500 }); }
     }
+
+    // Vitrine do cliente: POST /vitrine, GET|DELETE /vitrine/<código> (lista de imagens com prazo, em KV)
+    if (partes[0] === "vitrine" && partes.length <= 2) return rotaVitrine(req, env, partes, { origens: ORIGENS, cors }).catch((e) => new Response(JSON.stringify({ erro: String(e.message || e).slice(0, 120) }), { status: 500, headers: { "content-type": "application/json" } }));
 
     if (partes[0] === "card" && partes.length === 1) return rotaCard(req, env).catch((e) => new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: { ...cors(req.headers.get("origin") || ""), "content-type": "application/json" } }));
 
