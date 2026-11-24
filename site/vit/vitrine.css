@@ -13,7 +13,7 @@ h1{margin:0;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:800;letter-spacing:-.
 #meta{font:500 12px var(--f-mono);color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,168px),1fr));gap:22px 14px}
 /* entrada suave: cada carta sobe e aparece ao entrar na tela */
-.gc{margin:0;display:flex;flex-direction:column;gap:7px;content-visibility:auto;contain-intrinsic-size:168px 270px;opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .7s cubic-bezier(.2,.8,.2,1);transition-delay:calc(var(--i,0) * 45ms)}
+.gc{margin:0;display:flex;flex-direction:column;gap:7px;opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .7s cubic-bezier(.2,.8,.2,1);transition-delay:calc(var(--i,0) * 45ms)}
 .gc.vis{opacity:1;transform:none}
 /* a carta: .hit (parado, recebe o mouse) > .tilt (gira em 3D) > .img (moldura, imagem e brilho) */
 .hit{position:relative;aspect-ratio:var(--ar,.716);perspective:900px}
@@ -45,7 +45,7 @@ h1{margin:0;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:800;letter-spacing:-.
 /* modo rolagem: uma carta grande por vez, descendo (como o carrossel vertical da Vitrine de Sets); a carta do centro cresce e acende */
 html.rolagem{scroll-snap-type:y proximity}
 .rolagem .grid{grid-template-columns:1fr;gap:0;justify-items:center}
-.rolagem .gc{width:min(92vw,520px,calc((100vh - 150px) * var(--ar,.716)));min-height:calc(100vh - 80px);justify-content:center;scroll-snap-align:center;contain-intrinsic-size:auto 85vh;padding:10px 0}
+.rolagem .gc{width:min(92vw,520px,calc((100vh - 150px) * var(--ar,.716)));min-height:calc(100vh - 80px);justify-content:center;scroll-snap-align:center;padding:10px 0}
 .rolagem .gc .hit{transform:scale(.9);opacity:.5;transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .6s}
 .rolagem .gc.cur .hit{transform:none;opacity:1}
 .rolagem .gc figcaption{font-size:15px;opacity:.55;transition:opacity .6s}
