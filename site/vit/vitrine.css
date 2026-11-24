@@ -23,6 +23,8 @@ h1{margin:0;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:800;letter-spacing:-.
 .gc.fora .img{box-shadow:0 30px 55px -16px #000,0 0 0 1px #fff3}
 .img img{width:100%;height:100%;display:block;object-fit:contain;opacity:0;transition:opacity .45s;pointer-events:none;-webkit-touch-callout:none}
 .img img.ok{opacity:1}
+.hit{cursor:zoom-in}
+.hit:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6%}
 /* brilho: faixa holográfica que desliza + reflexo que segue o ponteiro */
 .shine,.glare{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s}
 .shine{background:linear-gradient(115deg,transparent 30%,#ffffff22 45%,#7bdcff22 52%,#ff9be822 58%,transparent 70%);background-size:250% 100%;background-position:var(--sx,100%) 0;mix-blend-mode:screen}
@@ -52,3 +54,17 @@ html.rolagem{scroll-snap-type:y proximity}
 .rolagem .gc.cur figcaption{opacity:1}
 @media (hover:hover){.grid:not(.x) .gc:hover .tilt{--ty:-6px;--sc:1.04}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}.img img,.gc,.tilt,.bg,.rolagem .gc .hit{transition:none!important}.gc{opacity:1;transform:none}.tilt{transform:none!important}}
+
+/* popup: a carta sozinha, inteira, no tamanho da rolagem, sobre um véu preto leve; o X fica centralizado abaixo dela */
+html.travado,html.travado body{overflow:hidden}
+.pop{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;opacity:0;transition:opacity .25s ease;cursor:default}
+.pop.on{opacity:1}
+.pop .hit{width:min(92vw,520px,calc((100vh - 170px) * var(--ar,.716)));cursor:default;transform:scale(.92);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.pop.on .hit{transform:none}
+.pop .img{box-shadow:0 30px 70px -18px #000,0 0 0 1px #fff2}
+.pop .shine,.pop .glare{opacity:1}
+.pop-leg{font:600 15px/1.25 var(--f-disp);color:var(--fg);text-align:center;max-width:min(92vw,520px);overflow-wrap:anywhere}
+.pop-x{width:44px;height:44px;border-radius:50%;border:1px solid #fff4;background:#000a;color:var(--fg);font-size:18px;cursor:pointer;display:grid;place-items:center;touch-action:manipulation;transition:background .2s,transform .2s}
+.pop-x:hover{background:var(--fg);color:var(--bg);transform:scale(1.08)}
+.pop-x:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.pop,.pop .hit{transition:none!important}}
