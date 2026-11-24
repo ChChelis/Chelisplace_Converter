@@ -36,7 +36,7 @@ h1{margin:0;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:800;letter-spacing:-.
 .aviso b{display:block;color:var(--fg);font-size:1.15rem;margin-bottom:6px}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);margin:0 auto 12px;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-@media (max-width:480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 10px}.rolagem .grid{grid-template-columns:1fr}}
+@media (max-width:480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 10px}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}.img img{transition:none}}
 
 /* seletor de visualização (a única coisa clicável da página) */
@@ -44,16 +44,21 @@ h1{margin:0;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:800;letter-spacing:-.
 .seg button{font:inherit;color:var(--mute);background:none;border:0;padding:7px 14px;cursor:pointer;touch-action:manipulation}
 .seg button[aria-pressed=true]{background:var(--fg);color:var(--bg);font-weight:600}
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-/* modo rolagem: uma carta grande por vez, descendo (como o carrossel vertical da Vitrine de Sets); a carta do centro cresce e acende */
-html.rolagem{scroll-snap-type:y proximity}
-.rolagem .grid{grid-template-columns:1fr;gap:0;justify-items:center}
-.rolagem .gc{width:min(92vw,520px,calc((100vh - 150px) * var(--ar,.716)));min-height:calc(100vh - 80px);justify-content:center;scroll-snap-align:center;padding:10px 0}
-.rolagem .gc .hit{transform:scale(.9);opacity:.5;transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .6s}
-.rolagem .gc.cur .hit{transform:none;opacity:1}
-.rolagem .gc figcaption{font-size:15px;opacity:.55;transition:opacity .6s}
-.rolagem .gc.cur figcaption{opacity:1}
-@media (hover:hover){.grid:not(.x) .gc:hover .tilt{--ty:-6px;--sc:1.04}}
-@media (prefers-reduced-motion:reduce){.spin{animation:none}.img img,.gc,.tilt,.bg,.rolagem .gc .hit{transition:none!important}.gc{opacity:1;transform:none}.tilt{transform:none!important}}
+/* modo rolagem = roleta como a do bot: a página não rola, uma carta por giro do mouse, a atual travada no centro com a anterior e a próxima esmaecidas */
+html.rolagem,html.rolagem body{height:100%;overflow:hidden;overscroll-behavior:none}
+html.rolagem body{display:flex;flex-direction:column;padding-bottom:0}
+.rolagem header,.rolagem main{width:100%}
+.rolagem main{flex:1;min-height:0}
+.rolagem .grid{display:block;position:relative;height:100%;container-type:size;overflow:hidden;touch-action:none}
+.rolagem .gc,.rolagem .gc.vis{--cw:min(92cqw,520px,calc(74cqh * var(--ar,.716)));position:absolute;left:50%;top:50%;width:var(--cw);gap:8px;pointer-events:none;
+  transform:translate(-50%,-50%) translateY(calc((var(--cw) / var(--ar,.716) + 46px) * var(--d,0))) scale(var(--s,1));opacity:var(--o,0);
+  transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .45s;transition-delay:0s;will-change:transform}
+.rolagem .gc.perto{pointer-events:auto}
+.rolagem .gc.longe{visibility:hidden}
+.rolagem .gc:not(.cur) .hit{cursor:pointer}
+.rolagem .gc figcaption{font-size:15px}
+@media (hover:hover){html:not(.rolagem) .gc:hover .tilt{--ty:-6px;--sc:1.04}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.img img,.gc,.tilt,.bg,.rolagem .gc .hit{transition:none!important}html:not(.rolagem) .gc{opacity:1;transform:none}.tilt{transform:none!important}}
 
 /* popup: a carta sozinha, inteira, no tamanho da rolagem, sobre um véu preto leve; o X fica centralizado abaixo dela */
 html.travado,html.travado body{overflow:hidden}

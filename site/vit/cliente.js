@@ -1,5 +1,5 @@
 "use strict";
-// Subpágina do cliente: lê a lista no Worker e mostra a grade/rolagem. Só dá para trocar o modo e abrir uma carta sozinha (popup); nada mais.
+// Subpágina do cliente: lê a lista no Worker e mostra a grade/rolagem. Só dá para trocar o modo, girar a roleta e, na grade, abrir uma carta sozinha (popup); nada mais.
 const WORKER = "https://chelisplace-avisos.shrill-mountain-e326.workers.dev"; // endereço público (não é segredo)
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -19,6 +19,7 @@ function fundo(figura) {
   novo.src = url;
 }
 function imagem(el) {
+  if (el.dataset.ini) return; el.dataset.ini = "1";
   const img = el.querySelector("img"), id = img.dataset.id;
   let tent = 0;
   const carregar = () => { img.src = thumbUrl(id, tent === 1 ? Math.round(largura() * 0.75) : largura()); };
@@ -37,7 +38,8 @@ async function iniciar() {
   if (!r.ok) return aviso("Não consegui abrir", "Tente de novo em instantes.");
 
   document.title = d.titulo; $("#titulo").textContent = d.titulo;
-  const meta = () => { $("#meta").textContent = `${d.itens.length} ${d.itens.length === 1 ? "imagem" : "imagens"} · no ar por ${quantoFalta(d.expira, Date.now())}`; };
+  let idx = 0;   // carta atual da roleta
+  const meta = () => { $("#meta").textContent = `${modo === "rolagem" ? `${idx + 1} / ${d.itens.length}` : `${d.itens.length} ${d.itens.length === 1 ? "imagem" : "imagens"}`} · no ar por ${quantoFalta(d.expira, Date.now())}`; };
   meta();
   const intervalo = setInterval(() => { if (Date.now() >= d.expira) { clearInterval(intervalo); aviso("Esta vitrine não está mais no ar", "O prazo acabou. Peça um novo link."); $("#meta").textContent = ""; } else meta(); }, 30000);
 
@@ -47,20 +49,17 @@ async function iniciar() {
   document.querySelectorAll(".img").forEach((el) => { if (io) io.observe(el); else imagem(el); });
   const figuras = [...document.querySelectorAll(".gc")];
   fundo(figuras[0]);
-  // entrada suave (escalonada) e, no modo rolagem, a carta do centro vira a "atual" e dá a cor do fundo
+  // entrada suave (escalonada) das cartas da grade
   let lote = 0;
   const ioVis = "IntersectionObserver" in window ? new IntersectionObserver((es) => { lote = 0; es.forEach((e) => { if (e.isIntersecting) { e.target.style.setProperty("--i", Math.min(lote++, 8)); e.target.classList.add("vis"); ioVis.unobserve(e.target); } }); }, { rootMargin: "0px 0px -4% 0px" }) : null;
   figuras.forEach((f) => (ioVis ? ioVis.observe(f) : f.classList.add("vis")));
-  if ("IntersectionObserver" in window) {
-    const ioCur = new IntersectionObserver((es) => es.forEach((e) => { e.target.classList.toggle("cur", e.isIntersecting); if (e.isIntersecting && modo === "rolagem") fundo(e.target); }), { rootMargin: "-42% 0px -42% 0px" });
-    figuras.forEach((f) => ioCur.observe(f));
-  } else figuras.forEach((f) => f.classList.add("cur"));
   // inclinar a carta com o ponteiro (mouse, ou o dedo enquanto toca), com brilho; a de baixo do ponteiro também vira o fundo
   const main = $("#main"); let ativa = null;
   const soltar = () => { if (!ativa) return; const t = ativa.querySelector(".tilt"); t.classList.remove("mov"); t.style.setProperty("--rx", "0deg"); t.style.setProperty("--ry", "0deg"); const g = ativa.closest(".gc"); if (g) g.classList.remove("fora"); ativa = null; };
   const mover = (e) => {
     const hit = e.target.closest && e.target.closest(".hit");
     if (!hit) return soltar();
+    if (modo === "rolagem" && !hit.closest(".gc.cur") && !hit.closest(".pop")) return soltar();   // na roleta só a carta atual inclina
     if (hit !== ativa) { soltar(); ativa = hit; const g = hit.closest(".gc"); if (g) { g.classList.add("fora"); if (modo === "grade") fundo(g); } }
     const t = hit.querySelector(".tilt"), r = hit.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
@@ -96,13 +95,53 @@ async function iniciar() {
     requestAnimationFrame(() => { p.classList.add("on"); p.querySelector(".pop-x").focus({ preventScroll: true }); });
     fundo(fig);
   };
-  main.addEventListener("click", (e) => { const h = e.target.closest(".hit"); if (h) abrir(h.closest(".gc")); });
-  main.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("hit")) { e.preventDefault(); abrir(e.target.closest(".gc")); } });
+  // ---------- roleta (modo Rolagem), como a do bot: a página não rola; cada giro do mouse anda UMA carta e a atual fica travada no centro ----------
+  const N = figuras.length;
+  const pintar = (f, i) => {
+    const dd = i - idx, ad = Math.abs(dd);
+    f.style.setProperty("--d", dd); f.style.setProperty("--s", dd === 0 ? 1 : dd > 0 ? (0.93 - 0.02 * dd).toFixed(2) : 0.9); f.style.setProperty("--o", dd === 0 ? 1 : dd === 1 ? 0.55 : 0);
+    f.style.zIndex = 10 - Math.min(ad, 9);
+    f.classList.toggle("cur", dd === 0); f.classList.toggle("perto", ad <= 1); f.classList.toggle("longe", ad > 3);
+    if (ad <= 4) imagem(f.querySelector(".img"));
+  };
+  const camadas = (de = 0, ate = N - 1) => { for (let i = Math.max(0, de); i <= Math.min(N - 1, ate); i++) pintar(figuras[i], i); };
+  const ir = (n) => {
+    const novo = Math.min(N - 1, Math.max(0, idx + n)); if (novo === idx) return;
+    const ant = idx; idx = novo; soltar(); camadas(Math.min(ant, novo) - 5, Math.max(ant, novo) + 5); fundo(figuras[idx]); meta();
+  };
+  let ultimaRoda = 0;
+  window.addEventListener("wheel", (e) => {
+    if (modo !== "rolagem") return; e.preventDefault();   // nada de rolar a página: só a roleta anda
+    if (aberta || !e.deltaY) return; const agora = Date.now(); if (agora - ultimaRoda < 260) return; ultimaRoda = agora;
+    ir(e.deltaY > 0 ? 1 : -1);
+  }, { passive: false });
+  let ty = null;
+  main.addEventListener("touchstart", (e) => { ty = e.touches[0].clientY; }, { passive: true });
+  main.addEventListener("touchend", (e) => { if (ty == null || modo !== "rolagem" || aberta) { ty = null; return; } const dy = e.changedTouches[0].clientY - ty; ty = null; if (Math.abs(dy) > 40) ir(dy < 0 ? 1 : -1); }, { passive: true });
+  document.addEventListener("keydown", (e) => {
+    if (modo !== "rolagem" || aberta || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key; if (k === "ArrowDown" || k === "PageDown" || k === "ArrowRight") ir(1); else if (k === "ArrowUp" || k === "PageUp" || k === "ArrowLeft") ir(-1);
+    else if (k === "Home") ir(-N); else if (k === "End") ir(N); else return;
+    e.preventDefault();
+  });
+  main.addEventListener("click", (e) => {
+    const h = e.target.closest(".hit"); if (!h) return; const f = h.closest(".gc");
+    if (modo === "rolagem") { if (!f.classList.contains("cur")) ir(figuras.indexOf(f) - idx); }   // na roleta a carta já está no tamanho cheio: sem popup; clicar na vizinha só a traz para o centro
+    else abrir(f);
+  });
+  main.addEventListener("keydown", (e) => { if (modo === "grade" && (e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("hit")) { e.preventDefault(); abrir(e.target.closest(".gc")); } });
   const trocar = (m) => {
+    if (m === modo) return; soltar();
+    if (m === "rolagem") {   // começa pela carta da fileira mais perto do centro da tela (a mais à esquerda, em empate)
+      const cy = innerHeight / 2; let dist = Infinity;
+      figuras.forEach((f, i) => { const r = f.getBoundingClientRect(), dd = Math.round(Math.abs((r.top + r.bottom) / 2 - cy) / 8); if (dd < dist) { dist = dd; idx = i; } f.classList.add("vis"); });
+    }
     modo = m; document.documentElement.classList.toggle("rolagem", m === "rolagem");
     document.querySelectorAll("#modos button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.modo === m)));
     document.querySelectorAll(".img img[src]").forEach((im) => { im.src = thumbUrl(im.dataset.id, largura()); });   // já carregadas: pede a versão do tamanho novo
-    window.scrollTo(0, 0); fundoId = ""; const c0 = document.querySelector(m === "rolagem" ? ".gc.cur" : ".gc"); if (c0) fundo(c0);
+    if (m === "rolagem") camadas();
+    else { figuras.forEach((f) => { ["--d", "--s", "--o"].forEach((k) => f.style.removeProperty(k)); f.style.zIndex = ""; f.classList.remove("cur", "perto", "longe"); }); figuras[idx].scrollIntoView({ block: "center" }); }
+    fundoId = ""; fundo(figuras[idx]); meta();
   };
   $("#modos").hidden = false;
   document.querySelectorAll("#modos button").forEach((b) => { b.onclick = () => trocar(b.dataset.modo); });
