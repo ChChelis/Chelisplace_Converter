@@ -5,11 +5,12 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const aviso = (t, d) => { $("#main").innerHTML = `<div class="aviso"><b>${esc(t)}</b>${esc(d || "")}</div>`; };
 
+let modo = "grade";
+const largura = () => (modo === "rolagem" ? 800 : 480);   // a carta grande precisa de mais pixels que a miniatura da grade
 function imagem(el) {
   const img = el.querySelector("img"), id = img.dataset.id;
   let tent = 0;
-  const larguras = [480, 360, 480];
-  const carregar = () => { img.src = thumbUrl(id, larguras[tent]); };
+  const carregar = () => { img.src = thumbUrl(id, tent === 1 ? Math.round(largura() * 0.75) : largura()); };
   img.onload = () => img.classList.add("ok");
   img.onerror = () => { if (++tent < 3) setTimeout(carregar, 1200 * tent); else el.classList.add("falhou"); };
   carregar();
@@ -33,6 +34,14 @@ async function iniciar() {
   // carrega só o que está perto da tela (centenas de imagens sem travar o Drive)
   const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); imagem(e.target); } }), { rootMargin: "600px" }) : null;
   document.querySelectorAll(".img").forEach((el, i) => { if (io) io.observe(el); else imagem(el); if (i === 0) $("#bgart").style.backgroundImage = `url(${thumbUrl(d.itens[0].id, 200)})`; });
+  const trocar = (m) => {
+    modo = m; document.documentElement.classList.toggle("rolagem", m === "rolagem");
+    document.querySelectorAll("#modos button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.modo === m)));
+    document.querySelectorAll(".img img[src]").forEach((im) => { im.src = thumbUrl(im.dataset.id, largura()); });   // já carregadas: pede a versão do tamanho novo
+    window.scrollTo(0, 0);
+  };
+  $("#modos").hidden = false;
+  document.querySelectorAll("#modos button").forEach((b) => { b.onclick = () => trocar(b.dataset.modo); });
   document.addEventListener("contextmenu", (e) => e.preventDefault());
 }
 iniciar();
