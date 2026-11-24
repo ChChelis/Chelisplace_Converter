@@ -4,3 +4,6 @@
 /conferencia/*
   X-Robots-Tag: noindex, nofollow, noarchive
   Cache-Control: no-store
+/vit/vitrine.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store
