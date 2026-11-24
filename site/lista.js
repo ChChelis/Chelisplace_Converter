@@ -50,6 +50,7 @@ function nomeParaBot(txt) {
 // Atribuições: as manuais (escolhidas pelo Chelis: {grupo, arquivo, copias}) valem primeiro; depois, automático pelo nome da carta no nome do
 // arquivo (1 cópia por imagem). `bloqueios` ("grupo|arquivo") desfazem um automático. Sobra = imagem sem atribuição (pede incluir ou não).
 const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, " ").trim();
+const idItem = (i) => i.chave || i.nome;  // imagens de subpastas têm chave própria (o mesmo nome pode existir em mais de uma pasta)
 const chaveGrupo = (c) => [c.nome, c.set || "", c.cn || ""].join("|");
 function agruparPendentes(pend) {
   const m = new Map();
@@ -58,22 +59,41 @@ function agruparPendentes(pend) {
 }
 function atribuir(itens, pendentes, manuais = [], bloqueios = []) {
   const grupos = agruparPendentes(pendentes).map((g) => ({ ...g, atrib: [], preenchidos: 0 }));
-  const existe = new Set(itens.map((i) => i.nome)), usadoManual = new Set(), bloq = new Set(bloqueios);
+  const existe = new Set(itens.map(idItem)), usadoManual = new Set(), bloq = new Set(bloqueios);
   const por = new Map(grupos.map((g) => [g.key, g]));
   for (const m of manuais) {  // escolhas do Chelis
     const g = por.get(m.grupo); if (!g || !existe.has(m.arquivo)) continue;
     const n = Math.min(Math.max(1, m.copias | 0), g.qtd - g.preenchidos); if (n <= 0) continue;
     g.atrib.push({ arquivo: m.arquivo, copias: n, auto: false }); g.preenchidos += n; usadoManual.add(m.arquivo);
   }
-  for (const it of itens) {  // automático: o nome da carta aparece no nome do arquivo
-    if (usadoManual.has(it.nome)) continue;
-    const n = semAcento(it.nome), g = grupos.find((g) => g.preenchidos < g.qtd && !bloq.has(g.key + "|" + it.nome) && semAcento(g.nome) && n.includes(semAcento(g.nome)));
-    if (g) { g.atrib.push({ arquivo: it.nome, copias: 1, auto: true }); g.preenchidos++; }
+  for (const it of itens) {  // automático: o nome da carta aparece no nome do arquivo (imagens opcionais, de subpastas, só entram se você escolher)
+    if (it.opcional || usadoManual.has(idItem(it))) continue;
+    const n = semAcento(it.nome), g = grupos.find((g) => g.preenchidos < g.qtd && !bloq.has(g.key + "|" + idItem(it)) && semAcento(g.nome) && n.includes(semAcento(g.nome)));
+    if (g) { g.atrib.push({ arquivo: idItem(it), copias: 1, auto: true }); g.preenchidos++; }
   }
   const usados = new Set(grupos.flatMap((g) => g.atrib.map((a) => a.arquivo))), cobrem = [];
-  for (const g of grupos) for (const a of g.atrib) for (let k = 0; k < a.copias; k++) cobrem.push(itens.find((i) => i.nome === a.arquivo));
+  for (const g of grupos) for (const a of g.atrib) for (let k = 0; k < a.copias; k++) cobrem.push(itens.find((i) => idItem(i) === a.arquivo));
   for (const g of grupos) g.faltam = g.qtd - g.preenchidos;
-  return { grupos, cobrem, sobra: itens.filter((i) => !usados.has(i.nome)) };
+  return { grupos, cobrem, sobra: itens.filter((i) => !usados.has(idItem(i)) && !i.opcional) };
 }
 
-if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo };
+// Troca de arte: tira `k` cópias (slots) da carta `id` do <fronts> do XML (do último slot para o primeiro). Sem mais slots, a carta sai do XML.
+function tirarSlotsDoXml(txt, id, k) {
+  return txt.replace(/<fronts>([\s\S]*?)<\/fronts>/, (m, corpo) => {
+    const cartas = [...corpo.matchAll(/<card>[\s\S]*?<\/card>/g)].map((x) => ({ texto: x[0], index: x.index })), novos = cartas.map((c) => c.texto);
+    let resta = k;
+    for (let i = cartas.length - 1; i >= 0 && resta > 0; i--) {
+      const mid = cartas[i].texto.match(/<id>\s*([^<\s]+)\s*<\/id>/);
+      if (!mid || mid[1] !== id) continue;
+      const ms = cartas[i].texto.match(/<slots>([^<]*)<\/slots>/), lista = ms ? ms[1].split(",").map((s) => s.trim()).filter(Boolean) : ["0"];
+      const tira = Math.min(resta, lista.length); resta -= tira;
+      const nova = lista.slice(0, lista.length - tira);
+      novos[i] = nova.length ? cartas[i].texto.replace(/<slots>[^<]*<\/slots>/, `<slots>${nova.join(",")}</slots>`) : null;
+    }
+    let saida = "", pos = 0;
+    cartas.forEach((c, i) => { saida += corpo.slice(pos, c.index) + (novos[i] === null ? "" : novos[i]); pos = c.index + c.texto.length; });
+    return "<fronts>" + saida + corpo.slice(pos) + "</fronts>";
+  });
+}
+
+if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo, idItem, tirarSlotsDoXml };

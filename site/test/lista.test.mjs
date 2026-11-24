@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-const { lerLista, marcarFicha, listaParaBot, nomeParaBot, atribuir } = createRequire(import.meta.url)("../lista.js");
+const { lerLista, marcarFicha, listaParaBot, nomeParaBot, atribuir, tirarSlotsDoXml, idItem } = createRequire(import.meta.url)("../lista.js");
 
 test("Moxfield: quantidade, set e número; *F* ignorado; / vira //", () => {
   const r = lerLista("2 Avenging Hunter (CLB) 215\n1 Sol Ring (C21) 263 *F*\n1 Undercity / The Initiative (TCLB) 20");
@@ -76,4 +76,28 @@ test("atribuir: manual não passa de quantos slots faltam; bloqueio desfaz o aut
 test("atribuir: sem pendentes, tudo é sobra", () => {
   const r = atribuir(arq("a.png", "b.png"), []);
   assert.deepEqual([r.cobrem.length, r.sobra.length], [0, 2]);
+});
+
+const sub = (nome, caminho) => ({ nome, em: "sub", caminho, chave: `sub/${caminho}/${nome}`, rotulo: `${caminho}/${nome}`, opcional: true });
+test("imagens de subpasta nunca entram sozinhas nem viram sobra; o mesmo nome em duas pastas é distinto", () => {
+  const itens = [sub("Mountain.png", "loja1"), sub("Mountain.png", "loja2")];
+  const r = atribuir(itens, pend("Mountain", 2, "j25", "90"));
+  assert.equal(r.cobrem.length, 0); assert.equal(r.sobra.length, 0);       // opcionais: só entram se você escolher
+  const m = atribuir(itens, pend("Mountain", 2, "j25", "90"), [{ grupo: "Mountain|j25|90", arquivo: "sub/loja2/Mountain.png", copias: 2 }]);
+  assert.deepEqual(m.cobrem.map(idItem), ["sub/loja2/Mountain.png", "sub/loja2/Mountain.png"]);
+});
+test("troca de arte: tirar cópias de uma carta do XML (do último slot ao primeiro)", () => {
+  const xml = `<order><fronts><card><id>AAA</id><slots>0,1,2</slots><name>X</name></card><card><id>BBB</id><slots>3</slots></card></fronts><backs><card><id>AAA</id><slots>0</slots></card></backs></order>`;
+  assert.match(tirarSlotsDoXml(xml, "AAA", 2), /<id>AAA<\/id><slots>0<\/slots>/);
+  const todas = tirarSlotsDoXml(xml, "AAA", 3);
+  assert.doesNotMatch(todas.split("</fronts>")[0], /AAA/);                  // a carta sai de <fronts>
+  assert.match(todas, /<backs><card><id>AAA<\/id>/);                       // <backs> não é mexido
+  assert.match(todas, /<id>BBB<\/id><slots>3<\/slots>/);                   // outras cartas intactas
+  assert.equal(tirarSlotsDoXml(xml, "ZZZ", 1), xml);
+});
+test("troca de arte: a mesma carta em dois cards (cópias separadas) perde do último para o primeiro", () => {
+  const xml = `<order><fronts><card><id>A</id><slots>0,1</slots></card><card><id>A</id><slots>5,6</slots></card></fronts></order>`;
+  const r = tirarSlotsDoXml(xml, "A", 3);
+  assert.match(r, /<card><id>A<\/id><slots>0<\/slots><\/card>/);
+  assert.equal((r.match(/<card>/g) || []).length, 1);
 });

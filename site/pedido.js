@@ -72,8 +72,13 @@ function aplicarTrocas(txt) {
   for (const [antigo, novo] of Object.entries(sessao.trocas || {})) txt = txt.replace(new RegExp("<id>\\s*" + antigo + "\\s*</id>", "g"), `<id>${novo}</id>`);
   return txt;
 }
+// Troca de arte (etapa 4): as cópias trocadas saem do XML (a carta passa a pedir menos cópias da arte original); as imagens novas entram como pendentes atribuídas.
+function aplicarSubstituicoes(txt) {
+  for (const s of sessao.substituicoes || []) txt = tirarSlotsDoXml(txt, s.id, s.copias);
+  return txt;
+}
 function sincronizarXml() {
-  let x = xmlCombinado(pedido.fontes); if (x !== null) x = aplicarTrocas(x);
+  let x = xmlCombinado(pedido.fontes); if (x !== null) x = aplicarSubstituicoes(aplicarTrocas(x));
   const n = pedido.fontes.filter((f) => f.xmlTexto).length;
   if (x === null) {  // nenhum pedido com XML: se o XML atual veio das fontes, solta
     if (xmlDeFontes) { sessao.xml = null; sessao.xmlNome = ""; sessao.conferencia = null; ultimoXmlTexto = ""; xmlDeFontes = false; atualizarRotulos(); }
@@ -86,7 +91,9 @@ function sincronizarXml() {
   sessao.conferencia = null;  // o XML mudou: conferir de novo
   atualizarRotulos();
 }
-const pendentesBot = () => pedido.fontes.flatMap((f) => f.frentes.filter((c) => c.pendente));  // slots do pedido sem imagem (nenhuma serviu no bot)
+// Slots sem imagem da arte pedida: "nenhum serviu" no bot + cópias cuja arte você trocou (a imagem nova é atribuída a elas)
+const pendentesBot = () => [...pedido.fontes.flatMap((f) => f.frentes.filter((c) => c.pendente)),
+  ...(sessao.substituicoes || []).flatMap((s) => Array.from({ length: s.copias }, () => ({ nome: s.nome, set: "troca", cn: s.id.slice(0, 8), pendente: true, troca: true })))];
 window.pendentesBot = pendentesBot;
 const assinatura = (f) => [...f.frentes, ...f.versos].map((c) => c.id || c.nome).join("|") + "#" + f.frentes.length;
 function addFonte(f) {
@@ -646,7 +653,64 @@ const motivoCurto = (m) => /404|not found/i.test(m) ? "não existe mais no Drive
 // Imagens do XML que sumiram do MPCFill e que você substituiu à mão (arquivo com outro ID): diz-se qual entra no lugar de qual.
 const idDoNomeArquivo = (n) => (n.match(RE_ID_ARQ) || [])[1] || "";
 const baseDaCarta = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").split(/[\[({]/)[0].trim().toLowerCase();
+// ---------- Trocar a arte de uma carta do pedido por uma imagem sua (da pasta, de completar/ ou de qualquer subpasta; com ou sem sangria corrigida) ----------
+function cartasDoXml() {
+  const m = new Map();
+  for (const f of pedido.fontes) for (const c of f.frentes) { if (c.pendente || !c.id) continue; const e = m.get(c.id) || { id: c.id, nome: c.nome, qtd: 0 }; e.qtd++; m.set(c.id, e); }
+  return [...m.values()].map((e) => ({ ...e, livres: e.qtd - (sessao.substituicoes || []).filter((s) => s.id === e.id).reduce((n, s) => n + s.copias, 0) }));
+}
+function desenharTrocaDireta(r) {
+  const el = $("#c-troca-direta"); if (!el) return;
+  const p = sessao.pasta, cartas = cartasDoXml();
+  if (!p || !cartas.length || !r) { el.innerHTML = ""; return; }
+  const fora = new Set([...(r.fora_da_lista || []), ...(r.sem_id || [])]);
+  const cand = [...p.raiz.filter((x) => fora.has(x.nome)), ...(p.completar || []), ...(p.subpastas || [])];  // mesma lista que o painel de pendentes usa
+  const subs = sessao.substituicoes = sessao.substituicoes || [];
+  const feitas = subs.length ? `<ul>${subs.map((s, i) => `<li>${esc(s.nome)} ×${s.copias} → ${esc(s.rotulo)} <button class="peq" data-td-desfaz="${i}">Desfazer</button></li>`).join("")}</ul>` : "";
+  const filtro = (el.querySelector("#td-filtro") || {}).value || "";
+  const opcoes = cand.map((c, k) => ({ c, k })).filter(({ c }) => !filtro || semAcento(c.rotulo || c.nome).includes(semAcento(filtro)));
+  el.innerHTML = `<div class="conf conf-so-voce"><b>Trocar a arte de uma carta do pedido</b>
+    <p class="suave">Escolha a carta, a imagem que entra no lugar e em quantas cópias. A imagem pode estar na pasta do pedido, em <code>completar/</code> ou em qualquer subpasta (já no Drive, ou subida agora: clique em <b>Reler a pasta</b>). Se ela vier sem sangria, use <b>Corrigir sangria…</b> antes de montar. A troca aparece na ficha como “arte trocada”.</p>
+    <button class="acao sec" id="td-reler">Reler a pasta (procura nas subpastas)</button> <button class="acao sec" id="td-sg">Corrigir sangria…</button>
+    ${feitas ? `<div class="conf"><b class="ok">${subs.length} troca(s)</b>${feitas}</div>` : ""}
+    <div class="item" style="margin-top:8px"><input type="text" id="td-filtro" placeholder="filtrar imagens pelo nome" value="${esc(filtro)}" size="24">
+      <select id="td-carta">${cartas.map((c, i) => `<option value="${i}"${c.livres ? "" : " disabled"}>${esc(c.nome)} ×${c.livres}${c.livres < c.qtd ? ` (de ${c.qtd})` : ""}</option>`).join("")}</select>
+      →
+      <select id="td-img">${opcoes.length ? opcoes.map(({ c, k }) => `<option value="${k}">${esc(c.rotulo || c.nome)}${c.em === "completar" ? " (completar/)" : ""}</option>`).join("") : '<option value="">(nenhuma imagem encontrada)</option>'}</select>
+      em <input type="number" id="td-n" min="1" value="1" style="width:4.5em"> cópia(s) <button class="peq" id="td-todas" title="Trocar em todas as cópias que ainda não foram trocadas">todas</button>
+      <button class="acao" id="td-ok"${cand.length ? "" : " disabled"}>Trocar</button></div>
+    <div class="suave" id="td-msg"></div></div>`;
+  const carta = () => cartas[+el.querySelector("#td-carta").value];
+  const ajustar = () => { const c = carta(), n = el.querySelector("#td-n"); if (!c) return; n.max = c.livres; n.value = Math.min(Math.max(1, +n.value || 1), c.livres || 1); };
+  el.querySelector("#td-carta").onchange = ajustar; ajustar();
+  el.querySelector("#td-todas").onclick = () => { const c = carta(); if (c) el.querySelector("#td-n").value = c.livres; };
+  el.querySelector("#td-filtro").oninput = () => { const pos = el.querySelector("#td-filtro").selectionStart, v = el.querySelector("#td-filtro").value, ci = el.querySelector("#td-carta").value, n = el.querySelector("#td-n").value; desenharTrocaDireta(r); const f = el.querySelector("#td-filtro"); f.value = v; f.focus(); f.setSelectionRange(pos, pos); el.querySelector("#td-carta").value = ci; el.querySelector("#td-n").value = n; };
+  el.querySelector("#td-reler").onclick = async (ev) => { ev.target.disabled = true; ev.target.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { /* mantém */ } conferir(); };
+  el.querySelector("#td-sg").onclick = () => { $("#sg-abrir").click(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+  el.querySelector("#td-ok").onclick = () => {
+    const c = carta(), imgSel = el.querySelector("#td-img").value, msg = el.querySelector("#td-msg");
+    if (!c || imgSel === "") { msg.innerHTML = `<span class="aviso">Escolha a carta e a imagem.</span>`; return; }
+    const arq = cand[+imgSel], n = Math.max(1, Math.min(c.livres, +el.querySelector("#td-n").value || 1));
+    if (!c.livres) { msg.innerHTML = `<span class="aviso">Todas as cópias dessa carta já foram trocadas.</span>`; return; }
+    const usadoId = idDoNomeArquivo(arq.nome), grupo = (pedido.alteracoes.find((a) => a.titulo === "Artes trocadas") || (pedido.alteracoes.push({ titulo: "Artes trocadas", itens: [] }), pedido.alteracoes[pedido.alteracoes.length - 1]));
+    const alt = { texto: `${nomeLimpo(c.nome)}: usada outra arte${n < c.qtd ? ` em ${n} de ${c.qtd} cópia(s)` : ""}`, pedido_id: c.id, ...(usadoId ? { usado_id: usadoId } : {}) };
+    grupo.itens.push(alt);
+    subs.push({ id: c.id, nome: c.nome, copias: n, arquivo: idItem(arq), rotulo: arq.rotulo || arq.nome, alt });
+    sessao.atribManuais = sessao.atribManuais || [];
+    sessao.atribManuais.push({ grupo: chaveGrupo({ nome: c.nome, set: "troca", cn: c.id.slice(0, 8) }), arquivo: idItem(arq), copias: n });
+    sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
+  };
+  el.querySelectorAll("[data-td-desfaz]").forEach((b) => (b.onclick = () => {
+    const s = subs[+b.dataset.tdDesfaz]; if (!s) return;
+    sessao.substituicoes = subs.filter((x) => x !== s);
+    const g = chaveGrupo({ nome: s.nome, set: "troca", cn: s.id.slice(0, 8) });
+    sessao.atribManuais = (sessao.atribManuais || []).filter((m) => !(m.grupo === g && m.arquivo === s.arquivo));
+    pedido.alteracoes.forEach((a) => (a.itens = a.itens.filter((it) => it !== s.alt))); pedido.alteracoes = pedido.alteracoes.filter((a) => a.itens.length);
+    sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
+  }));
+}
 function desenharTrocas(r) {
+  desenharTrocaDireta(r);
   const el = $("#c-trocas");
   const feitas = Object.entries(sessao.trocas || {});
   // candidatos: imagens fora do XML E cópias "a mais" de imagens que o XML já pede (a sobra pode ser justamente a substituta de uma que sumiu)
@@ -702,14 +766,15 @@ function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
   if (!pend.length) { el.innerHTML = ""; return; }
   const r = separarExtras(itens), faltam = r.grupos.reduce((n, g) => n + g.faltam, 0), e = atribEstado();
   // o seletor já vem na imagem mais provável da carta: a que já está atribuída a ela ou a que tem o nome dela
-  const opc = (g) => { const pad = (g.atrib.length ? g.atrib[g.atrib.length - 1].arquivo : (itens.find((i) => semAcento(i.nome).includes(semAcento(g.nome))) || {}).nome);
-    return itens.map((i) => `<option value="${esc(i.nome)}"${i.nome === pad ? " selected" : ""}>${esc(i.nome)}${i.em === "completar" ? " (completar/)" : ""}</option>`).join(""); };
+  const rot = (chave) => { const it = itens.find((i) => idItem(i) === chave); return it ? (it.rotulo || it.nome) : chave; };
+  const opc = (g) => { const pad = (g.atrib.length ? g.atrib[g.atrib.length - 1].arquivo : idItem(itens.find((i) => !i.opcional && semAcento(i.nome).includes(semAcento(g.nome))) || {}));
+    return itens.map((i) => `<option value="${esc(idItem(i))}"${idItem(i) === pad ? " selected" : ""}>${esc(i.rotulo || i.nome)}${i.em === "completar" ? " (completar/)" : ""}</option>`).join(""); };
   const cab = compacto ? "" : (faltam
-    ? `<b class="aviso">${faltam} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b>. Abaixo você diz qual imagem vale por qual carta, e em quantos slots.<br><button class="acao sec" id="p-reler">Reler a pasta</button>`
-    : `<b class="ok">Os ${pend.length} slot(s) pendentes do bot já têm imagem na pasta.</b>`);
+    ? `<b class="aviso">${faltam} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot, ou a arte foi trocada; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b>. Abaixo você diz qual imagem vale por qual carta, e em quantos slots.<br><button class="acao sec" id="p-reler">Reler a pasta</button>`
+    : `<b class="ok">Os ${pend.length} slot(s) pendente(s) já têm imagem na pasta.</b>`);
   el.innerHTML = `<div class="conf">${cab}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
-      <b>${esc(g.nome)}</b>${g.set ? ` <span class="suave">(${esc(g.set.toUpperCase())} ${esc(g.cn)})</span>` : ""} <span class="suave">×${g.qtd}</span> — <b class="${g.faltam ? "aviso" : "ok"}">${g.preenchidos}/${g.qtd}</b>
-      ${g.atrib.map((a, ai) => `<span class="suave" style="margin-left:8px">${esc(a.arquivo)} ×${a.copias}${a.auto ? " (pelo nome)" : ""} <button class="peq" data-rm="${gi}:${ai}" title="Tirar esta imagem desta carta">×</button></span>`).join("")}
+      <b>${esc(g.nome)}</b>${g.set === "troca" ? ` <span class="suave">(troca de arte)</span>` : g.set ? ` <span class="suave">(${esc(g.set.toUpperCase())} ${esc(g.cn)})</span>` : ""} <span class="suave">×${g.qtd}</span> — <b class="${g.faltam ? "aviso" : "ok"}">${g.preenchidos}/${g.qtd}</b>
+      ${g.atrib.map((a, ai) => `<span class="suave" style="margin-left:8px">${esc(rot(a.arquivo))} ×${a.copias}${a.auto ? " (pelo nome)" : ""} <button class="peq" data-rm="${gi}:${ai}" title="Tirar esta imagem desta carta">×</button></span>`).join("")}
       ${g.faltam && itens.length ? `<div style="margin-top:4px"><select data-sel="${gi}">${opc(g)}</select> em <input type="number" min="1" max="${g.faltam}" value="${g.faltam}" size="3" style="width:4.5em" data-n="${gi}"> slot(s) <button class="peq" data-usar="${gi}">Usar esta imagem</button>${g.atrib.length ? ` <button class="peq" data-mult="${gi}">Completar os ${g.faltam} com a mesma imagem</button>` : ""}</div>` : ""}
     </div>`).join("") + `</div>`;
   const grupo = (b) => r.grupos[+b.dataset.g || +b.dataset.usar || +b.dataset.mult || 0];
@@ -780,9 +845,9 @@ const nomePng = (n) => n.replace(/\.[A-Za-z0-9]+$/, "") + ".png";
 function sgAtualizarLista() {
   const p = sessao.pasta, ja = new Map(SG.itens.map((i) => [i.chave, i]));
   const daPasta = [];
-  if (p) for (const it of [...p.raiz, ...p.pares, ...(p.completar || [])]) {  // completar/ também: é onde as imagens de outra fonte costumam ser subidas
+  if (p) for (const it of [...p.raiz, ...p.pares, ...(p.completar || []), ...(p.subpastas || [])]) {  // completar/ e subpastas também: é onde as imagens de outra fonte costumam ser subidas
     if (!SG.mostrarComId && !semIdNoNome(it.nome)) continue;  // imagens com ID de 20+ caracteres já são do MPCFill
-    const chave = (it.em || "raiz") + "/" + it.nome;
+    const chave = it.chave || (it.em || "raiz") + "/" + it.nome;
     daPasta.push(ja.get(chave) || { chave, nome: it.nome, item: it, incluir: true, modo: "borda" });
   }
   SG.itens = [...daPasta, ...SG.itens.filter((i) => i.novo)];
@@ -967,7 +1032,7 @@ function novoPedido() {
   pedido.fontes = []; pedido.alteracoes = []; pedido.cardId = null; pedido.botNome = null; $("#t-criar").textContent = "Criar card no Trello";
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
-  sessao.extrasDecisao = null; sessao.trocas = {}; sessao.atribManuais = []; sessao.atribBloqueios = [];
+  sessao.extrasDecisao = null; sessao.trocas = {}; sessao.atribManuais = []; sessao.atribBloqueios = []; sessao.substituicoes = [];
   clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
   for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas", "#t-aviso"]) { const el = $(s); if (el) el.textContent = ""; }

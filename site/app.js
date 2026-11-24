@@ -45,7 +45,7 @@ async function pastaDoComputador() {
     const inp = document.createElement("input");
     inp.type = "file"; inp.webkitdirectory = true;
     inp.onchange = () => {
-      const raiz = [], pares = [], completar = [];
+      const raiz = [], pares = [], completar = [], subpastas = [];
       for (const f of inp.files) {
         const partes = f.webkitRelativePath.split("/");
         if (!IMG.test(f.name)) continue;
@@ -53,16 +53,27 @@ async function pastaDoComputador() {
         if (partes.length === 2) raiz.push(item);
         else if (partes.length === 3 && partes[1].toLowerCase() === "pares") pares.push(item);
         else if (partes.length >= 3 && partes[1].toLowerCase() === "completar") completar.push({ ...item, em: "completar" });
+        else if (partes.length >= 3 && !RESERVADAS.has(partes[1].toLowerCase())) subpastas.push(itemSub(f.name, partes.slice(1, -1).join("/"), item.ler));
       }
-      inp.files.length ? res({ nome: (inp.files[0].webkitRelativePath || "").split("/")[0], handle: null, raiz, pares, completar, podeGravar: false }) : rej(new Error("cancelado"));
+      inp.files.length ? res({ nome: (inp.files[0].webkitRelativePath || "").split("/")[0], handle: null, raiz, pares, completar, subpastas, podeGravar: false }) : rej(new Error("cancelado"));
     };
     inp.click();
   });
 }
 
+// Imagens em subpastas do pedido (fora das pastas com função própria): ficam à disposição para trocar a arte de uma carta ou preencher uma pendente (nunca entram sozinhas).
+const RESERVADAS = new Set(["pares", "completar", "saida", "originais_sem_sangria", "copias_a_mais", "anteriores"]);
+const itemSub = (nome, caminho, ler, extra = {}) => ({ nome, em: "sub", caminho, chave: "sub/" + caminho + "/" + nome, rotulo: caminho + "/" + nome, opcional: true, ler, ...extra });
+
 async function lerHandle(handle) {
   {
-    const raiz = [], pares = [], completar = [];
+    const raiz = [], pares = [], completar = [], subpastas = [];
+    const varrerSub = async (dir, caminho, nivel) => {
+      for await (const [n, h] of dir.entries()) {
+        if (h.kind === "file" && IMG.test(n)) subpastas.push(itemSub(n, caminho, () => h.getFile(), { pai: dir }));
+        else if (h.kind === "directory" && nivel < 3) await varrerSub(h, caminho + "/" + n, nivel + 1);
+      }
+    };
     const varrer = async (dir, nivel) => {  // completar/ pode ter subpastas (uma por loja, por exemplo)
       for await (const [n, h] of dir.entries()) {
         if (h.kind === "file" && IMG.test(n)) completar.push({ nome: n, em: "completar", ler: () => h.getFile(), pai: dir });
@@ -71,13 +82,14 @@ async function lerHandle(handle) {
     };
     for await (const [nome, h] of handle.entries()) {
       if (h.kind === "directory" && nome.toLowerCase() === "completar") await varrer(h, 1);
+      else if (h.kind === "directory" && !RESERVADAS.has(nome.toLowerCase())) await varrerSub(h, nome, 1);
       if (h.kind === "file" && IMG.test(nome)) raiz.push({ nome, em: "raiz", ler: () => h.getFile() });
       if (h.kind === "directory" && nome.toLowerCase() === "pares") {
         for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && IMG.test(n2)) pares.push({ nome: n2, em: "pares", ler: () => h2.getFile() });
       }
     }
     return {
-      nome: handle.name, handle, raiz, pares, completar, podeGravar: true,
+      nome: handle.name, handle, raiz, pares, completar, subpastas, podeGravar: true,
       recarregar: () => lerHandle(handle),
       // guarda a original em originais_sem_sangria/ e coloca a corrigida no lugar dela (ou só adiciona, se não havia original)
       async inserirCorrigida(item, nomeNovo, bytes) {
@@ -156,8 +168,16 @@ async function montarPastaDrive(ped) {
     }
   };
   if (dirCompletar) await varrer(dirCompletar.id, 1);
+  const subpastas = [];
+  const varrerSub = async (pasta, caminho, nivel) => {
+    for (const f of await Drive.listar(pasta)) {
+      if (f.mimeType === Drive.PASTA) { if (nivel < 3) await varrerSub(f.id, caminho + "/" + f.name, nivel + 1); }
+      else if (imagem(f)) subpastas.push({ ...item(f, pasta, "sub"), caminho, chave: "sub/" + caminho + "/" + f.name, rotulo: caminho + "/" + f.name, opcional: true });
+    }
+  };
+  for (const f of filhos) if (f.mimeType === Drive.PASTA && !RESERVADAS.has(f.name.toLowerCase())) await varrerSub(f.id, f.name, 1);
   return {
-    nome: ped.name, drive: { id: ped.id }, raiz, pares, completar, podeGravar: true,
+    nome: ped.name, drive: { id: ped.id }, raiz, pares, completar, subpastas, podeGravar: true,
     recarregar: () => montarPastaDrive(ped),
     // move a original para originais_sem_sangria/ (nada é apagado) e envia a corrigida para o mesmo lugar
     async inserirCorrigida(it, nomeNovo, bytes) {
@@ -293,7 +313,7 @@ async function conferir() {
   const fora = new Set([...r.fora_da_lista, ...r.sem_id]);
   const extrasItens = [...pasta.raiz.filter((x) => fora.has(x.nome)), ...(pasta.completar || [])];
   if (window.desenharTrocas) window.desenharTrocas(r);  // faltando × imagens extras: “usar no lugar”
-  const extrasPendentes = window.desenharExtras ? await window.desenharExtras(extrasItens, r.faltando.length) : 0;
+  const extrasPendentes = window.desenharExtras ? await window.desenharExtras([...extrasItens, ...(pasta.subpastas || [])], r.faltando.length) : 0;
   sessao.conferencia = { extrasPendentes, pendentes: r.faltando.length + r.a_duplicar.length + r.excesso.length + r.pares_incompletos.length + (soltos.length ? 1 : 0), faltando: r.faltando.length, a_duplicar: r.a_duplicar.length, excesso: r.excesso.length, pares_incompletos: r.pares_incompletos.length, soltos: soltos.length };
   const moverPares = () => confirmar(acoes, `Criar a pasta "pares" dentro de "${pasta.nome}" e mover ${soltos.length} arquivo(s) de dupla face para ela?`, async (atualizar) => {
     await pasta.moverPares(soltos, (k, n) => atualizar(`Movendo arquivo ${k} de ${n} para pares/…`, (k - 1) / n));
@@ -328,20 +348,25 @@ async function prepararMontagem() {
   if (!p) { plano.innerHTML = ""; MONT.pronta = false; return atualizarRotulos(); }
   if (!clienteEditado) $("#m-cliente").value = p.nome;
   await pronto;
-  let raizXml = p.raiz, extras = [...(p.completar || [])], padrao = [], faltando = 0, ignorados = 0;
+  let raizXml = p.raiz, extras = [...(p.completar || [])], padrao = [], faltando = 0, ignorados = 0, copiasTrocadas = 0;
   if (sessao.xml) {
     try {
       const r = await chamar("checar", { xml: sessao.xml.slice(0), nomes: [...p.raiz, ...p.pares].map((x) => x.nome), ignorar: [...sessao.ignorar] });
       const fora = new Set([...r.fora_da_lista, ...r.sem_id]), pad = new Set(r.verso_padrao);
       extras = [...p.raiz.filter((x) => fora.has(x.nome)), ...(p.completar || [])];
       padrao = p.raiz.filter((x) => pad.has(x.nome));
-      raizXml = p.raiz.filter((x) => !fora.has(x.nome) && !pad.has(x.nome));
+      // cópias da arte ORIGINAL de uma carta cuja arte foi trocada (etapa 4): o XML passou a pedir menos cópias dela, as que sobram não entram
+      const idsTrocados = new Set((sessao.substituicoes || []).map((s) => s.id));
+      const sobras = new Set((r.excesso_mover || []).filter(([id]) => idsTrocados.has(id)).flatMap(([, arqs]) => arqs));
+      copiasTrocadas = sobras.size;
+      raizXml = p.raiz.filter((x) => !fora.has(x.nome) && !pad.has(x.nome) && !sobras.has(x.nome));
       faltando = r.faltando.length; ignorados = r.pares_ignorados.length;
     } catch (e) { plano.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; MONT.pronta = false; return; }
   }
   // As imagens que preenchem slots pendentes do bot entram sempre; só a sobra (extras de verdade) tem a decisão "incluir ou não".
   const pend = window.pendentesBot ? window.pendentesBot() : [];
-  const sep = window.separarExtras ? window.separarExtras(extras) : { cobrem: [], sobra: extras };
+  const todosExtras = [...extras, ...(p.subpastas || [])];  // as de subpastas só entram se atribuídas (troca de arte / pendente)
+  const sep = window.separarExtras ? window.separarExtras(todosExtras) : { cobrem: [], sobra: extras };
   const sobra = sep.sobra;
   // decisão sobre a sobra vale para este conjunto de arquivos; se mudar, pergunta de novo
   const chave = chaveExtras(sobra);
@@ -362,8 +387,9 @@ async function prepararMontagem() {
   let h = `<p><b>${raizXml.length}</b> carta(s) do pedido + <b>${p.pares.length}</b> de pares + <b>${nExtras}</b> extra(s) = <b>${total}</b> slot(s) → <b>${Math.ceil(total / 18) || 0}</b> página(s) de 18.</p>`;
   if (ignorados) h += `<p class="suave">${ignorados} par(es) ignorado(s) na Checagem: não entram na montagem.</p>`;
   if (faltando) h += `<p class="aviso">${faltando} imagem(ns) do XML ainda não estão na pasta (veja a Checagem).</p>`;
+  if (copiasTrocadas) h += `<p class="suave">${copiasTrocadas} cópia(s) da arte original que você trocou ficam de fora da montagem (na etapa 4, “mover cópias a mais” as guarda em copias_a_mais/).</p>`;
   if (padrao.length) h += `<p class="suave">O verso padrão (${esc(padrao[0].nome)}) está na pasta e não entra na montagem.</p>`;
-  if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta (com as cópias que você definiu); entram nos últimos slots, depois dos pares.</p>`;
+  if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} slot(s) pendente(s) preenchido(s) por imagens da pasta (com as cópias que você definiu); entram nos últimos slots, depois dos pares.</p>`;
   if (sobra.length) {
     h += `<div class="conf"><b class="aviso">${sobra.length} imagem(ns) na pasta não estão no XML nem são de slot pendente:</b>${lista(sobra, (x) => esc(x.nome))}`;
     h += MONT.incluirExtras === null
@@ -372,7 +398,7 @@ async function prepararMontagem() {
     h += `</div>`;
   }
   if (pendFalta) {
-    h += `<div class="conf"><b class="alerta">Faltam imagens para ${pendFalta} de ${pend.length} slot(s) pendente(s) do bot</b> (nenhum serviu; já estão no orçamento): ${esc(pend.slice(0, 12).map((c) => c.nome).join("; "))}${pend.length > 12 ? "…" : ""}<br>Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>, ou adicione daqui do computador. Se vierem sem sangria, use <b>Corrigir sangria…</b> (ele lista também o que estiver em <code>completar/</code>).<br>`;
+    h += `<div class="conf"><b class="alerta">Faltam imagens para ${pendFalta} de ${pend.length} slot(s) pendente(s)</b> (nenhum serviu no bot ou a arte foi trocada; já estão no orçamento): ${esc(pend.slice(0, 12).map((c) => c.nome).join("; "))}${pend.length > 12 ? "…" : ""}<br>Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>, ou adicione daqui do computador. Se vierem sem sangria, use <b>Corrigir sangria…</b> (ele lista também o que estiver em <code>completar/</code>).<br>`;
     h += `<div id="m-atrib"></div><button class="acao sec" id="m-reler">Reler a pasta</button> <button class="acao sec" id="m-sg">Corrigir sangria…</button> <input id="m-add-pend" type="file" accept="image/*" multiple> `;
     h += MONT.ignorarPend ? `<span class="suave">Vai montar sem essas ${pendFalta} imagem(ns).</span> <button class="peq" id="m-pend-nao">Desfazer</button>` : `<button class="acao sec" id="m-pend-ignorar">Montar sem elas</button>`;
     h += `</div>`;
@@ -391,11 +417,11 @@ async function prepararMontagem() {
   const motivos = [];
   if (!total) motivos.push("não há nenhuma imagem para montar");
   if (MONT.incluirExtras === null) motivos.push("responda sobre as imagens fora do XML");
-  if (aguardando) motivos.push(`faltam imagens para ${pendFalta} slot(s) pendente(s) do bot: suba-as ou escolha montar sem elas`);
+  if (aguardando) motivos.push(`faltam imagens para ${pendFalta} slot(s) pendente(s): suba-as ou escolha montar sem elas`);
   else if (falta && !MONT.permitirBranco) motivos.push(`complete os ${falta} slot(s) que faltam ou escolha montar com slots em branco`);
   if (motivos.length) h += `<p class="aviso">Montar PDFs está travado: ${motivos.join("; ")}.</p>`;
   plano.innerHTML = h;
-  const ma = $("#m-atrib"); if (ma && window.desenharAtribuicao) window.desenharAtribuicao(ma, extras, () => prepararMontagem(), true);  // qual imagem vale por qual carta pendente (e quantas cópias)
+  const ma = $("#m-atrib"); if (ma && window.desenharAtribuicao) window.desenharAtribuicao(ma, todosExtras, () => prepararMontagem(), true);  // qual imagem vale por qual carta pendente (e quantas cópias)
   const liga = (id, fn) => { const el = $("#" + id); if (el) el.onclick = async () => { fn(); await prepararMontagem(); }; };
   liga("m-extras-sim", () => (MONT.incluirExtras = true));
   liga("m-extras-nao", () => (MONT.incluirExtras = false));
