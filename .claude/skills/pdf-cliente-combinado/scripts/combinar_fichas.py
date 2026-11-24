@@ -150,7 +150,7 @@ def _nome_pdf(p):
 
 
 def parear(mds, pdfs):
-    """Casa cada ficha .md com o PDF cujo nome contém o título (ex.: Neto_1_Sauron). Sem ambiguidade, senão erro."""
+    """Casa cada ficha .md com o PDF cujo nome contém o título (ex.: Cliente_1_Deck). Sem ambiguidade, senão erro."""
     fichas = [(p, ler_md(p)) for p in mds]
     pares = []
     for caminho, f in fichas:

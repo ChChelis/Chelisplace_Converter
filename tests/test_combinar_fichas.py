@@ -39,7 +39,7 @@ class Combinar(unittest.TestCase):
         self.assertEqual(cf.lista_limpa(com_versos)[-2:], ["##### Cartas para completar", "1. C"])
 
     def test_ordem_pelo_numero_do_nome(self):
-        pares = [({"nome": "Neto_3_X"}, "c"), ({"nome": "Neto_1_Y"}, "a"), ({"nome": "Neto_2_Z"}, "b")]
+        pares = [({"nome": "Cli_3_X"}, "c"), ({"nome": "Cli_1_Y"}, "a"), ({"nome": "Cli_2_Z"}, "b")]
         self.assertEqual([p[1] for p in cf.ordenar(pares)], ["a", "b", "c"])
 
     def test_miniaturas_ficam_no_item_certo_mesmo_quando_um_item_nao_tem(self):
