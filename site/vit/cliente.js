@@ -133,8 +133,8 @@ async function iniciar() {
   const trocar = (m) => {
     if (m === modo) return; soltar();
     if (m === "rolagem") {   // começa pela carta da fileira mais perto do centro da tela (a mais à esquerda, em empate)
-      const cy = innerHeight / 2; let dist = Infinity;
-      figuras.forEach((f, i) => { const r = f.getBoundingClientRect(), dd = Math.round(Math.abs((r.top + r.bottom) / 2 - cy) / 8); if (dd < dist) { dist = dd; idx = i; } f.classList.add("vis"); });
+      const cy = innerHeight / 2, ds = figuras.map((f) => { f.classList.add("vis"); const r = f.getBoundingClientRect(); return Math.abs((r.top + r.bottom) / 2 - cy); });
+      const menor = Math.min(...ds); idx = ds.findIndex((x) => x <= menor + 12);   // a 1ª da fileira mais perto do centro (12 px de folga para o empate da mesma fileira)
     }
     modo = m; document.documentElement.classList.toggle("rolagem", m === "rolagem");
     document.querySelectorAll("#modos button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.modo === m)));
