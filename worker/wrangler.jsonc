@@ -3,6 +3,8 @@
   "name": "chelisplace-avisos",
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
+  // KV da vitrine do cliente (o ID do namespace não é segredo)
+  "kv_namespaces": [{ "binding": "VITRINES", "id": "e8f3c568a31b46dc82c961634d54ad68" }],
   "triggers": {
     // 10h e 17h de Brasília (UTC-3), seg-sex: resumos. Demais: vigia de atrasos 9h–18h (sem 10h/17h).
     "crons": ["0 13,20 * * 1-5", "0 12,14-19,21 * * 1-5"]
