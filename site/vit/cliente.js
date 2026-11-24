@@ -22,7 +22,7 @@ function imagem(el) {
   const img = el.querySelector("img"), id = img.dataset.id;
   let tent = 0;
   const carregar = () => { img.src = thumbUrl(id, tent === 1 ? Math.round(largura() * 0.75) : largura()); };
-  img.onload = () => img.classList.add("ok");
+  img.onload = () => { img.classList.add("ok"); const ar = img.naturalWidth / img.naturalHeight; if (ar > 0.5 && ar < 1.1) el.closest(".gc").style.setProperty("--ar", ar.toFixed(4)); };   // a moldura segue a proporção real da imagem (com sangria é ~0,735): nada é cortado
   img.onerror = () => { if (++tent < 3) setTimeout(carregar, 1200 * tent); else el.classList.add("falhou"); };
   carregar();
 }
