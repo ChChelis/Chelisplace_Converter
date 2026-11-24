@@ -45,19 +45,35 @@ function nomeParaBot(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "pedido";
 }
 
-// Das imagens extras da pasta, quais preenchem slots pendentes do bot (entram sempre) e quais são sobra de verdade (pedem decisão).
-// Casa pelo nome da carta no nome do arquivo ("001_Dawn of Hope.png"); pendente que sobrar é coberto, na ordem, por imagem que não casou.
+// Slots pendentes do bot (cartas sem imagem no MPCFill) × imagens extras da pasta.
+// Grupos: cartas pendentes iguais (nome+set+número) ficam juntas ("Mountain ×9"). Uma imagem pode cobrir vários slots (multiplicar).
+// Atribuições: as manuais (escolhidas pelo Chelis: {grupo, arquivo, copias}) valem primeiro; depois, automático pelo nome da carta no nome do
+// arquivo (1 cópia por imagem). `bloqueios` ("grupo|arquivo") desfazem um automático. Sobra = imagem sem atribuição (pede incluir ou não).
 const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, " ").trim();
-function separarExtrasPuro(itens, pendentes) {
-  const restantes = pendentes.map((c) => semAcento(c.nome)), cobrem = [];
-  if (!restantes.length) return { cobrem, sobra: itens.slice() };
-  for (const it of itens) {
-    const n = semAcento(it.nome), k = restantes.findIndex((r) => r && n.includes(r));
-    if (k >= 0) { restantes.splice(k, 1); cobrem.push(it); }
+const chaveGrupo = (c) => [c.nome, c.set || "", c.cn || ""].join("|");
+function agruparPendentes(pend) {
+  const m = new Map();
+  for (const c of pend) { const k = chaveGrupo(c); if (!m.has(k)) m.set(k, { key: k, nome: c.nome, set: c.set || "", cn: c.cn || "", qtd: 0 }); m.get(k).qtd++; }
+  return [...m.values()];
+}
+function atribuir(itens, pendentes, manuais = [], bloqueios = []) {
+  const grupos = agruparPendentes(pendentes).map((g) => ({ ...g, atrib: [], preenchidos: 0 }));
+  const existe = new Set(itens.map((i) => i.nome)), usadoManual = new Set(), bloq = new Set(bloqueios);
+  const por = new Map(grupos.map((g) => [g.key, g]));
+  for (const m of manuais) {  // escolhas do Chelis
+    const g = por.get(m.grupo); if (!g || !existe.has(m.arquivo)) continue;
+    const n = Math.min(Math.max(1, m.copias | 0), g.qtd - g.preenchidos); if (n <= 0) continue;
+    g.atrib.push({ arquivo: m.arquivo, copias: n, auto: false }); g.preenchidos += n; usadoManual.add(m.arquivo);
   }
-  const sobra = itens.filter((i) => !cobrem.includes(i));
-  while (restantes.length && sobra.length) { cobrem.push(sobra.shift()); restantes.shift(); }
-  return { cobrem, sobra };
+  for (const it of itens) {  // automático: o nome da carta aparece no nome do arquivo
+    if (usadoManual.has(it.nome)) continue;
+    const n = semAcento(it.nome), g = grupos.find((g) => g.preenchidos < g.qtd && !bloq.has(g.key + "|" + it.nome) && semAcento(g.nome) && n.includes(semAcento(g.nome)));
+    if (g) { g.atrib.push({ arquivo: it.nome, copias: 1, auto: true }); g.preenchidos++; }
+  }
+  const usados = new Set(grupos.flatMap((g) => g.atrib.map((a) => a.arquivo))), cobrem = [];
+  for (const g of grupos) for (const a of g.atrib) for (let k = 0; k < a.copias; k++) cobrem.push(itens.find((i) => i.nome === a.arquivo));
+  for (const g of grupos) g.faltam = g.qtd - g.preenchidos;
+  return { grupos, cobrem, sobra: itens.filter((i) => !usados.has(i.nome)) };
 }
 
-if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot, separarExtrasPuro };
+if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo };

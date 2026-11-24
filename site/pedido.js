@@ -691,29 +691,46 @@ window.desenharTrocas = desenharTrocas;
 const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(new RegExp("\\s*\\([A-Za-z0-9_-]{20,}\\)" + SUFIXO_COPIA + "\\s*$", "i"), "").trim();
 // Das imagens extras da pasta, quais preenchem os slots pendentes do bot (entram sempre, já estão no orçamento) e quais são sobra de verdade (essas, sim, pedem decisão).
 // Casa pelo nome da carta no nome do arquivo (ex.: "001_Dawn of Hope.png"); o que sobrar de pendente é coberto, na ordem, por imagens que não casaram.
-const separarExtras = (itens) => separarExtrasPuro(itens, pendentesBot());  // regra em lista.js (testada)
+// Escolhas do Chelis sobre quais imagens cobrem quais pendentes (o resto é automático, por nome); regra em lista.js (testada)
+const atribEstado = () => { sessao.atribManuais = sessao.atribManuais || []; sessao.atribBloqueios = sessao.atribBloqueios || []; return sessao; };
+const separarExtras = (itens) => { const e = atribEstado(); return atribuir(itens, pendentesBot(), e.atribManuais, e.atribBloqueios); };
 window.separarExtras = separarExtras;
-function desenharPend(nExtras) {
-  const el = $("#c-pend"), pend = pendentesBot(); if (!el) return;
+// Painel: para cada carta pendente (grupo de iguais), qual imagem da pasta vale por ela e em quantos slots (multiplicar). Automático pelo nome; o resto é escolha sua.
+function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
+  if (!el) return;
+  const pend = pendentesBot();
   if (!pend.length) { el.innerHTML = ""; return; }
-  const falta = Math.max(0, pend.length - nExtras);
-  const lista = `<ul>${pend.slice(0, 20).map((c) => `<li>${esc(c.nome)}${c.set ? ` <span class="suave">(${esc(c.set.toUpperCase())} ${esc(c.cn)})</span>` : ""}</li>`).join("")}${pend.length > 20 ? `<li class="suave">… e mais ${pend.length - 20}</li>` : ""}</ul>`;
-  el.innerHTML = falta
-    ? `<div class="conf"><b class="aviso">${falta} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b> (ele lista também o que estiver em <code>completar/</code>).<br><button class="acao sec" id="p-reler">Reler a pasta</button>${lista}</div>`
-    : `<div class="conf"><b class="ok">Os ${pend.length} slot(s) pendentes do bot já têm imagem na pasta.</b></div>`;
+  const r = separarExtras(itens), faltam = r.grupos.reduce((n, g) => n + g.faltam, 0), e = atribEstado();
+  // o seletor já vem na imagem mais provável da carta: a que já está atribuída a ela ou a que tem o nome dela
+  const opc = (g) => { const pad = (g.atrib.length ? g.atrib[g.atrib.length - 1].arquivo : (itens.find((i) => semAcento(i.nome).includes(semAcento(g.nome))) || {}).nome);
+    return itens.map((i) => `<option value="${esc(i.nome)}"${i.nome === pad ? " selected" : ""}>${esc(i.nome)}${i.em === "completar" ? " (completar/)" : ""}</option>`).join(""); };
+  const cab = compacto ? "" : (faltam
+    ? `<b class="aviso">${faltam} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b>. Abaixo você diz qual imagem vale por qual carta, e em quantos slots.<br><button class="acao sec" id="p-reler">Reler a pasta</button>`
+    : `<b class="ok">Os ${pend.length} slot(s) pendentes do bot já têm imagem na pasta.</b>`);
+  el.innerHTML = `<div class="conf">${cab}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
+      <b>${esc(g.nome)}</b>${g.set ? ` <span class="suave">(${esc(g.set.toUpperCase())} ${esc(g.cn)})</span>` : ""} <span class="suave">×${g.qtd}</span> — <b class="${g.faltam ? "aviso" : "ok"}">${g.preenchidos}/${g.qtd}</b>
+      ${g.atrib.map((a, ai) => `<span class="suave" style="margin-left:8px">${esc(a.arquivo)} ×${a.copias}${a.auto ? " (pelo nome)" : ""} <button class="peq" data-rm="${gi}:${ai}" title="Tirar esta imagem desta carta">×</button></span>`).join("")}
+      ${g.faltam && itens.length ? `<div style="margin-top:4px"><select data-sel="${gi}">${opc(g)}</select> em <input type="number" min="1" max="${g.faltam}" value="${g.faltam}" size="3" style="width:4.5em" data-n="${gi}"> slot(s) <button class="peq" data-usar="${gi}">Usar esta imagem</button>${g.atrib.length ? ` <button class="peq" data-mult="${gi}">Completar os ${g.faltam} com a mesma imagem</button>` : ""}</div>` : ""}
+    </div>`).join("") + `</div>`;
+  const grupo = (b) => r.grupos[+b.dataset.g || +b.dataset.usar || +b.dataset.mult || 0];
+  const definir = (g, arquivo, copias) => { e.atribManuais = e.atribManuais.filter((m) => !(m.grupo === g.key && m.arquivo === arquivo)); e.atribManuais.push({ grupo: g.key, arquivo, copias }); e.atribBloqueios = e.atribBloqueios.filter((b) => b !== g.key + "|" + arquivo); };
+  el.querySelectorAll("[data-usar]").forEach((b) => (b.onclick = () => { const gi = +b.dataset.usar, g = r.grupos[gi], arq = el.querySelector(`[data-sel="${gi}"]`).value, n = Math.max(1, Math.min(g.faltam, +el.querySelector(`[data-n="${gi}"]`).value || 1)); const ja = g.atrib.find((a) => a.arquivo === arq); definir(g, arq, n + (ja ? ja.copias : 0)); aoMudar(); }));
+  el.querySelectorAll("[data-mult]").forEach((b) => (b.onclick = () => { const g = r.grupos[+b.dataset.mult], a = g.atrib[g.atrib.length - 1]; definir(g, a.arquivo, a.copias + g.faltam); aoMudar(); }));
+  el.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { const [gi, ai] = b.dataset.rm.split(":").map(Number), g = r.grupos[gi], a = g.atrib[ai]; e.atribManuais = e.atribManuais.filter((m) => !(m.grupo === g.key && m.arquivo === a.arquivo)); e.atribBloqueios.push(g.key + "|" + a.arquivo); aoMudar(); }));
+  const br = el.querySelector("#p-reler"); if (br) br.onclick = async () => { br.disabled = true; br.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (err) { /* mantém */ } if (window.conferir) conferir(); };
 }
+window.desenharAtribuicao = desenharAtribuicao;
 async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras");
   const { cobrem, sobra } = separarExtras(itens);  // só a sobra pede decisão; o que preenche pendentes entra sempre
   const chave = chaveExtras(sobra);
+  desenharAtribuicao($("#c-pend"), itens, () => conferir());
   itens = sobra;
-  desenharPend(cobrem.length);
-  const br = $("#p-reler"); if (br) br.onclick = async () => { br.disabled = true; br.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { /* mantém */ } if (window.conferir) conferir(); };
   const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
   if (!itens.length) {
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
     sessao.extrasDecisao = null; renderFontes();
-    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} imagem(ns) preenchem slots pendentes do bot</b> (já estão no orçamento e na ficha; entram na montagem).</div>` : "";
+    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta</b> (já estão no orçamento e na ficha; entram na montagem).</div>` : "";
     return 0;
   }
   const dec = sessao.extrasDecisao && sessao.extrasDecisao.chave === chave ? sessao.extrasDecisao.valor : (noPedido ? "incluir" : null);
@@ -950,7 +967,7 @@ function novoPedido() {
   pedido.fontes = []; pedido.alteracoes = []; pedido.cardId = null; pedido.botNome = null; $("#t-criar").textContent = "Criar card no Trello";
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
-  sessao.extrasDecisao = null; sessao.trocas = {};
+  sessao.extrasDecisao = null; sessao.trocas = {}; sessao.atribManuais = []; sessao.atribBloqueios = [];
   clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
   for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas", "#t-aviso"]) { const el = $(s); if (el) el.textContent = ""; }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-const { lerLista, marcarFicha, listaParaBot, nomeParaBot, separarExtrasPuro } = createRequire(import.meta.url)("../lista.js");
+const { lerLista, marcarFicha, listaParaBot, nomeParaBot, atribuir } = createRequire(import.meta.url)("../lista.js");
 
 test("Moxfield: quantidade, set e número; *F* ignorado; / vira //", () => {
   const r = lerLista("2 Avenging Hunter (CLB) 215\n1 Sol Ring (C21) 263 *F*\n1 Undercity / The Initiative (TCLB) 20");
@@ -42,15 +42,38 @@ test("nome do pedido aceito pelo bot", () => {
   assert.ok(/^[A-Za-z0-9_-]{1,60}$/.test(nomeParaBot("x".repeat(100) + "ção")));
 });
 
-test("extras: imagens que preenchem pendentes entram sempre; só a sobra é decisão", () => {
-  const pend = ["Dawn of Hope", "Voice of Resurgence", "Lathiel, the Bounteous Dawn", "The Legend of Kyoshi"].map((nome) => ({ nome }));
-  const arq = ["tla-358-avatar-kyoshi.png", "004_The Legend of Kyoshi -- Avatar Kyoshi.png", "003_Lathiel, the Bounteous Dawn.png", "002_Voice of Resurgence.png", "001_Dawn of Hope.png"].map((nome) => ({ nome }));
-  const r = separarExtrasPuro(arq, pend);
+const pend = (n, q = 1, set = "", cn = "") => Array.from({ length: q }, () => ({ nome: n, set, cn }));
+const arq = (...n) => n.map((nome) => ({ nome }));
+
+test("atribuir: o nome da carta no arquivo cobre o pendente; a sobra é o que não casou", () => {
+  const r = atribuir(arq("tla-358-avatar-kyoshi.png", "004_The Legend of Kyoshi -- Avatar Kyoshi.png", "001_Dawn of Hope.png"), [...pend("Dawn of Hope"), ...pend("The Legend of Kyoshi")]);
   assert.deepEqual(r.sobra.map((x) => x.nome), ["tla-358-avatar-kyoshi.png"]);
-  assert.equal(r.cobrem.length, 4);
+  assert.equal(r.cobrem.length, 2);
+  assert.deepEqual(r.grupos.map((g) => g.faltam), [0, 0]);
 });
-test("extras: sem pendentes, tudo é sobra; nome diferente é coberto na ordem", () => {
-  assert.equal(separarExtrasPuro([{ nome: "a.png" }], []).sobra.length, 1);
-  const r = separarExtrasPuro([{ nome: "foto1.png" }, { nome: "foto2.png" }], [{ nome: "Sol Ring" }]);
-  assert.deepEqual([r.cobrem.length, r.sobra.length], [1, 1]);
+test("atribuir: 1 imagem para 9 iguais cobre 1 por padrão; o grupo mostra o que falta (3 grupos, como na tela real)", () => {
+  const pendentes = [...pend("Mountain", 9, "j25", "90"), ...pend("Plains", 10, "pmps09", "1"), ...pend("Sram, Senior Edificer", 1, "mul", "6")];
+  const r = atribuir(arq("001_Mountain.png", "002_Plains.png", "003_Sram, Senior Edificer.png"), pendentes);
+  assert.deepEqual(r.grupos.map((g) => [g.preenchidos, g.faltam]), [[1, 8], [1, 9], [1, 0]]);
+  assert.equal(r.sobra.length, 0);
+});
+test("atribuir: multiplicar (manual) e escolher outra imagem para outra carta", () => {
+  const pendentes = [...pend("Mountain", 9, "j25", "90"), ...pend("Sol Ring", 1)];
+  const itens = arq("001_Mountain.png", "foto.png");
+  const man = [{ grupo: "Mountain|j25|90", arquivo: "001_Mountain.png", copias: 9 }, { grupo: "Sol Ring||", arquivo: "foto.png", copias: 1 }];
+  const r = atribuir(itens, pendentes, man);
+  assert.equal(r.cobrem.length, 10);                      // 9 cópias da Mountain + 1 foto
+  assert.equal(r.cobrem.filter((x) => x.nome === "001_Mountain.png").length, 9);
+  assert.deepEqual(r.grupos.map((g) => g.faltam), [0, 0]);
+  assert.equal(r.sobra.length, 0);
+});
+test("atribuir: manual não passa de quantos slots faltam; bloqueio desfaz o automático", () => {
+  const pendentes = pend("Mountain", 3, "j25", "90");
+  assert.equal(atribuir(arq("a.png"), pendentes, [{ grupo: "Mountain|j25|90", arquivo: "a.png", copias: 99 }]).cobrem.length, 3);
+  const b = atribuir(arq("001_Mountain.png"), pendentes, [], ["Mountain|j25|90|001_Mountain.png"]);
+  assert.equal(b.cobrem.length, 0); assert.equal(b.sobra.length, 1);
+});
+test("atribuir: sem pendentes, tudo é sobra", () => {
+  const r = atribuir(arq("a.png", "b.png"), []);
+  assert.deepEqual([r.cobrem.length, r.sobra.length], [0, 2]);
 });

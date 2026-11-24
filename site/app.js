@@ -363,7 +363,7 @@ async function prepararMontagem() {
   if (ignorados) h += `<p class="suave">${ignorados} par(es) ignorado(s) na Checagem: não entram na montagem.</p>`;
   if (faltando) h += `<p class="aviso">${faltando} imagem(ns) do XML ainda não estão na pasta (veja a Checagem).</p>`;
   if (padrao.length) h += `<p class="suave">O verso padrão (${esc(padrao[0].nome)}) está na pasta e não entra na montagem.</p>`;
-  if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} imagem(ns) da pasta preenchem slots pendentes do bot e entram nos últimos slots, depois dos pares.</p>`;
+  if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta (com as cópias que você definiu); entram nos últimos slots, depois dos pares.</p>`;
   if (sobra.length) {
     h += `<div class="conf"><b class="aviso">${sobra.length} imagem(ns) na pasta não estão no XML nem são de slot pendente:</b>${lista(sobra, (x) => esc(x.nome))}`;
     h += MONT.incluirExtras === null
@@ -373,7 +373,7 @@ async function prepararMontagem() {
   }
   if (pendFalta) {
     h += `<div class="conf"><b class="alerta">Faltam imagens para ${pendFalta} de ${pend.length} slot(s) pendente(s) do bot</b> (nenhum serviu; já estão no orçamento): ${esc(pend.slice(0, 12).map((c) => c.nome).join("; "))}${pend.length > 12 ? "…" : ""}<br>Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>, ou adicione daqui do computador. Se vierem sem sangria, use <b>Corrigir sangria…</b> (ele lista também o que estiver em <code>completar/</code>).<br>`;
-    h += `<button class="acao sec" id="m-reler">Reler a pasta</button> <button class="acao sec" id="m-sg">Corrigir sangria…</button> <input id="m-add-pend" type="file" accept="image/*" multiple> `;
+    h += `<div id="m-atrib"></div><button class="acao sec" id="m-reler">Reler a pasta</button> <button class="acao sec" id="m-sg">Corrigir sangria…</button> <input id="m-add-pend" type="file" accept="image/*" multiple> `;
     h += MONT.ignorarPend ? `<span class="suave">Vai montar sem essas ${pendFalta} imagem(ns).</span> <button class="peq" id="m-pend-nao">Desfazer</button>` : `<button class="acao sec" id="m-pend-ignorar">Montar sem elas</button>`;
     h += `</div>`;
   }
@@ -395,6 +395,7 @@ async function prepararMontagem() {
   else if (falta && !MONT.permitirBranco) motivos.push(`complete os ${falta} slot(s) que faltam ou escolha montar com slots em branco`);
   if (motivos.length) h += `<p class="aviso">Montar PDFs está travado: ${motivos.join("; ")}.</p>`;
   plano.innerHTML = h;
+  const ma = $("#m-atrib"); if (ma && window.desenharAtribuicao) window.desenharAtribuicao(ma, extras, () => prepararMontagem(), true);  // qual imagem vale por qual carta pendente (e quantas cópias)
   const liga = (id, fn) => { const el = $("#" + id); if (el) el.onclick = async () => { fn(); await prepararMontagem(); }; };
   liga("m-extras-sim", () => (MONT.incluirExtras = true));
   liga("m-extras-nao", () => (MONT.incluirExtras = false));
