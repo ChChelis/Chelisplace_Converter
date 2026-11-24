@@ -689,6 +689,10 @@ window.desenharTrocas = desenharTrocas;
 // ---------- Imagens extras (fora do pedido): completar/ e soltas sem ID ----------
 // Elas mudam o total de slots depois do orçamento: a Conferência pede uma decisão e, se incluir, o pedido, o orçamento e a ficha são atualizados.
 const nomeLimpo = (n) => n.replace(/\.[A-Za-z0-9]+$/, "").replace(new RegExp("\\s*\\([A-Za-z0-9_-]{20,}\\)" + SUFIXO_COPIA + "\\s*$", "i"), "").trim();
+// Das imagens extras da pasta, quais preenchem os slots pendentes do bot (entram sempre, já estão no orçamento) e quais são sobra de verdade (essas, sim, pedem decisão).
+// Casa pelo nome da carta no nome do arquivo (ex.: "001_Dawn of Hope.png"); o que sobrar de pendente é coberto, na ordem, por imagens que não casaram.
+const separarExtras = (itens) => separarExtrasPuro(itens, pendentesBot());  // regra em lista.js (testada)
+window.separarExtras = separarExtras;
 function desenharPend(nExtras) {
   const el = $("#c-pend"), pend = pendentesBot(); if (!el) return;
   if (!pend.length) { el.innerHTML = ""; return; }
@@ -699,23 +703,19 @@ function desenharPend(nExtras) {
     : `<div class="conf"><b class="ok">Os ${pend.length} slot(s) pendentes do bot já têm imagem na pasta.</b></div>`;
 }
 async function desenharExtras(itens, faltandoQtd = 0) {
-  const el = $("#c-extras"), chave = chaveExtras(itens);
-  desenharPend(itens.length);
+  const el = $("#c-extras");
+  const { cobrem, sobra } = separarExtras(itens);  // só a sobra pede decisão; o que preenche pendentes entra sempre
+  const chave = chaveExtras(sobra);
+  itens = sobra;
+  desenharPend(cobrem.length);
   const br = $("#p-reler"); if (br) br.onclick = async () => { br.disabled = true; br.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { /* mantém */ } if (window.conferir) conferir(); };
   const noPedido = pedido.fontes.some((f) => f.origem === "completar" && f.extrasChave === chave);
   if (!itens.length) {
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
-    sessao.extrasDecisao = null; el.innerHTML = ""; renderFontes(); return 0;
-  }
-  // as imagens extras que preenchem slots pendentes do bot já estão no orçamento: não pedem decisão nem mudam o valor; só o que passar dos pendentes é pergunta
-  const nPend = pendentesBot().length, cobre = Math.min(itens.length, nPend);
-  if (cobre && cobre === itens.length) {
-    pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");
-    sessao.extrasDecisao = { chave, valor: "incluir" }; renderFontes();
-    el.innerHTML = `<div class="conf"><b class="ok">${itens.length} imagem(ns) extra(s) preenchem slots pendentes do bot</b> (já estão no orçamento e na ficha).</div>`;
+    sessao.extrasDecisao = null; renderFontes();
+    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} imagem(ns) preenchem slots pendentes do bot</b> (já estão no orçamento e na ficha; entram na montagem).</div>` : "";
     return 0;
   }
-  if (cobre) itens = itens.slice(cobre);  // o resto é extra de verdade
   const dec = sessao.extrasDecisao && sessao.extrasDecisao.chave === chave ? sessao.extrasDecisao.valor : (noPedido ? "incluir" : null);
   const lista = `<ul>${itens.slice(0, 12).map((x) => `<li>${esc(x.nome)} <span class="suave">${x.em === "completar" ? "(completar/)" : "(solta na pasta)"}</span></li>`).join("")}${itens.length > 12 ? `<li class="suave">… e mais ${itens.length - 12}</li>` : ""}</ul>`;
   if (dec === "incluir") {

@@ -339,15 +339,17 @@ async function prepararMontagem() {
       faltando = r.faltando.length; ignorados = r.pares_ignorados.length;
     } catch (e) { plano.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; MONT.pronta = false; return; }
   }
-  // decisão sobre extras vale para este conjunto de arquivos; se mudar, pergunta de novo
-  const chave = chaveExtras(extras);
-  if (chave !== MONT.chaveExtras) { MONT.chaveExtras = chave; MONT.incluirExtras = extras.length ? null : false; }
+  // As imagens que preenchem slots pendentes do bot entram sempre; só a sobra (extras de verdade) tem a decisão "incluir ou não".
+  const pend = window.pendentesBot ? window.pendentesBot() : [];
+  const sep = window.separarExtras ? window.separarExtras(extras) : { cobrem: [], sobra: extras };
+  const sobra = sep.sobra;
+  // decisão sobre a sobra vale para este conjunto de arquivos; se mudar, pergunta de novo
+  const chave = chaveExtras(sobra);
+  if (chave !== MONT.chaveExtras) { MONT.chaveExtras = chave; MONT.incluirExtras = sobra.length ? null : false; }
   const dec = sessao.extrasDecisao;  // já decidido na etapa 4 (Conferir), junto com o orçamento: não pergunta de novo
-  if (extras.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
-  if (!extras.length) MONT.incluirExtras = false;  // nada a perguntar
-  const pend = window.pendentesBot ? window.pendentesBot() : [];  // slots do bot sem imagem (nenhuma serviu): as imagens extras são as deles
-  if (pend.length && MONT.incluirExtras === null && extras.length && extras.length <= pend.length) MONT.incluirExtras = true;
-  const extrasUsados = MONT.incluirExtras ? extras : [];
+  if (sobra.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
+  if (!sobra.length) MONT.incluirExtras = false;  // nada a perguntar
+  const extrasUsados = [...sep.cobrem, ...(MONT.incluirExtras ? sobra : [])];
   const nExtras = extrasUsados.length + MONT.adicionadas.length;
   const total = raizXml.length + p.pares.length + nExtras;
   const resto = total % 18, pendFalta = Math.max(0, pend.length - nExtras), falta = resto ? 18 - resto : 0;
@@ -361,8 +363,9 @@ async function prepararMontagem() {
   if (ignorados) h += `<p class="suave">${ignorados} par(es) ignorado(s) na Checagem: não entram na montagem.</p>`;
   if (faltando) h += `<p class="aviso">${faltando} imagem(ns) do XML ainda não estão na pasta (veja a Checagem).</p>`;
   if (padrao.length) h += `<p class="suave">O verso padrão (${esc(padrao[0].nome)}) está na pasta e não entra na montagem.</p>`;
-  if (extras.length) {
-    h += `<div class="conf"><b class="aviso">${extras.length} imagem(ns) na pasta não estão no XML:</b>${lista(extras, (x) => esc(x.nome))}`;
+  if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} imagem(ns) da pasta preenchem slots pendentes do bot e entram nos últimos slots, depois dos pares.</p>`;
+  if (sobra.length) {
+    h += `<div class="conf"><b class="aviso">${sobra.length} imagem(ns) na pasta não estão no XML nem são de slot pendente:</b>${lista(sobra, (x) => esc(x.nome))}`;
     h += MONT.incluirExtras === null
       ? `Colocar nos <b>últimos slots, depois dos pares</b>? <br><button class="acao" id="m-extras-sim">Sim, colocar no fim</button><button class="acao sec" id="m-extras-nao">Não incluir</button>`
       : `<span class="suave">${MONT.incluirExtras ? "Entram nos últimos slots, depois dos pares." : "Não entram na montagem."}</span> <button class="peq" id="m-extras-mudar">Mudar</button>`;
@@ -382,7 +385,7 @@ async function prepararMontagem() {
     h += `</div>`;
   } else if (total && !aguardando) h += `<p class="ok">As páginas fecham em múltiplos de 18.</p>`;
   // o que da pasta NÃO entra na montagem (para conferir antes de gerar)
-  const fora = [...padrao.map((x) => [x.nome, "verso padrão"]), ...(MONT.incluirExtras === false ? extras.map((x) => [x.nome, "extra não incluído"]) : [])];
+  const fora = [...padrao.map((x) => [x.nome, "verso padrão"]), ...(MONT.incluirExtras === false ? sobra.map((x) => [x.nome, "extra não incluído"]) : [])];
   if (fora.length) h += `<details class="conf"><summary class="suave">${fora.length} imagem(ns) da pasta <b>não entram</b> na montagem</summary><ul>${fora.slice(0, 40).map(([n, why]) => `<li>${esc(n)} <span class="suave">(${why})</span></li>`).join("")}${fora.length > 40 ? `<li class="suave">… e mais ${fora.length - 40}</li>` : ""}</ul></details>`;
   // por que o botão está travado (sempre dizer)
   const motivos = [];

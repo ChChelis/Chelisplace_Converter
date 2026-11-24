@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-const { lerLista, marcarFicha, listaParaBot, nomeParaBot } = createRequire(import.meta.url)("../lista.js");
+const { lerLista, marcarFicha, listaParaBot, nomeParaBot, separarExtrasPuro } = createRequire(import.meta.url)("../lista.js");
 
 test("Moxfield: quantidade, set e número; *F* ignorado; / vira //", () => {
   const r = lerLista("2 Avenging Hunter (CLB) 215\n1 Sol Ring (C21) 263 *F*\n1 Undercity / The Initiative (TCLB) 20");
@@ -40,4 +40,17 @@ test("nome do pedido aceito pelo bot", () => {
   assert.equal(nomeParaBot("João da Silva / Deck #2"), "Joao_da_Silva_Deck_2");
   assert.equal(nomeParaBot(""), "pedido");
   assert.ok(/^[A-Za-z0-9_-]{1,60}$/.test(nomeParaBot("x".repeat(100) + "ção")));
+});
+
+test("extras: imagens que preenchem pendentes entram sempre; só a sobra é decisão", () => {
+  const pend = ["Dawn of Hope", "Voice of Resurgence", "Lathiel, the Bounteous Dawn", "The Legend of Kyoshi"].map((nome) => ({ nome }));
+  const arq = ["tla-358-avatar-kyoshi.png", "004_The Legend of Kyoshi -- Avatar Kyoshi.png", "003_Lathiel, the Bounteous Dawn.png", "002_Voice of Resurgence.png", "001_Dawn of Hope.png"].map((nome) => ({ nome }));
+  const r = separarExtrasPuro(arq, pend);
+  assert.deepEqual(r.sobra.map((x) => x.nome), ["tla-358-avatar-kyoshi.png"]);
+  assert.equal(r.cobrem.length, 4);
+});
+test("extras: sem pendentes, tudo é sobra; nome diferente é coberto na ordem", () => {
+  assert.equal(separarExtrasPuro([{ nome: "a.png" }], []).sobra.length, 1);
+  const r = separarExtrasPuro([{ nome: "foto1.png" }, { nome: "foto2.png" }], [{ nome: "Sol Ring" }]);
+  assert.deepEqual([r.cobrem.length, r.sobra.length], [1, 1]);
 });

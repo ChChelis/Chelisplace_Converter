@@ -45,4 +45,19 @@ function nomeParaBot(txt) {
   return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "pedido";
 }
 
-if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot };
+// Das imagens extras da pasta, quais preenchem slots pendentes do bot (entram sempre) e quais são sobra de verdade (pedem decisão).
+// Casa pelo nome da carta no nome do arquivo ("001_Dawn of Hope.png"); pendente que sobrar é coberto, na ordem, por imagem que não casou.
+const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, " ").trim();
+function separarExtrasPuro(itens, pendentes) {
+  const restantes = pendentes.map((c) => semAcento(c.nome)), cobrem = [];
+  if (!restantes.length) return { cobrem, sobra: itens.slice() };
+  for (const it of itens) {
+    const n = semAcento(it.nome), k = restantes.findIndex((r) => r && n.includes(r));
+    if (k >= 0) { restantes.splice(k, 1); cobrem.push(it); }
+  }
+  const sobra = itens.filter((i) => !cobrem.includes(i));
+  while (restantes.length && sobra.length) { cobrem.push(sobra.shift()); restantes.shift(); }
+  return { cobrem, sobra };
+}
+
+if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot, separarExtrasPuro };
