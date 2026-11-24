@@ -659,6 +659,41 @@ function cartasDoXml() {
   for (const f of pedido.fontes) for (const c of f.frentes) { if (c.pendente || !c.id) continue; const e = m.get(c.id) || { id: c.id, nome: c.nome, qtd: 0 }; e.qtd++; m.set(c.id, e); }
   return [...m.values()].map((e) => ({ ...e, livres: e.qtd - (sessao.substituicoes || []).filter((s) => s.id === e.id).reduce((n, s) => n + s.copias, 0) }));
 }
+// Carta cuja arte foi trocada em TODAS as cópias: o XML deixa de pedir a imagem original, que passaria a parecer "fora do pedido" (extra) e pediria decisão/valor.
+// Aqui ela vira "original trocada": sai da lista de extras e da montagem, e pode ser guardada em copias_a_mais/.
+const idsTrocadosTotal = () => new Set(cartasDoXml().filter((c) => c.livres <= 0).map((c) => c.id));
+window.idsTrocadosTotal = idsTrocadosTotal;
+function separarOriginaisTrocados(r) {
+  const ids = idsTrocadosTotal(), sai = (n) => ids.has(idDoNomeArquivo(n));
+  r.originais_trocadas = ids.size ? r.fora_da_lista.filter(sai) : [];
+  if (r.originais_trocadas.length) {
+    r.fora_da_lista = r.fora_da_lista.filter((n) => !sai(n));
+    r.ok = !(r.faltando.length || r.a_duplicar.length || r.excesso.length || r.fora_da_lista.length || r.sem_id.length);  // igual a nucleo/checagem.py
+  }
+  return r;
+}
+window.separarOriginaisTrocados = separarOriginaisTrocados;
+const compacto = (s) => semAcento(s).replace(/ /g, "");
+// Sugestão pelo nome do arquivo: "solring.png" → Sol Ring; "sheoldred.png" → Sheoldred, the Apocalypse (o nome do arquivo tem de caber no nome da carta, ou o contrário)
+function sugestoesDeTroca(cartas, cand) {
+  const usadas = new Set((sessao.substituicoes || []).map((s) => s.arquivo)), saida = [];
+  for (const c of cartas) {
+    if (c.livres <= 0) continue;
+    const ck = compacto(c.nome);
+    const arq = cand.find((i) => { const ik = compacto(i.nome); return !usadas.has(idItem(i)) && ik.length >= 5 && (ck.includes(ik) || (ck.length >= 5 && ik.includes(ck))); });
+    if (arq) { usadas.add(idItem(arq)); saida.push({ carta: c, arq }); }
+  }
+  return saida;
+}
+function aplicarTroca(c, arq, n) {
+  const subs = sessao.substituicoes = sessao.substituicoes || [];
+  const usadoId = idDoNomeArquivo(arq.nome), grupo = (pedido.alteracoes.find((a) => a.titulo === "Artes trocadas") || (pedido.alteracoes.push({ titulo: "Artes trocadas", itens: [] }), pedido.alteracoes[pedido.alteracoes.length - 1]));
+  const alt = { texto: `${nomeLimpo(c.nome)}: usada outra arte${n < c.qtd ? ` em ${n} de ${c.qtd} cópia(s)` : ""}`, pedido_id: c.id, ...(usadoId ? { usado_id: usadoId } : {}) };
+  grupo.itens.push(alt);
+  subs.push({ id: c.id, nome: c.nome, copias: n, arquivo: idItem(arq), rotulo: arq.rotulo || arq.nome, alt });
+  sessao.atribManuais = sessao.atribManuais || [];
+  sessao.atribManuais.push({ grupo: chaveGrupo({ nome: c.nome, set: "troca", cn: c.id.slice(0, 8) }), arquivo: idItem(arq), copias: n });
+}
 function desenharTrocaDireta(r) {
   const el = $("#c-troca-direta"); if (!el) return;
   const p = sessao.pasta, cartas = cartasDoXml();
@@ -666,12 +701,23 @@ function desenharTrocaDireta(r) {
   const fora = new Set([...(r.fora_da_lista || []), ...(r.sem_id || [])]);
   const cand = [...p.raiz.filter((x) => fora.has(x.nome)), ...(p.completar || []), ...(p.subpastas || [])];  // mesma lista que o painel de pendentes usa
   const subs = sessao.substituicoes = sessao.substituicoes || [];
+  // o que foi achado nas subpastas (para não haver dúvida do que a página enxerga)
+  const porPasta = new Map();
+  for (const i of p.subpastas || []) porPasta.set(i.caminho, (porPasta.get(i.caminho) || 0) + 1);
+  const achadas = porPasta.size
+    ? `<details><summary class="suave">Imagens achadas em subpastas: ${[...porPasta].map(([c, n]) => `${esc(c)} (${n})`).join(" · ")}</summary><ul>${(p.subpastas || []).map((i) => `<li>${esc(i.rotulo)}</li>`).join("")}</ul></details>`
+    : `<p class="suave">Nenhuma imagem achada em subpastas (olho até 3 níveis, em todas as pastas do pedido, menos pares, completar, saida, originais_sem_sangria, copias_a_mais e anteriores). Subiu agora? Clique em <b>Reler a pasta</b>.</p>`;
+  const sug = sugestoesDeTroca(cartas, cand);
+  const sugHtml = sug.length ? `<div class="conf"><b>Sugestões pelo nome do arquivo</b> <span class="suave">(desmarque o que não quiser; troca todas as cópias que restam da carta)</span>
+    ${sug.map((s, i) => `<label style="display:block"><input type="checkbox" data-sug="${i}" checked> ${esc(s.carta.nome)} ×${s.carta.livres} ← ${esc(s.arq.rotulo || s.arq.nome)}</label>`).join("")}
+    <button class="acao" id="td-sug-ok">Trocar as marcadas</button></div>` : "";
   const feitas = subs.length ? `<ul>${subs.map((s, i) => `<li>${esc(s.nome)} ×${s.copias} → ${esc(s.rotulo)} <button class="peq" data-td-desfaz="${i}">Desfazer</button></li>`).join("")}</ul>` : "";
   const filtro = (el.querySelector("#td-filtro") || {}).value || "";
   const opcoes = cand.map((c, k) => ({ c, k })).filter(({ c }) => !filtro || semAcento(c.rotulo || c.nome).includes(semAcento(filtro)));
   el.innerHTML = `<div class="conf conf-so-voce"><b>Trocar a arte de uma carta do pedido</b>
     <p class="suave">Escolha a carta, a imagem que entra no lugar e em quantas cópias. A imagem pode estar na pasta do pedido, em <code>completar/</code> ou em qualquer subpasta (já no Drive, ou subida agora: clique em <b>Reler a pasta</b>). Se ela vier sem sangria, use <b>Corrigir sangria…</b> antes de montar. A troca aparece na ficha como “arte trocada”.</p>
     <button class="acao sec" id="td-reler">Reler a pasta (procura nas subpastas)</button> <button class="acao sec" id="td-sg">Corrigir sangria…</button>
+    ${achadas}${sugHtml}
     ${feitas ? `<div class="conf"><b class="ok">${subs.length} troca(s)</b>${feitas}</div>` : ""}
     <div class="item" style="margin-top:8px"><input type="text" id="td-filtro" placeholder="filtrar imagens pelo nome" value="${esc(filtro)}" size="24">
       <select id="td-carta">${cartas.map((c, i) => `<option value="${i}"${c.livres ? "" : " disabled"}>${esc(c.nome)} ×${c.livres}${c.livres < c.qtd ? ` (de ${c.qtd})` : ""}</option>`).join("")}</select>
@@ -692,12 +738,12 @@ function desenharTrocaDireta(r) {
     if (!c || imgSel === "") { msg.innerHTML = `<span class="aviso">Escolha a carta e a imagem.</span>`; return; }
     const arq = cand[+imgSel], n = Math.max(1, Math.min(c.livres, +el.querySelector("#td-n").value || 1));
     if (!c.livres) { msg.innerHTML = `<span class="aviso">Todas as cópias dessa carta já foram trocadas.</span>`; return; }
-    const usadoId = idDoNomeArquivo(arq.nome), grupo = (pedido.alteracoes.find((a) => a.titulo === "Artes trocadas") || (pedido.alteracoes.push({ titulo: "Artes trocadas", itens: [] }), pedido.alteracoes[pedido.alteracoes.length - 1]));
-    const alt = { texto: `${nomeLimpo(c.nome)}: usada outra arte${n < c.qtd ? ` em ${n} de ${c.qtd} cópia(s)` : ""}`, pedido_id: c.id, ...(usadoId ? { usado_id: usadoId } : {}) };
-    grupo.itens.push(alt);
-    subs.push({ id: c.id, nome: c.nome, copias: n, arquivo: idItem(arq), rotulo: arq.rotulo || arq.nome, alt });
-    sessao.atribManuais = sessao.atribManuais || [];
-    sessao.atribManuais.push({ grupo: chaveGrupo({ nome: c.nome, set: "troca", cn: c.id.slice(0, 8) }), arquivo: idItem(arq), copias: n });
+    aplicarTroca(c, arq, n);
+    sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
+  };
+  const sugOk = el.querySelector("#td-sug-ok");
+  if (sugOk) sugOk.onclick = () => {
+    el.querySelectorAll("[data-sug]").forEach((cb) => { if (!cb.checked) return; const s = sug[+cb.dataset.sug], atual = cartasDoXml().find((x) => x.id === s.carta.id); if (atual && atual.livres > 0) aplicarTroca(atual, s.arq, atual.livres); });
     sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
   };
   el.querySelectorAll("[data-td-desfaz]").forEach((b) => (b.onclick = () => {

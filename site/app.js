@@ -267,6 +267,7 @@ async function conferir() {
   const nomes = [...pasta.raiz, ...pasta.pares].map((x) => x.nome);  // completar/ é tratada à parte (extras)
   let r;
   try { r = await chamar("checar", { xml: sessao.xml.slice(0), nomes, ignorar: [...sessao.ignorar] }); } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
+  if (window.separarOriginaisTrocados) separarOriginaisTrocados(r);  // arte original de carta trocada (em todas as cópias) não é "extra"
   const secao = (t, cls, itens, f) => (itens.length ? `<h3 class="${cls}">${t} (${itens.length})</h3>${lista(itens, f)}` : "");
   const todos = r.pares_incompletos.length > 1 ? `<p><button class="peq" data-ign-todos="1">Ignorar todos os pares incompletos</button></p>` : "";
   alvo.innerHTML =
@@ -277,6 +278,7 @@ async function conferir() {
     secao("Cópias a mais", "aviso", r.excesso, ([n, q]) => `${esc(n)}: ${q} a mais`) +
     secao("Fora da lista do XML (extras)", "aviso", r.fora_da_lista, esc) +
     secao("Sem ID no nome (extras)", "aviso", r.sem_id, esc) +
+    secao("Arte original de carta trocada (não entra no pedido)", "suave", r.originais_trocadas || [], esc) +
     ((pasta.completar || []).length ? secao("Na pasta completar/ (extras)", "aviso", pasta.completar, (x) => esc(x.nome)) : "") +
     secao("Verso padrão na pasta (não entra na montagem)", "suave", r.verso_padrao, esc) +
     secao("Pares dupla face incompletos", "alerta", r.pares_incompletos, ([f, v, idf, idv]) => `${esc(f)} / ${esc(v)} ${botaoPeq("Ignorar este par", "data-ign", idf + "," + idv)}`) + todos +
@@ -306,6 +308,12 @@ async function conferir() {
     sessao.conferencia = null;
     return `${sobras.length} arquivo(s) movido(s) para copias_a_mais/. Clique em Conferir para ver o resultado.`;
   }));
+  const originais = r.originais_trocadas || [];
+  if (pasta.podeGravar && originais.length) botao(`Mover ${originais.length} arte(s) original(is) trocada(s) para copias_a_mais/`, () => confirmar(acoes, `Mover ${originais.length} arquivo(s) da arte original das cartas que você trocou para a subpasta "copias_a_mais" (nada é apagado)?\n${originais.slice(0, 6).join("\n")}${originais.length > 6 ? "\n…" : ""}`, async (atualizar) => {
+    await pasta.moverPares(originais, (k, n) => atualizar(`Movendo arquivo ${k} de ${n} para copias_a_mais/…`, (k - 1) / n), "copias_a_mais");
+    sessao.conferencia = null;
+    return `${originais.length} arquivo(s) movido(s) para copias_a_mais/. Clique em Conferir para ver o resultado.`;
+  }), true);
   // pares completos que ainda estão soltos na pasta do pedido: propõe a pasta pares/ sozinho, com confirmação
   const jaEmPares = new Set(pasta.pares.map((x) => x.nome));
   const soltos = r.pares.filter(([f, v]) => !(jaEmPares.has(f) && jaEmPares.has(v))).flat().filter((n) => !jaEmPares.has(n));
@@ -352,12 +360,13 @@ async function prepararMontagem() {
   if (sessao.xml) {
     try {
       const r = await chamar("checar", { xml: sessao.xml.slice(0), nomes: [...p.raiz, ...p.pares].map((x) => x.nome), ignorar: [...sessao.ignorar] });
+      if (window.separarOriginaisTrocados) separarOriginaisTrocados(r);
       const fora = new Set([...r.fora_da_lista, ...r.sem_id]), pad = new Set(r.verso_padrao);
       extras = [...p.raiz.filter((x) => fora.has(x.nome)), ...(p.completar || [])];
       padrao = p.raiz.filter((x) => pad.has(x.nome));
       // cópias da arte ORIGINAL de uma carta cuja arte foi trocada (etapa 4): o XML passou a pedir menos cópias dela, as que sobram não entram
       const idsTrocados = new Set((sessao.substituicoes || []).map((s) => s.id));
-      const sobras = new Set((r.excesso_mover || []).filter(([id]) => idsTrocados.has(id)).flatMap(([, arqs]) => arqs));
+      const sobras = new Set([...(r.excesso_mover || []).filter(([id]) => idsTrocados.has(id)).flatMap(([, arqs]) => arqs), ...(r.originais_trocadas || [])]);
       copiasTrocadas = sobras.size;
       raizXml = p.raiz.filter((x) => !fora.has(x.nome) && !pad.has(x.nome) && !sobras.has(x.nome));
       faltando = r.faltando.length; ignorados = r.pares_ignorados.length;
@@ -387,7 +396,7 @@ async function prepararMontagem() {
   let h = `<p><b>${raizXml.length}</b> carta(s) do pedido + <b>${p.pares.length}</b> de pares + <b>${nExtras}</b> extra(s) = <b>${total}</b> slot(s) → <b>${Math.ceil(total / 18) || 0}</b> página(s) de 18.</p>`;
   if (ignorados) h += `<p class="suave">${ignorados} par(es) ignorado(s) na Checagem: não entram na montagem.</p>`;
   if (faltando) h += `<p class="aviso">${faltando} imagem(ns) do XML ainda não estão na pasta (veja a Checagem).</p>`;
-  if (copiasTrocadas) h += `<p class="suave">${copiasTrocadas} cópia(s) da arte original que você trocou ficam de fora da montagem (na etapa 4, “mover cópias a mais” as guarda em copias_a_mais/).</p>`;
+  if (copiasTrocadas) h += `<p class="suave">${copiasTrocadas} cópia(s) da arte original que você trocou ficam de fora da montagem (na etapa 4 há um botão para guardá-las em copias_a_mais/).</p>`;
   if (padrao.length) h += `<p class="suave">O verso padrão (${esc(padrao[0].nome)}) está na pasta e não entra na montagem.</p>`;
   if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} slot(s) pendente(s) preenchido(s) por imagens da pasta (com as cópias que você definiu); entram nos últimos slots, depois dos pares.</p>`;
   if (sobra.length) {
