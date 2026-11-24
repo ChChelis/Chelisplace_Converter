@@ -124,13 +124,17 @@ def desenhar(md, imagens=None, miniaturas=None, matriz=None):
                 p.y += PASSO_BLOCO - PASSO_ITEM
                 apos_item = False
             nivel = {3: "h3", 4: "h4", 5: "h5"}[len(m.group(1))]
+            if matriz and m.group(2).strip().startswith("Valor do pedido"):
+                p.cabe(PASSO_BLOCO * 3 + PASSO_PARAG + 420 + 40)  # valor, "Pix", chave e QR ficam juntos na mesma página
             em_pix = m.group(2).strip() == "Pix"
             p.linha(m.group(2), TAM[nivel], True)
             continue
         it = re.match(r"^\s*(\d+)\.\s+(.*)$", t)
         if it:
             num = it.group(1) + "."
-            for k, parte in enumerate(p.quebrar(it.group(2), TAM["txt"], RECUO) or [""]):  # item comprido continua na linha de baixo, alinhado ao texto
+            partes = p.quebrar(it.group(2), TAM["txt"], RECUO) or [""]
+            p.cabe(len(partes) * PASSO_ITEM + (170 if miniaturas.get(it.group(2).strip()) else 0))  # o texto do item e as miniaturas dele não se separam entre páginas
+            for k, parte in enumerate(partes):  # item comprido continua na linha de baixo, alinhado ao texto
                 p.cabe(PASSO_ITEM)
                 if k == 0:
                     p.d.text((ESQ + RECUO - 8 - p.d.textlength(num, font=fonte(TAM["txt"])), p.y), num, fill=CINZA, font=fonte(TAM["txt"]))

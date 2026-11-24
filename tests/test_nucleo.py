@@ -459,3 +459,36 @@ class FichaPdfQuebra(unittest.TestCase):
         paginas = ficha_pdf.desenhar(md)
         direita = max(ImageChops.invert(p.convert("L")).getbbox()[2] for p in paginas)
         self.assertLessEqual(direita, ficha_pdf.W - ficha_pdf.DIR_)
+
+
+class FichaPdfJuntos(unittest.TestCase):
+    def test_qr_fica_na_pagina_do_valor_e_do_pix(self):
+        md = "### Pedido: 5 slots\n#### 1. Lista → 5 slots\n" + "".join(f"{i}. Carta {i}\n" for i in range(1, 40)) + "### Valor do pedido: 405 reais\n### Pix\nchave-teste\n"
+        matriz = [[(x + y) % 2 for x in range(25)] for y in range(25)]
+        paginas = ficha_pdf.desenhar(md, matriz=matriz)
+        # a última página tem o valor, o Pix e o QR (não deixa o QR sozinho)
+        ultima = paginas[-1].convert("L")
+        topo = ImageChops_bbox_top(ultima)
+        self.assertLess(topo, 400)  # começa perto do topo: o título "Valor do pedido" veio junto
+
+    def test_item_e_miniatura_nao_se_separam(self):
+        import io
+        import numpy as np
+        from PIL import Image
+        b = io.BytesIO(); Image.new("RGB", (100, 140), (255, 0, 0)).save(b, "PNG")
+        # itens suficientes para o último ficar no fim da página: sem a regra, o texto ficaria numa página e a miniatura na seguinte
+        for n in range(30, 45):
+            md = "### Pedido: 1 slots\n### Alterações\n#### T\n" + "".join(f"{i}. Item {i}\n" for i in range(1, n)) + f"{n}. Ultimo item\n"
+            for pag in ficha_pdf.desenhar(md, {"u": b.getvalue()}, {"Ultimo item": ["u"]}):
+                a = np.asarray(pag.convert("RGB")).astype(int)
+                verm = (a[:, :, 0] > 200) & (a[:, :, 1] < 60)
+                if not verm.any():
+                    continue
+                y = int(np.argmax(verm.any(axis=1)))
+                escuro = (a[max(0, y - 60):y - 5, 150:900, :].sum(axis=2) < 200).any()  # texto do item logo acima da miniatura
+                self.assertTrue(escuro, f"item {n}: miniatura sem o texto do item na mesma página")
+
+
+def ImageChops_bbox_top(im):
+    from PIL import ImageChops
+    return ImageChops.invert(im).getbbox()[1]
