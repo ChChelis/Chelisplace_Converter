@@ -109,7 +109,8 @@ def desenhar(md, imagens=None, miniaturas=None, matriz=None):
     imagens, miniaturas = imagens or {}, miniaturas or {}
     p = _Folha()
     em_pix = pulando = apos_item = False
-    for bruta in md.splitlines():
+    linhas_md = md.splitlines()
+    for pos, bruta in enumerate(linhas_md):
         t = bruta.rstrip()
         if t.strip() == "#### Confidencial":
             pulando = True  # custo, colagem e lucro nunca vão ao cliente; volta no próximo "### " (o Pix)
@@ -124,6 +125,13 @@ def desenhar(md, imagens=None, miniaturas=None, matriz=None):
                 p.y += PASSO_BLOCO - PASSO_ITEM
                 apos_item = False
             nivel = {3: "h3", 4: "h4", 5: "h5"}[len(m.group(1))]
+            if matriz and m.group(2).strip() == "Valores":
+                n = 0  # a lista de valores por pedido fica inteira, junto do total, do Pix e do QR
+                for prox in linhas_md[pos + 1:]:
+                    if prox.startswith("###"):
+                        break
+                    n += bool(prox.strip())
+                p.cabe(PASSO_BLOCO * (n + 5) + 420 + 40)
             if matriz and m.group(2).strip().startswith("Valor do pedido"):
                 p.cabe(PASSO_BLOCO * 3 + PASSO_PARAG + 420 + 40)  # valor, "Pix", chave e QR ficam juntos na mesma página
             em_pix = m.group(2).strip() == "Pix"

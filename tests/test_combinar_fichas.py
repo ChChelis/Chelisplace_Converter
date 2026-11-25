@@ -52,6 +52,19 @@ class Combinar(unittest.TestCase):
         self.assertGreater(cor(r[0][0])[0], 200)                                  # vermelha
         self.assertGreater(cor(r[2][0])[2], 200); self.assertGreater(cor(r[2][1])[0], 200)  # azul e vermelha
 
+    def test_itens_de_duas_linhas_nao_deslocam_as_miniaturas(self):
+        longo = " — não existe no MPCFill; a imagem vem de outra fonte e o texto precisa quebrar em mais de uma linha para este teste"
+        alts = [f"Carta {i} (SET {i}){longo}" for i in range(1, 7)]
+        md = ficha_md("T", [f"Carta {i}" for i in range(1, 6)], alts)
+        minis = {alts[0]: ["v"], alts[2]: ["a"], alts[3]: ["v"], alts[5]: ["a", "v"]}  # itens 2 e 5 sem miniatura
+        paginas = ficha_pdf.desenhar(md.replace("(bot) ", ""), {"v": png((255, 0, 0)), "a": png((0, 0, 255))}, minis)
+        # o PDF da página é gravado em JPEG: a compressão cria um halo cinza em volta do texto, que não pode virar "número de item"
+        jpg = []
+        for pg in paginas:
+            b = io.BytesIO(); pg.convert("RGB").save(b, "JPEG", quality=75); b.seek(0); jpg.append(Image.open(b).convert("RGB"))
+        r = cf.miniaturas_por_item(jpg, 6)
+        self.assertEqual([len(x) for x in r], [1, 0, 1, 1, 0, 2])
+
     def test_pdf_de_outro_pedido_e_recusado(self):
         paginas = ficha_pdf.desenhar(ficha_md("T", ["a", "b"], []))
         with self.assertRaises(ValueError):

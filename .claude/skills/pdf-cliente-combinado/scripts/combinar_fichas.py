@@ -42,6 +42,7 @@ def ler_md(caminho):
     return dict(
         nome=apos("#### Nome"), tel=apos("#### Número"), pix=apos("### Pix"),
         slots=int(re.search(r"### Pedido: (\d+) slots", texto).group(1)),
+        valor=float(re.search(r"### Valor do pedido: ([\d.,]+) reais", texto).group(1).replace(",", ".")),
         lista=L[i0 + 1: i_alt if i_alt is not None else i_val],
         alt=L[i_alt + 1: i_val] if i_alt is not None else [],
     )
@@ -128,7 +129,7 @@ def miniaturas_por_item(paginas, n_itens):
                 crops = [im.crop((x0, y0, x1, y1)) for x0, x1 in pedacos if x1 - x0 >= 40]
                 eventos.append(("faixa", crops))
             elif MIN_TEXTO <= h <= MAX_FAIXA:  # (traços de 1-4 px são ruído da página, não texto)
-                reg = a[y0:y1, 100:146]
+                reg = a[y0:y1, 100:144]  # o número do item termina em x≈142; o texto (e a borda dele) começa em x≈150: nas linhas de continuação não há número
                 if (reg < 245).any() and reg[reg < 245].min() > 150:  # número cinza do item
                     eventos.append(("item", None))
     itens = [i for i, e in enumerate(eventos) if e[0] == "item"]
@@ -168,17 +169,42 @@ def ordenar(pares):
     return sorted(pares, key=chave)  # estável: sem número, mantém a ordem dada
 
 
-def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="Sao Paulo", md_saida=None):
+def reais(v):
+    return str(int(v)) if float(v).is_integer() else f"{v:.2f}".replace(".", ",")
+
+
+def valor_do_pedido(f, valores):
+    """valores: {chave: valor}; a chave é o número do pedido (o N de Cliente_N_Nome) ou o título inteiro. Sem chave, vale o valor da própria ficha."""
+    m = re.search(r"_(\d+)_", f["nome"])
+    for k in ((m.group(1) if m else None), f["nome"]):
+        if k is not None and k in valores:
+            return float(valores[k])
+    return f["valor"]
+
+
+def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="Sao Paulo", md_saida=None, valores=None, adicional=0.0, rotulo_adicional="Adicional", mostrar_adicional=True):
+    """total: valor final (o QR e o fim do PDF). Com `valores` (ou `adicional`), o PDF mostra o valor de cada pedido e o adicional, e o total
+    tem de bater com a soma (total=None usa a soma). `mostrar_adicional=False` soma o adicional ao total sem listá-lo no PDF. Os .md recebidos nunca são alterados."""
     import qrcode
     pares = ordenar(parear(mds, pdfs))
+    detalhado = valores is not None or bool(adicional)
+    vals = [valor_do_pedido(f, valores or {}) for f, _ in pares]
+    soma = sum(vals) + float(adicional or 0)
+    if detalhado:
+        if total is None:
+            total = soma
+        elif abs(float(total) - soma) > 0.005:
+            raise ValueError(f"o total ({reais(total)}) não bate com a soma dos valores ({reais(soma)}).")
+    elif total is None:
+        raise ValueError("informe --total (ou --valor/--adicional para somar).")
     tel, chave_pix = {f["tel"] for f, _ in pares}, {f["pix"] for f, _ in pares}
     if len(tel) != 1 or len(chave_pix) != 1:
         raise ValueError(f"as fichas têm telefones ({sorted(tel)}) ou chaves Pix diferentes: são mesmo do mesmo cliente?")
     tel, chave_pix = tel.pop(), chave_pix.pop()
     md = ["#### Nome", cliente, "#### Número", tel, f"### Pedido: {sum(f['slots'] for f, _ in pares)} slots"]
     alts, imagens, minis = [], {}, {}
-    for f, pdf in pares:
-        md.append(f"#### {f['nome']} → {f['slots']} slots")
+    for (f, pdf), v in zip(pares, vals):
+        md.append(f"#### {f['nome']} → {f['slots']} slots" + (f" · R$ {reais(v)}" if detalhado else ""))
         md += lista_limpa(f["lista"])
         linhas, itens = alteracoes(f["nome"], f["alt"])
         alts += linhas
@@ -194,7 +220,11 @@ def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="
                     minis[texto] = chaves
     if alts:
         md += ["### Alterações"] + alts
-    md += [f"### Valor do pedido: {total:g} reais", "### Pix", chave_pix]
+    if detalhado:
+        md += ["### Valores"] + [f"{f['nome']}: R$ {reais(v)}" for (f, _), v in zip(pares, vals)]
+        if adicional and mostrar_adicional:
+            md.append(f"{rotulo_adicional}: R$ {reais(adicional)}")
+    md += [f"### Valor do pedido: {reais(total)} reais", "### Pix", chave_pix]
     texto = "\n".join(md) + "\n"
 
     codigo = pix.payload(chave_pix, recebedor, cidade, total)
@@ -204,7 +234,7 @@ def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="
     ficha_pdf.gerar(texto, imagens, minis, matriz, saida)
     if md_saida:
         Path(md_saida).write_text(texto, encoding="utf-8")
-    return dict(codigo=codigo, chave=chave_pix, fichas=[f["nome"] for f, _ in pares], miniaturas=sum(len(v) for v in minis.values()),
+    return dict(total=total, valores=vals, codigo=codigo, chave=chave_pix, fichas=[f["nome"] for f, _ in pares], miniaturas=sum(len(v) for v in minis.values()),
                 itens_com_miniatura=len(minis), itens=sum(len(alteracoes(f["nome"], f["alt"])[1]) for f, _ in pares))
 
 
@@ -224,7 +254,11 @@ def verificar_qr(saida, codigo):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--cliente", required=True)
-    ap.add_argument("--total", required=True, type=float, help="valor total combinado, em reais")
+    ap.add_argument("--total", type=float, help="valor total combinado, em reais (obrigatório sem --valor/--adicional; com eles, é conferido contra a soma)")
+    ap.add_argument("--valor", nargs="*", default=[], metavar="N=VALOR", help="valor de cada pedido que muda: o número do pedido (ou o título inteiro) = valor; os demais mantêm o valor da ficha")
+    ap.add_argument("--adicional", type=float, default=0, help="valor extra somado ao total (aparece como uma linha própria)")
+    ap.add_argument("--rotulo-adicional", default="Adicional")
+    ap.add_argument("--ocultar-adicional", action="store_true", help="soma o adicional ao total sem mostrar a linha no PDF")
     ap.add_argument("--saida", required=True)
     ap.add_argument("--md", nargs="+", required=True)
     ap.add_argument("--pdf", nargs="+", required=True)
@@ -232,9 +266,11 @@ def main():
     ap.add_argument("--cidade", default="Sao Paulo")
     ap.add_argument("--salvar-md", help="grava também o texto da ficha combinada (sem a parte confidencial)")
     a = ap.parse_args()
-    r = combinar(a.cliente, a.total, a.md, a.pdf, a.saida, a.recebedor, a.cidade, a.salvar_md)
+    valores = dict(v.split("=", 1) for v in a.valor) if a.valor else None
+    r = combinar(a.cliente, a.total, a.md, a.pdf, a.saida, a.recebedor, a.cidade, a.salvar_md, valores, a.adicional, a.rotulo_adicional, not a.ocultar_adicional)
     ok = verificar_qr(a.saida, r["codigo"])
     print("fichas (ordem):", ", ".join(r["fichas"]))
+    print("valores:", ", ".join(f"{n}={reais(v)}" for n, v in zip(r["fichas"], r["valores"])), "| total:", reais(r["total"]))
     print(f"alterações: {r['itens']} itens, {r['itens_com_miniatura']} com miniatura ({r['miniaturas']} imagens)")
     print("copia-e-cola:", r["codigo"])
     print("QR conferido:", {True: "lido e igual ao copia-e-cola", False: "NÃO confere: não envie", None: "não conferido (instale opencv-python-headless)"}[ok])

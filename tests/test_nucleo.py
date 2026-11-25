@@ -492,3 +492,22 @@ class FichaPdfJuntos(unittest.TestCase):
 def ImageChops_bbox_top(im):
     from PIL import ImageChops
     return ImageChops.invert(im).getbbox()[1]
+
+
+class FichaPdfValores(unittest.TestCase):
+    def test_lista_de_valores_nao_se_parte_do_total(self):
+        original = ficha_pdf._Folha.linha
+        for n in range(15, 45):
+            registro = []
+
+            def espia(self, texto, *a, **k):
+                registro.append((len(self.paginas), texto))
+                return original(self, texto, *a, **k)
+            ficha_pdf._Folha.linha = espia
+            try:
+                md = "### Pedido: 5 slots\n#### 1. L → 5 slots\n" + "".join(f"{i}. Carta {i}\n" for i in range(1, n)) + "### Valores\n" + "".join(f"Pedido_{i}: R$ 135\n" for i in range(1, 7)) + "### Valor do pedido: 890 reais\n### Pix\nchave\n"
+                ficha_pdf.desenhar(md, matriz=[[(x + y) % 2 for x in range(25)] for y in range(25)])
+            finally:
+                ficha_pdf._Folha.linha = original
+            pag = {texto: p for p, texto in registro}
+            self.assertEqual(len({pag["Valores"], pag["Pedido_1: R$ 135"], pag["Pedido_6: R$ 135"], pag["Valor do pedido: 890 reais"], pag["chave"]}), 1, f"n={n}: valores, total e Pix em páginas diferentes")

@@ -20,6 +20,7 @@ python3 -I .claude/skills/pdf-cliente-combinado/scripts/combinar_fichas.py \
   --cliente Cliente --total 405 --saida <pasta de saída>/Pedido_Cliente.pdf --salvar-md <pasta de saída>/Pedido_Cliente.md \
   --md <fichas .md> --pdf <PDFs da página>
 ```
+- **Valor de cada pedido e adicional (opcional):** `--valor 1=135 2=135 6=135` corrige o valor dos pedidos pelo número (ou título inteiro); os que não aparecem **mantêm o valor da própria ficha** (ex.: um pedido avulso). Com `--valor`/`--adicional` o PDF mostra o valor ao lado de cada título, uma lista "Valores" e o total; o total é a soma e, se você também passar `--total`, ele é conferido contra a soma. `--adicional 125` soma um valor extra ao total (ex.: horas de montagem); `--ocultar-adicional` o soma **sem mostrar** a linha no PDF (o total não bate com a soma do que está visível: avise o Chelis). Os `.md` originais nunca são alterados.
 - Os títulos das listas são os nomes das fichas (`Cliente_1_Deck`…), na ordem do número. O script casa cada `.md` com o PDF cujo nome contém o título.
 - Seções extras (“Cartas para completar”) entram como continuação da lista; versos continuam separados.
 - O script lê o QR de volta e só dá certo se ele for igual ao copia-e-cola (sai com erro se não for).
