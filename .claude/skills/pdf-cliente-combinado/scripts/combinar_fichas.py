@@ -48,14 +48,19 @@ def ler_md(caminho):
     )
 
 
-def lista_limpa(lista):
+def lista_limpa(lista, sem_completar=False):
     """Seções extras (ex.: '#### 2. Cartas para completar → 1 slots') viram continuação da mesma lista (renumerada); se a lista tem
-    Frentes/Versos, a seção extra vira um subtítulo."""
-    tem_sub, saida, n = any(l.startswith("#####") for l in lista), [], 0
+    Frentes/Versos, a seção extra vira um subtítulo. `sem_completar` omite a seção "Cartas para completar" inteira (títulos e itens)."""
+    tem_sub, saida, n, pulando = any(l.startswith("#####") for l in lista), [], 0, False
     for l in lista:
         if l.startswith("#### "):
+            pulando = sem_completar and "Cartas para completar" in l
+            if pulando:
+                continue
             if tem_sub:
                 saida.append("##### " + re.sub(r"\s*→.*$", "", re.sub(r"^\d+\.\s+", "", l[5:])).strip())
+            continue
+        if pulando:
             continue
         m = re.match(r"^\s*\d+\.\s+(.*)$", l)
         if m and not tem_sub:
@@ -182,7 +187,8 @@ def valor_do_pedido(f, valores):
     return f["valor"]
 
 
-def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="Sao Paulo", md_saida=None, valores=None, adicional=0.0, rotulo_adicional="Adicional", mostrar_adicional=True):
+def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="Sao Paulo", md_saida=None, valores=None, adicional=0.0, rotulo_adicional="Adicional", mostrar_adicional=True, sem_completar=()):
+    sem_completar = {str(x) for x in sem_completar}
     """total: valor final (o QR e o fim do PDF). Com `valores` (ou `adicional`), o PDF mostra o valor de cada pedido e o adicional, e o total
     tem de bater com a soma (total=None usa a soma). `mostrar_adicional=False` soma o adicional ao total sem listá-lo no PDF. Os .md recebidos nunca são alterados."""
     import qrcode
@@ -205,7 +211,9 @@ def combinar(cliente, total, mds, pdfs, saida, recebedor="Chelisplace", cidade="
     alts, imagens, minis = [], {}, {}
     for (f, pdf), v in zip(pares, vals):
         md.append(f"#### {f['nome']} → {f['slots']} slots" + (f" · R$ {reais(v)}" if detalhado else ""))
-        md += lista_limpa(f["lista"])
+        num = re.search(r"_(\d+)_", f["nome"])
+        omitir = f["nome"] in sem_completar or bool(num and num.group(1) in sem_completar)
+        md += lista_limpa(f["lista"], omitir)
         linhas, itens = alteracoes(f["nome"], f["alt"])
         alts += linhas
         if itens:
@@ -258,6 +266,7 @@ def main():
     ap.add_argument("--valor", nargs="*", default=[], metavar="N=VALOR", help="valor de cada pedido que muda: o número do pedido (ou o título inteiro) = valor; os demais mantêm o valor da ficha")
     ap.add_argument("--adicional", type=float, default=0, help="valor extra somado ao total (aparece como uma linha própria)")
     ap.add_argument("--rotulo-adicional", default="Adicional")
+    ap.add_argument("--sem-completar", nargs="*", default=[], metavar="N", help="números (ou títulos) dos pedidos cuja seção 'Cartas para completar' não deve aparecer no PDF")
     ap.add_argument("--ocultar-adicional", action="store_true", help="soma o adicional ao total sem mostrar a linha no PDF")
     ap.add_argument("--saida", required=True)
     ap.add_argument("--md", nargs="+", required=True)
@@ -267,7 +276,7 @@ def main():
     ap.add_argument("--salvar-md", help="grava também o texto da ficha combinada (sem a parte confidencial)")
     a = ap.parse_args()
     valores = dict(v.split("=", 1) for v in a.valor) if a.valor else None
-    r = combinar(a.cliente, a.total, a.md, a.pdf, a.saida, a.recebedor, a.cidade, a.salvar_md, valores, a.adicional, a.rotulo_adicional, not a.ocultar_adicional)
+    r = combinar(a.cliente, a.total, a.md, a.pdf, a.saida, a.recebedor, a.cidade, a.salvar_md, valores, a.adicional, a.rotulo_adicional, not a.ocultar_adicional, a.sem_completar)
     ok = verificar_qr(a.saida, r["codigo"])
     print("fichas (ordem):", ", ".join(r["fichas"]))
     print("valores:", ", ".join(f"{n}={reais(v)}" for n, v in zip(r["fichas"], r["valores"])), "| total:", reais(r["total"]))

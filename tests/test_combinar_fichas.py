@@ -38,6 +38,12 @@ class Combinar(unittest.TestCase):
         com_versos = ["##### Frentes", "1. A", "##### Versos", "1. V", "#### 2. Cartas para completar → 1 slots", "1. C"]
         self.assertEqual(cf.lista_limpa(com_versos)[-2:], ["##### Cartas para completar", "1. C"])
 
+    def test_sem_completar_omite_a_secao_inteira(self):
+        lista = ["1. A", "2. B", "#### 2. Cartas para completar → 2 slots", "1. C", "2. D"]
+        self.assertEqual(cf.lista_limpa(lista, sem_completar=True), ["1. A", "2. B"])
+        com_versos = ["##### Frentes", "1. A", "##### Versos", "1. V", "#### 2. Cartas para completar → 1 slots", "1. C"]
+        self.assertEqual(cf.lista_limpa(com_versos, sem_completar=True), ["##### Frentes", "1. A", "##### Versos", "1. V"])
+
     def test_ordem_pelo_numero_do_nome(self):
         pares = [({"nome": "Cli_3_X"}, "c"), ({"nome": "Cli_1_Y"}, "a"), ({"nome": "Cli_2_Z"}, "b")]
         self.assertEqual([p[1] for p in cf.ordenar(pares)], ["a", "b", "c"])
