@@ -69,3 +69,4 @@ button.peq:disabled{opacity:.4;cursor:not-allowed}
 .vit-item input[type=text]{width:100%;padding:4px 6px;font-size:.8rem}
 .vit-item.off{opacity:.4}
 .vit-no-ar-item{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 0;border-top:1px solid var(--linha)}
+.p-acoes{margin:6px 0}

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-const { lerLista, marcarFicha, listaParaBot, nomeParaBot, atribuir, tirarSlotsDoXml, idItem } = createRequire(import.meta.url)("../lista.js");
+const { lerLista, marcarFicha, listaParaBot, nomeParaBot, atribuir, tirarSlotsDoXml, idItem, sugerirPorNome, agruparPendentes } = createRequire(import.meta.url)("../lista.js");
 
 test("Moxfield: quantidade, set e número; *F* ignorado; / vira //", () => {
   const r = lerLista("2 Avenging Hunter (CLB) 215\n1 Sol Ring (C21) 263 *F*\n1 Undercity / The Initiative (TCLB) 20");
@@ -100,4 +100,19 @@ test("troca de arte: a mesma carta em dois cards (cópias separadas) perde do ú
   const r = tirarSlotsDoXml(xml, "A", 3);
   assert.match(r, /<card><id>A<\/id><slots>0<\/slots><\/card>/);
   assert.equal((r.match(/<card>/g) || []).length, 1);
+});
+
+test("sugerirPorNome: reconhece pelo nome, com prefixo numérico, apóstrofo e subpasta; cada imagem serve a uma carta", () => {
+  const pend = ["Blast Zone", "Hall of the Bandit Lord", "Rogue's Passage", "Snow-Covered Wastes", "Snow-Covered Wastes", "Carta Sem Imagem"].map((nome) => ({ nome, set: "x", cn: "1" })).concat([{ nome: "Blast Zone", set: "y", cn: "9" }]);   // Blast Zone em duas impressões
+  const grupos = agruparPendentes(pend).map((g) => ({ ...g, faltam: g.qtd }));
+  const sub = (nome) => ({ nome, chave: "sub/completar (corrigir sangria)/" + nome, opcional: true });
+  const itens = [sub("001_Blast Zone.png"), sub("002_Hall of the Bandit Lord.png"), sub("015_Solemn Simulacrum.png"), sub("Rogues Passage.png"), sub("010_Snow-Covered Wastes.png"), sub("011_Snow-Covered Wastes (1).png")];
+  const s = sugerirPorNome(itens, grupos), por = (n) => s.get(grupos.find((g) => g.nome === n).key);
+  assert.equal(por("Blast Zone").nome, "001_Blast Zone.png");
+  assert.equal(s.get(grupos.find((g) => g.nome === "Blast Zone" && g.set === "y").key).nome, "001_Blast Zone.png", "a mesma imagem serve a outra impressão da mesma carta");
+  assert.equal(por("Hall of the Bandit Lord").nome, "002_Hall of the Bandit Lord.png");
+  assert.equal(por("Rogue's Passage").nome, "Rogues Passage.png");
+  assert.equal(por("Snow-Covered Wastes").nome, "010_Snow-Covered Wastes.png");   // o grupo é um só (×2): uma imagem multiplicada
+  assert.equal(s.has(grupos.find((g) => g.nome === "Carta Sem Imagem").key), false);
+  assert.ok(![...s.values()].some((i) => i.nome.includes("Solemn")), "não empurra Solemn Simulacrum para ninguém");
 });

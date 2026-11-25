@@ -811,23 +811,31 @@ function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
   const pend = pendentesBot();
   if (!pend.length) { el.innerHTML = ""; return; }
   const r = separarExtras(itens), faltam = r.grupos.reduce((n, g) => n + g.faltam, 0), e = atribEstado();
+  const sug = sugerirPorNome(itens, r.grupos);   // imagem com o nome da carta (até em subpasta/completar), para o seletor já vir certo e para "confirmar todas"
+  const nSug = r.grupos.filter((g) => g.faltam > 0 && sug.has(g.key)).length;
   // o seletor já vem na imagem mais provável da carta: a que já está atribuída a ela ou a que tem o nome dela
   const rot = (chave) => { const it = itens.find((i) => idItem(i) === chave); return it ? (it.rotulo || it.nome) : chave; };
-  const opc = (g) => { const pad = (g.atrib.length ? g.atrib[g.atrib.length - 1].arquivo : idItem(itens.find((i) => !i.opcional && semAcento(i.nome).includes(semAcento(g.nome))) || {}));
+  const opc = (g) => { const pad = (g.atrib.length ? g.atrib[g.atrib.length - 1].arquivo : sug.has(g.key) ? idItem(sug.get(g.key)) : "");
     return itens.map((i) => `<option value="${esc(idItem(i))}"${idItem(i) === pad ? " selected" : ""}>${esc(i.rotulo || i.nome)}${i.em === "completar" ? " (completar/)" : ""}</option>`).join(""); };
   const cab = compacto ? "" : (faltam
     ? `<b class="aviso">${faltam} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot, ou a arte foi trocada; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b>. Abaixo você diz qual imagem vale por qual carta, e em quantos slots.<br><button class="acao sec" id="p-reler">Reler a pasta</button>`
     : `<b class="ok">Os ${pend.length} slot(s) pendente(s) já têm imagem na pasta.</b>`);
-  el.innerHTML = `<div class="conf">${cab}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
+  const acoes = `<div class="p-acoes">${nSug ? `<button class="acao" id="p-conf-todas">Confirmar as ${nSug} sugestões pelo nome</button>` : ""}${itens.length ? `<button class="acao sec" id="p-sg-pre">Corrigir sangria destas imagens…</button>` : ""}</div>`;
+  el.innerHTML = `<div class="conf">${cab}${acoes}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
       <b>${esc(g.nome)}</b>${g.set === "troca" ? ` <span class="suave">(troca de arte)</span>` : g.set ? ` <span class="suave">(${esc(g.set.toUpperCase())} ${esc(g.cn)})</span>` : ""} <span class="suave">×${g.qtd}</span> — <b class="${g.faltam ? "aviso" : "ok"}">${g.preenchidos}/${g.qtd}</b>
       ${g.atrib.map((a, ai) => `<span class="suave" style="margin-left:8px">${esc(rot(a.arquivo))} ×${a.copias}${a.auto ? " (pelo nome)" : ""} <button class="peq" data-rm="${gi}:${ai}" title="Tirar esta imagem desta carta">×</button></span>`).join("")}
-      ${g.faltam && itens.length ? `<div style="margin-top:4px"><select data-sel="${gi}">${opc(g)}</select> em <input type="number" min="1" max="${g.faltam}" value="${g.faltam}" size="3" style="width:4.5em" data-n="${gi}"> slot(s) <button class="peq" data-usar="${gi}">Usar esta imagem</button>${g.atrib.length ? ` <button class="peq" data-mult="${gi}">Completar os ${g.faltam} com a mesma imagem</button>` : ""}</div>` : ""}
+      ${g.faltam && itens.length ? `<div style="margin-top:4px"><select data-sel="${gi}">${opc(g)}</select>${!g.atrib.length ? (sug.has(g.key) ? ` <span class="suave">(sugestão pelo nome)</span>` : ` <span class="aviso">nenhuma imagem com o nome desta carta: escolha</span>`) : ""} em <input type="number" min="1" max="${g.faltam}" value="${g.faltam}" size="3" style="width:4.5em" data-n="${gi}"> slot(s) <button class="peq" data-usar="${gi}">Usar esta imagem</button>${g.atrib.length ? ` <button class="peq" data-mult="${gi}">Completar os ${g.faltam} com a mesma imagem</button>` : ""}</div>` : ""}
     </div>`).join("") + `</div>`;
   const grupo = (b) => r.grupos[+b.dataset.g || +b.dataset.usar || +b.dataset.mult || 0];
   const definir = (g, arquivo, copias) => { e.atribManuais = e.atribManuais.filter((m) => !(m.grupo === g.key && m.arquivo === arquivo)); e.atribManuais.push({ grupo: g.key, arquivo, copias }); e.atribBloqueios = e.atribBloqueios.filter((b) => b !== g.key + "|" + arquivo); };
   el.querySelectorAll("[data-usar]").forEach((b) => (b.onclick = () => { const gi = +b.dataset.usar, g = r.grupos[gi], arq = el.querySelector(`[data-sel="${gi}"]`).value, n = Math.max(1, Math.min(g.faltam, +el.querySelector(`[data-n="${gi}"]`).value || 1)); const ja = g.atrib.find((a) => a.arquivo === arq); definir(g, arq, n + (ja ? ja.copias : 0)); aoMudar(); }));
   el.querySelectorAll("[data-mult]").forEach((b) => (b.onclick = () => { const g = r.grupos[+b.dataset.mult], a = g.atrib[g.atrib.length - 1]; definir(g, a.arquivo, a.copias + g.faltam); aoMudar(); }));
   el.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { const [gi, ai] = b.dataset.rm.split(":").map(Number), g = r.grupos[gi], a = g.atrib[ai]; e.atribManuais = e.atribManuais.filter((m) => !(m.grupo === g.key && m.arquivo === a.arquivo)); e.atribBloqueios.push(g.key + "|" + a.arquivo); aoMudar(); }));
+  const bt = el.querySelector("#p-conf-todas"); if (bt) bt.onclick = () => { for (const g of r.grupos) { const it = g.faltam > 0 && sug.get(g.key); if (!it) continue; const arq = idItem(it), ja = g.atrib.find((a) => a.arquivo === arq); definir(g, arq, g.faltam + (ja ? ja.copias : 0)); } aoMudar(); };
+  const bs = el.querySelector("#p-sg-pre"); if (bs) bs.onclick = () => {   // abre a correção de sangria já com estas imagens marcadas: as atribuídas às cartas e as sugeridas pelo nome
+    const chaves = new Set(); for (const g of r.grupos) { g.atrib.forEach((a) => chaves.add(a.arquivo)); if (g.faltam > 0 && sug.has(g.key)) chaves.add(idItem(sug.get(g.key))); }
+    window.abrirSangriaPre(chaves, el);
+  };
   const br = el.querySelector("#p-reler"); if (br) br.onclick = async () => { br.disabled = true; br.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (err) { /* mantém */ } if (window.conferir) conferir(); };
 }
 window.desenharAtribuicao = desenharAtribuicao;
@@ -885,7 +893,7 @@ window.desenharExtras = desenharExtras;
 
 // ---------- Correção de sangria (botão separado; processo do HANDOFF_SANGRIA) ----------
 // 816x1110 RGBA, carta 744x1040 centralizada, 299.9994 dpi; modos por imagem: borda (padrão), branco, preto. Nunca sobrescreve sem guardar a original.
-const SG = { itens: [], mostrarComId: false, rodando: false };
+const SG = { itens: [], mostrarComId: false, rodando: false, nota: "" };
 const semIdNoNome = (n) => !RE_ID_ARQ.test(n);
 const nomePng = (n) => n.replace(/\.[A-Za-z0-9]+$/, "") + ".png";
 function sgAtualizarLista() {
@@ -905,7 +913,7 @@ function sgDesenhar() {
   const prontas = SG.itens.filter((i) => i.opcoes && i.incluir);
   const pendentes = SG.itens.filter((i) => i.incluir && !i.opcoes);
   const driveOk = typeof Drive !== "undefined" && Drive.conectado();
-  box.innerHTML = `<b>Correção de sangria</b>
+  box.innerHTML = `<b>Correção de sangria</b>${SG.nota ? `<p class="ok">${esc(SG.nota)}</p>` : ""}
     <p class="suave">Corrige cantos transparentes e cria a sangria (canvas 816×1110, carta 744×1040, 300 dpi). Para cada imagem a página gera <b>as três opções</b>: veja como fica cada uma (miniatura com zoom nos cantos) e <b>clique na que quer</b>. <b>Borda</b> estende a borda (padrão); <b>branco</b> e <b>preto</b> são para imagens com sujeira nos cantos. Transparência interna (caixas de texto) é preservada.</p>
     <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sg-comid" ${SG.mostrarComId ? "checked" : ""}> mostrar também as imagens com ID do MPCFill</label>
     <input id="sg-add" type="file" accept="image/*" multiple> <span class="suave">adicionar imagens do computador</span>
@@ -962,7 +970,12 @@ async function sgInserir() {
   $("#sg-inserir").disabled = true;
   try {
     let n = 0;
-    for (const i of fila) { st.textContent = `Inserindo ${++n}/${fila.length}…`; await sessao.pasta.inserirCorrigida(i.novo ? null : i.item, nomePng(i.nome), sgSaida(i)); }
+    const renomeios = [];
+    for (const i of fila) { st.textContent = `Inserindo ${++n}/${fila.length}…`; await sessao.pasta.inserirCorrigida(i.novo ? null : i.item, nomePng(i.nome), sgSaida(i)); if (!i.novo && i.item) { const velha = idItem(i.item), nova = velha.endsWith(i.item.nome) ? velha.slice(0, velha.length - i.item.nome.length) + nomePng(i.nome) : nomePng(i.nome); if (nova !== velha) renomeios.push([velha, nova]); } }
+    for (const [velha, nova] of renomeios) {  // a escolha "esta imagem vale por esta carta" acompanha o arquivo corrigido (jpg vira png)
+      sessao.atribManuais = (sessao.atribManuais || []).map((m) => (m.arquivo === velha ? { ...m, arquivo: nova } : m));
+      sessao.atribBloqueios = (sessao.atribBloqueios || []).map((b) => (b.endsWith("|" + velha) ? b.slice(0, -velha.length) + nova : b));
+    }
     sgLimpar();
     if (sessao.pasta.recarregar) sessao.pasta = await sessao.pasta.recarregar();
     sessao.conferencia = null; atualizarRotulos();
@@ -993,9 +1006,19 @@ async function sgEnviarDrive() {
 }
 const sgNaMontagem = () => ($("#sg").parentElement || {}).id === "m-sg-host";
 const sgReler = async (box) => { box.hidden = false; box.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { box.innerHTML = `<span class="alerta">Não consegui reler a pasta: ${esc(e.message)}</span>`; await new Promise((r) => setTimeout(r, 1200)); } };
-$("#sg-abrir").onclick = async () => { $("#c-extras").after($("#sg")); await sgReler($("#sg")); sgAtualizarLista(); sgDesenhar(); };
+$("#sg-abrir").onclick = async () => { SG.nota = ""; $("#c-extras").after($("#sg")); await sgReler($("#sg")); sgAtualizarLista(); sgDesenhar(); };
+// A partir do painel das cartas pendentes: abre a correção já com as imagens dessas cartas marcadas (as demais desmarcadas)
+window.abrirSangriaPre = async (chaves, origem) => {
+  if (origem && origem.closest("#montagem")) $("#m-sg-host").append($("#sg")); else $("#c-extras").after($("#sg"));
+  await sgReler($("#sg"));
+  const marcar = () => { sgAtualizarLista(); for (const i of SG.itens) i.incluir = !!(i.item && chaves.has(idItem(i.item))); return SG.itens.filter((i) => i.incluir).length; };
+  let n = marcar();
+  if (n < chaves.size && !SG.mostrarComId) { SG.mostrarComId = true; n = marcar(); }   // alguma tem ID de 20+ caracteres no nome: precisa listar essas também
+  SG.nota = `${n} imagem(ns) já vêm marcadas: as que valem pelas cartas pendentes. Desmarque o que não precisa de sangria.`;
+  sgDesenhar(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" });
+};
 // Montagem: o mesmo painel aparece embaixo do plano (o botão fica junto do aviso de imagens pendentes)
-window.abrirSangriaMontagem = async () => { $("#m-sg-host").append($("#sg")); await sgReler($("#sg")); sgAtualizarLista(); sgDesenhar(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+window.abrirSangriaMontagem = async () => { SG.nota = ""; $("#m-sg-host").append($("#sg")); await sgReler($("#sg")); sgAtualizarLista(); sgDesenhar(); $("#sg").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
 
 // ---------- Etapas: não passa para a próxima com pendência ----------
 const ORDEM = ["entrada", "orcamento", "conferencia", "checagem", "ficha", "montagem"];

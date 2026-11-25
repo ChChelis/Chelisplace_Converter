@@ -49,7 +49,7 @@ function nomeParaBot(txt) {
 // Grupos: cartas pendentes iguais (nome+set+número) ficam juntas ("Mountain ×9"). Uma imagem pode cobrir vários slots (multiplicar).
 // Atribuições: as manuais (escolhidas pelo Chelis: {grupo, arquivo, copias}) valem primeiro; depois, automático pelo nome da carta no nome do
 // arquivo (1 cópia por imagem). `bloqueios` ("grupo|arquivo") desfazem um automático. Sobra = imagem sem atribuição (pede incluir ou não).
-const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, " ").trim();
+const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/['’`´]/g, "").replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, " ").trim();
 const idItem = (i) => i.chave || i.nome;  // imagens de subpastas têm chave própria (o mesmo nome pode existir em mais de uma pasta)
 const chaveGrupo = (c) => [c.nome, c.set || "", c.cn || ""].join("|");
 function agruparPendentes(pend) {
@@ -77,6 +77,20 @@ function atribuir(itens, pendentes, manuais = [], bloqueios = []) {
   return { grupos, cobrem, sobra: itens.filter((i) => !usados.has(idItem(i)) && !i.opcional) };
 }
 
+// Sugestão pelo NOME, para o seletor e para "confirmar todas": para cada carta pendente que ainda falta, a imagem (de qualquer pasta, inclusive subpastas e completar/)
+// cujo nome tem o nome da carta ("001_Blast Zone.png", "Rogues Passage" = "Rogue's Passage"). Vence o nome mais parecido (igual > mais curto); uma imagem não serve a cartas de nomes diferentes.
+function sugerirPorNome(itens, grupos) {
+  const sem = (n) => semAcento(n).replace(/^\d+\s+/, "");   // tira o "001_" do começo
+  const usado = new Map(), sug = new Map();   // imagem -> nome da carta que a levou
+  for (const g of grupos) {
+    const alvo = semAcento(g.nome); if (!alvo || g.faltam <= 0) continue;
+    const cand = itens.filter((i) => (!usado.has(idItem(i)) || usado.get(idItem(i)) === alvo) && sem(i.nome).includes(alvo))   // a mesma imagem serve a impressões diferentes da mesma carta, não a cartas de nomes diferentes
+      .sort((a, b) => (sem(a.nome) === alvo ? 0 : 1) - (sem(b.nome) === alvo ? 0 : 1) || (a.opcional ? 1 : 0) - (b.opcional ? 1 : 0) || sem(a.nome).length - sem(b.nome).length);
+    if (cand[0]) { sug.set(g.key, cand[0]); usado.set(idItem(cand[0]), alvo); }
+  }
+  return sug;
+}
+
 // Troca de arte: tira `k` cópias (slots) da carta `id` do <fronts> do XML (do último slot para o primeiro). Sem mais slots, a carta sai do XML.
 function tirarSlotsDoXml(txt, id, k) {
   return txt.replace(/<fronts>([\s\S]*?)<\/fronts>/, (m, corpo) => {
@@ -96,4 +110,4 @@ function tirarSlotsDoXml(txt, id, k) {
   });
 }
 
-if (typeof module !== "undefined") module.exports = { lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo, idItem, tirarSlotsDoXml };
+if (typeof module !== "undefined") module.exports = { sugerirPorNome, semAcento, lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo, idItem, tirarSlotsDoXml };
