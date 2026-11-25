@@ -716,9 +716,10 @@ function desenharTrocaDireta(r) {
     : `<p class="suave">Nenhuma imagem achada em subpastas (olho até 3 níveis, em todas as pastas do pedido, menos pares, completar, saida, originais_sem_sangria, copias_a_mais e anteriores). Subiu agora? Clique em <b>Reler a pasta</b>.</p>`;
   const usadasSub = new Set(subs.map((s) => s.arquivo)), inc = new Set(sessao.subIncluidas || []);
   const livresSub = (p.subpastas || []).filter((i) => !usadasSub.has(idItem(i)));
-  const incluirHtml = livresSub.length ? `<div class="conf"><b>Imagens das subpastas que não entram em nenhuma troca</b> <span class="suave">(hoje ficam de fora do pedido; marque as que devem entrar como carta extra, 1 slot cada, nos últimos slots)</span>
-    ${livresSub.map((i, k) => `<label style="display:block"><input type="checkbox" data-inc="${k}"${inc.has(idItem(i)) ? " checked" : ""}> ${esc(i.rotulo)}</label>`).join("")}
-    <button class="acao" id="td-inc-ok">Incluir as marcadas no pedido</button></div>` : "";
+  const nInc = livresSub.filter((i) => inc.has(idItem(i))).length;
+  const incluirHtml = livresSub.length ? `<details class="conf" id="td-inc"${nInc ? "" : " open"}><summary>${nInc ? `<b class="ok">✔ ${nInc} imagem(ns) das subpastas incluída(s) no pedido como carta extra</b> <span class="suave">(clique para mudar; cópias, total e valor aparecem em “fora do pedido” mais abaixo)</span>` : `<b>Imagens das subpastas que não entram em nenhuma troca</b> <span class="suave">(hoje ficam de fora do pedido; marque as que devem entrar como carta extra, 1 slot cada, nos últimos slots)</span>`}</summary>
+    ${livresSub.map((i, k) => `<label style="display:block"><input type="checkbox" data-inc="${k}"${inc.has(idItem(i)) ? " checked" : ""}> ${esc(i.rotulo)}${inc.has(idItem(i)) ? ` <span class="ok">(incluída)</span>` : ""}</label>`).join("")}
+    <button class="acao" id="td-inc-ok" disabled>Incluir as marcadas no pedido</button> <span class="suave" id="td-inc-msg">${nInc ? "Mude as caixinhas para alterar o que entra." : "Marque as imagens para habilitar o botão."}</span></details>` : "";
   const sug = sugestoesDeTroca(cartas, cand);
   const sugHtml = sug.length ? `<div class="conf"><b>Sugestões pelo nome do arquivo</b> <span class="suave">(desmarque o que não quiser; troca todas as cópias que restam da carta)</span>
     ${sug.map((s, i) => `<label style="display:block"><input type="checkbox" data-sug="${i}" checked> ${esc(rotuloCarta(s.carta))} ×${s.carta.livres} ← ${esc(s.arq.rotulo || s.arq.nome)}</label>`).join("")}
@@ -754,12 +755,19 @@ function desenharTrocaDireta(r) {
     sincronizarXml(); renderAlteracoes(); renderFicha(); conferir();
   };
   const incOk = el.querySelector("#td-inc-ok");
-  if (incOk) incOk.onclick = () => {
-    const marcadas = new Set([...el.querySelectorAll("[data-inc]")].filter((cb) => cb.checked).map((cb) => idItem(livresSub[+cb.dataset.inc])));
-    const fora = new Set(livresSub.map(idItem));
-    sessao.subIncluidas = [...(sessao.subIncluidas || []).filter((c) => !fora.has(c)), ...marcadas];
-    sessao.conferencia = null; conferir();
-  };
+  if (incOk) {
+    const marcadasAgora = () => new Set([...el.querySelectorAll("[data-inc]")].filter((cb) => cb.checked).map((cb) => idItem(livresSub[+cb.dataset.inc])));
+    const atuais = new Set(livresSub.map(idItem).filter((c) => inc.has(c)));
+    const mudou = () => { const m = marcadasAgora(); return m.size !== atuais.size || [...m].some((c) => !atuais.has(c)); };
+    el.querySelectorAll("[data-inc]").forEach((cb) => (cb.onchange = () => { incOk.disabled = !mudou(); el.querySelector("#td-inc-msg").textContent = mudou() ? `${marcadasAgora().size} marcada(s): clique em Incluir para valer.` : "Nada mudou desde a última inclusão."; }));
+    incOk.onclick = () => {
+      if (incOk.disabled) return; incOk.disabled = true;   // um clique só: já está valendo
+      const fora = new Set(livresSub.map(idItem));
+      sessao.subIncluidas = [...(sessao.subIncluidas || []).filter((c) => !fora.has(c)), ...marcadasAgora()];
+      el.querySelector("#td-inc-msg").textContent = "Incluindo…";
+      sessao.conferencia = null; conferir();
+    };
+  }
   const sugOk = el.querySelector("#td-sug-ok");
   if (sugOk) sugOk.onclick = () => {
     el.querySelectorAll("[data-sug]").forEach((cb) => { if (!cb.checked) return; const s = sug[+cb.dataset.sug], atual = cartasDoXml().find((x) => x.id === s.carta.id); if (atual && atual.livres > 0) aplicarTroca(atual, s.arq, atual.livres); });
