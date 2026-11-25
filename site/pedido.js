@@ -827,6 +827,25 @@ const separarExtras = (itens) => {
   return atribuir(inc.size ? itens.map((i) => inc.has(idItem(i)) ? { ...i, opcional: false } : i) : itens, pendentesBot(), e.atribManuais, e.atribBloqueios);
 };
 window.separarExtras = separarExtras;
+// Cópias (multiplicar) de uma imagem extra: 1 por padrão; vale para as extras da etapa 4 e da montagem
+const copiasDe = (i) => Math.max(1, Math.min(99, +((sessao.copiasExtra || {})[idItem(i)]) || 1));
+const expandirCopias = (l) => l.flatMap((i) => Array.from({ length: copiasDe(i) }, () => i));
+window.copiasDeExtra = copiasDe; window.expandirCopias = expandirCopias;
+function definirCopiasExtra(item, n) {
+  sessao.copiasExtra = sessao.copiasExtra || {}; sessao.copiasExtra[idItem(item)] = Math.max(1, Math.min(99, Math.round(+n) || 1));
+  const f = pedido.fontes.find((x) => x.origem === "completar");
+  if (f && f.itensExtras) { f.frentes = expandirCopias(f.itensExtras).map((x) => ({ nome: nomeLimpo(x.nome) })); renderFontes(); }   // já incluídas: o total e o valor acompanham
+}
+window.definirCopiasExtra = definirCopiasExtra;
+// Verso (_back) ligado a uma frente pendente: carta dupla-face conta 2 slots, então o verso entra no total e no orçamento (+1 cada), sem perguntar
+function sincronizarVersosLigados(versos) {
+  const chave = versos.map((v) => v.nome).sort().join("|"), atual = pedido.fontes.find((f) => f.origem === "versos_pend");
+  if ((atual ? atual.chave : "") === chave) return;
+  pedido.fontes = pedido.fontes.filter((f) => f.origem !== "versos_pend");
+  if (versos.length) pedido.fontes.push({ titulo: "Versos das duplas-faces pendentes", origem: "versos_pend", chave, frentes: [], versos: versos.map((v) => ({ nome: nomeLimpo(v.nome) })) });
+  renderFontes();
+}
+window.sincronizarVersosLigados = sincronizarVersosLigados;
 // Painel: para cada carta pendente (grupo de iguais), qual imagem da pasta vale por ela e em quantos slots (multiplicar). Automático pelo nome; o resto é escolha sua.
 function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
   if (!el) return;
@@ -843,7 +862,7 @@ function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
     ? `<b class="aviso">${faltam} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot, ou a arte foi trocada; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b>. Abaixo você diz qual imagem vale por qual carta, e em quantos slots.<br><button class="acao sec" id="p-reler">Reler a pasta</button>`
     : `<b class="ok">Os ${pend.length} slot(s) pendente(s) já têm imagem na pasta.</b>`);
   const nVersos = (r.versos || []).length;
-  const cab2 = nVersos ? `<p class="ok">${nVersos} verso(s) <code>_back</code> reconhecido(s) pelo nome: fazem parte das cartas acima, saem logo depois da frente e não contam como extra.</p>` : "";
+  const cab2 = nVersos ? `<p class="ok">${nVersos} verso(s) <code>_back</code> reconhecido(s) pelo nome: fazem parte das cartas acima, saem logo depois da frente e contam +1 slot cada (dupla-face = 2; já somados no total e no orçamento).</p>` : "";
   const acoes = `<div class="p-acoes">${nSug ? `<button class="acao" id="p-conf-todas">Confirmar as ${nSug} sugestões pelo nome</button>` : ""}${itens.length ? `<button class="acao sec" id="p-sg-pre">Corrigir sangria destas imagens…</button>` : ""}</div>`;
   el.innerHTML = `<div class="conf">${cab}${cab2}${acoes}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
       <b>${esc(g.nome)}</b>${g.set === "troca" ? ` <span class="suave">(troca de arte)</span>` : g.set ? ` <span class="suave">(${esc(g.set.toUpperCase())} ${esc(g.cn)})</span>` : ""} <span class="suave">×${g.qtd}</span> — <b class="${g.faltam ? "aviso" : "ok"}">${g.preenchidos}/${g.qtd}</b>
@@ -865,7 +884,8 @@ function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
 window.desenharAtribuicao = desenharAtribuicao;
 async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras");
-  const { cobrem, sobra, versos = [] } = separarExtras(itens);  // só a sobra pede decisão; o que preenche pendentes entra sempre
+  const { cobrem, sobra, versos = [] } = separarExtras(itens);
+  sincronizarVersosLigados(versos);  // só a sobra pede decisão; o que preenche pendentes entra sempre
   const chave = chaveExtras(sobra);
   desenharAtribuicao($("#c-pend"), itens, () => conferir());
   itens = sobra;
@@ -873,13 +893,17 @@ async function desenharExtras(itens, faltandoQtd = 0) {
   if (!itens.length) {
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
     sessao.extrasDecisao = null; renderFontes();
-    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta</b> (já estão no orçamento e na ficha; entram na montagem)${versos.length ? `, com ${versos.length} verso(s) <code>_back</code> ligado(s) às frentes` : ""}.</div>` : "";
+    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta</b> (já estão no orçamento e na ficha; entram na montagem)${versos.length ? `, com ${versos.length} verso(s) <code>_back</code> ligado(s) às frentes (+1 slot cada, já no total e no orçamento)` : ""}.</div>` : "";
     return 0;
   }
   const dec = sessao.extrasDecisao && sessao.extrasDecisao.chave === chave ? sessao.extrasDecisao.valor : (noPedido ? "incluir" : null);
-  const lista = `<ul>${itens.slice(0, 12).map((x) => `<li>${esc(x.nome)} <span class="suave">${x.em === "completar" ? "(completar/)" : "(solta na pasta)"}</span></li>`).join("")}${itens.length > 12 ? `<li class="suave">… e mais ${itens.length - 12}</li>` : ""}</ul>`;
+  const nSlots = expandirCopias(itens).length;   // cada imagem pode valer várias cópias (multiplicar)
+  const lista = `<ul>${itens.slice(0, 40).map((x, k) => `<li>${esc(x.nome)} <span class="suave">${x.em === "completar" ? "(completar/)" : x.em === "sub" ? "(subpasta)" : "(solta na pasta)"}</span> × <input type="number" min="1" max="99" value="${copiasDe(x)}" style="width:4.5em" data-cx="${k}" title="Quantas cópias desta imagem entram no pedido"> cópia(s)</li>`).join("")}${itens.length > 40 ? `<li class="suave">… e mais ${itens.length - 40} (1 cópia cada)</li>` : ""}</ul>`;
+  const ligarCopias = () => el.querySelectorAll("[data-cx]").forEach((inp) => (inp.onchange = () => { definirCopiasExtra(itens[+inp.dataset.cx], inp.value); conferir(); }));
   if (dec === "incluir") {
-    el.innerHTML = `<div class="conf"><b class="ok">${itens.length} imagem(ns) extra(s) incluída(s) no pedido</b> (“Cartas para completar”, ${itens.length} slots; já está no orçamento e na ficha). <button class="peq" id="x-desfazer">Desfazer</button> <button class="peq" id="x-orc">Rever o orçamento</button></div>`;
+    const fx = pedido.fontes.find((x) => x.origem === "completar"); if (fx) { fx.itensExtras = itens; const novas = expandirCopias(itens).map((x) => ({ nome: nomeLimpo(x.nome) })); if (novas.length !== fx.frentes.length) { fx.frentes = novas; renderFontes(); } }
+    el.innerHTML = `<div class="conf"><b class="ok">${itens.length} imagem(ns) extra(s) incluída(s) no pedido</b> (“Cartas para completar”, ${nSlots} slots; já está no orçamento e na ficha). Ajuste as cópias de cada uma:${lista}<button class="peq" id="x-desfazer">Desfazer</button> <button class="peq" id="x-orc">Rever o orçamento</button></div>`;
+    ligarCopias();
     $("#x-desfazer").onclick = () => { pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar"); sessao.extrasDecisao = { chave, valor: "nao" }; renderFontes(); conferir(); };
     $("#x-orc").onclick = () => document.querySelector("#passos [data-aba=orcamento]").click();
     return 0;
@@ -893,9 +917,9 @@ async function desenharExtras(itens, faltandoQtd = 0) {
   await pronto;
   const t = totais(), pr = precosEfetivos(pedido.modo), slotsAtual = t.frentes + t.versos;
   const antes = (await chamar("orcar", { frentes: slotsAtual, versos: 0, modo: pedido.modo, precos: pr })).pago;
-  const depois = (await chamar("orcar", { frentes: slotsAtual + itens.length, versos: 0, modo: pedido.modo, precos: pr })).pago;
+  const depois = (await chamar("orcar", { frentes: slotsAtual + nSlots, versos: 0, modo: pedido.modo, precos: pr })).pago;
   el.innerHTML = `<div class="conf conf-so-voce"><b class="aviso">${itens.length} imagem(ns) fora do pedido na pasta</b>${lista}
-    <p>Elas não estavam no pedido quando o orçamento foi feito. Se entrarem, o pedido passa de <b>${slotsAtual}</b> para <b>${slotsAtual + itens.length} slots</b> e o valor da tabela de <b>${reais(antes)}</b> para <b>${reais(depois)}</b> (cobrado hoje: ${reais(valorFinal())}).</p>
+    <p>Elas não estavam no pedido quando o orçamento foi feito. Se entrarem, o pedido passa de <b>${slotsAtual}</b> para <b>${slotsAtual + nSlots} slots</b> e o valor da tabela de <b>${reais(antes)}</b> para <b>${reais(depois)}</b> (cobrado hoje: ${reais(valorFinal())}).</p>
     ${faltandoQtd ? `<p class="aviso">Atenção: ainda faltam ${faltandoQtd} imagem(ns) do XML. Se estas imagens são as <b>trocas</b> delas, use <b>Usar no lugar</b> (acima) e não inclua aqui, senão o pedido conta em dobro.</p>` : ""}
     <button class="acao" id="x-inc-atualiza">Incluir e atualizar o valor</button>
     <button class="acao sec" id="x-inc-mantem">Incluir e manter o valor atual</button>
@@ -904,10 +928,11 @@ async function desenharExtras(itens, faltandoQtd = 0) {
     if (!atualizarValor) { $("#o-pago").value = valorFinal(); pagoEditado = true; }  // congela o valor combinado
     else pagoEditado = false;
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");
-    pedido.fontes.push({ titulo: "Cartas para completar", origem: "completar", extrasChave: chave, frentes: itens.map((x) => ({ nome: nomeLimpo(x.nome) })), versos: [] });
+    pedido.fontes.push({ titulo: "Cartas para completar", origem: "completar", extrasChave: chave, itensExtras: itens, frentes: expandirCopias(itens).map((x) => ({ nome: nomeLimpo(x.nome) })), versos: [] });
     sessao.extrasDecisao = { chave, valor: "incluir" };
     renderFontes(); conferir();
   };
+  ligarCopias();   // as cópias definidas aqui valem para o total e o valor acima
   $("#x-inc-atualiza").onclick = () => incluir(true);
   $("#x-inc-mantem").onclick = () => incluir(false);
   $("#x-nao").onclick = () => { sessao.extrasDecisao = { chave, valor: "nao" }; conferir(); };
@@ -1124,8 +1149,8 @@ window.podeAbrirAba = podeAbrirAba;
 function novoPedido() {
   pedido.fontes = []; pedido.alteracoes = []; pedido.cardId = null; pedido.botNome = null; $("#t-criar").textContent = "Criar card no Trello";
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
-  Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
-  sessao.extrasDecisao = null; sessao.trocas = {}; sessao.atribManuais = []; sessao.atribBloqueios = []; sessao.substituicoes = []; sessao.subIncluidas = [];
+  Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], copiasAdd: new Map(), permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
+  sessao.extrasDecisao = null; sessao.trocas = {}; sessao.atribManuais = []; sessao.atribBloqueios = []; sessao.substituicoes = []; sessao.subIncluidas = []; sessao.copiasExtra = {};
   clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
   for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
   for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas", "#t-aviso"]) { const el = $(s); if (el) el.textContent = ""; }

@@ -240,7 +240,7 @@ async function receberPasta(alvoErro, prefixo) {
   try { sessao.pasta = await escolher(prefixo); } catch (e) { return falha(alvoErro, e); }
   sessao.conferencia = null;
   carregarIgnorados();
-  MONT.adicionadas = []; MONT.chaveExtras = "";  // outro pedido: as perguntas da montagem começam do zero
+  MONT.adicionadas = []; MONT.copiasAdd = new Map(); MONT.chaveExtras = "";  // outro pedido: as perguntas da montagem começam do zero
   if (!clienteEditado) $("#m-cliente").value = sessao.pasta.nome;
   atualizarRotulos();
   if (!$("#montagem").hidden) prepararMontagem();
@@ -346,7 +346,7 @@ function baixar(blob, nome) {
 
 // ---------- montagem ----------
 // Ordem dos slots: cartas do XML, (brancos), pares, extras. Extras = imagens da pasta que não estão no XML.
-const MONT = { incluirExtras: null, chaveExtras: "", adicionadas: [], permitirBranco: false, chaveBranco: "", pronta: false, plano: null, ignorarPend: false, chavePend: "" };
+const MONT = { incluirExtras: null, chaveExtras: "", adicionadas: [], copiasAdd: new Map(), permitirBranco: false, chaveBranco: "", pronta: false, plano: null, ignorarPend: false, chavePend: "" };
 
 // Relê a pasta do pedido (Drive ou computador): pega o que foi subido/alterado depois que ela foi escolhida.
 async function relerPasta() {
@@ -383,14 +383,16 @@ async function prepararMontagem() {
   const todosExtras = [...extras, ...(p.subpastas || [])];  // as de subpastas só entram se atribuídas (troca de arte / pendente)
   const sep = window.separarExtras ? window.separarExtras(todosExtras) : { cobrem: [], sobra: extras };
   const sobra = sep.sobra;
+  if (window.sincronizarVersosLigados) window.sincronizarVersosLigados(sep.versos || []);   // dupla-face conta 2 slots: o verso (_back) entra no total
   // decisão sobre a sobra vale para este conjunto de arquivos; se mudar, pergunta de novo
   const chave = chaveExtras(sobra);
   if (chave !== MONT.chaveExtras) { MONT.chaveExtras = chave; MONT.incluirExtras = sobra.length ? null : false; }
   const dec = sessao.extrasDecisao;  // já decidido na etapa 4 (Conferir), junto com o orçamento: não pergunta de novo
   if (sobra.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
   if (!sobra.length) MONT.incluirExtras = false;  // nada a perguntar
-  const extrasUsados = ordenarComVersos([...sep.cobrem, ...(sep.versos || []), ...(MONT.incluirExtras ? sobra : [])]);   // verso (_back) logo depois da sua frente
-  const nExtras = extrasUsados.length + MONT.adicionadas.length;
+  const extrasUsados = ordenarComVersos([...sep.cobrem, ...(sep.versos || []), ...(MONT.incluirExtras ? window.expandirCopias(sobra) : [])]);   // verso (_back) logo depois da sua frente
+  const copiasAdd = (f) => MONT.copiasAdd.get(f) || 1, nAdd = MONT.adicionadas.reduce((n, f) => n + copiasAdd(f), 0);
+  const nExtras = extrasUsados.length + nAdd;
   const total = raizXml.length + p.pares.length + nExtras;
   const resto = total % 18, pendFalta = Math.max(0, pend.length - (nExtras - (sep.versos || []).length)), falta = resto ? 18 - resto : 0;
   if (MONT.chavePend !== String(pendFalta)) { MONT.chavePend = String(pendFalta); MONT.ignorarPend = false; }
@@ -407,7 +409,7 @@ async function prepararMontagem() {
   if ((sep.versos || []).length) h += `<p class="ok">${sep.versos.length} verso(s) (_back) ligado(s) às frentes pendentes: entram logo depois delas.</p>`;
   if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} slot(s) pendente(s) preenchido(s) por imagens da pasta (com as cópias que você definiu); entram nos últimos slots, depois dos pares.</p>`;
   if (sobra.length) {
-    h += `<div class="conf"><b class="aviso">${sobra.length} imagem(ns) na pasta não estão no XML nem são de slot pendente:</b>${lista(sobra, (x) => esc(x.nome))}`;
+    h += `<div class="conf"><b class="aviso">${sobra.length} imagem(ns) na pasta não estão no XML nem são de slot pendente:</b>${lista(sobra, (x) => `${esc(x.nome)} × <input type="number" min="1" max="99" value="${window.copiasDeExtra(x)}" style="width:4.5em" data-mcx="${sobra.indexOf(x)}"> cópia(s)`)}`;
     h += MONT.incluirExtras === null
       ? `Colocar nos <b>últimos slots, depois dos pares</b>? <br><button class="acao" id="m-extras-sim">Sim, colocar no fim</button><button class="acao sec" id="m-extras-nao">Não incluir</button>`
       : `<span class="suave">${MONT.incluirExtras ? "Entram nos últimos slots, depois dos pares." : "Não entram na montagem."}</span> <button class="peq" id="m-extras-mudar">Mudar</button>`;
@@ -419,9 +421,9 @@ async function prepararMontagem() {
     h += MONT.ignorarPend ? `<span class="suave">Vai montar sem essas ${pendFalta} imagem(ns).</span> <button class="peq" id="m-pend-nao">Desfazer</button>` : `<button class="acao sec" id="m-pend-ignorar">Montar sem elas</button>`;
     h += `</div>`;
   }
+  if (MONT.adicionadas.length) h += `<div class="conf"><b>${MONT.adicionadas.length} imagem(ns) adicionada(s) aqui</b> <span class="suave">(${nAdd} slot(s); entram depois dos pares; multiplique as cópias de cada uma)</span><ul>${MONT.adicionadas.map((f, k) => `<li>${esc(f.name)} × <input type="number" min="1" max="99" value="${copiasAdd(f)}" style="width:4.5em" data-mca="${k}"> cópia(s)</li>`).join("")}</ul><button class="peq" id="m-add-limpar">Remover as adicionadas</button></div>`;
   if (falta && !aguardando) {
     h += `<div class="conf"><b class="alerta">A última página tem ${resto} de 18 slots: faltam ${falta}.</b><br>Adicione ${falta} imagem(ns) para completar (entram depois dos pares) ou monte assim mesmo, com ${falta} slot(s) em branco <b>só na última página</b> (as demais saem cheias).`;
-    if (MONT.adicionadas.length) h += `<br><span class="suave">${MONT.adicionadas.length} imagem(ns) adicionada(s): ${esc(MONT.adicionadas.map((f) => f.name).join(", "))}</span> <button class="peq" id="m-add-limpar">Remover as adicionadas</button>`;
     h += `<br><input id="m-add" type="file" accept="image/*" multiple> `;
     h += MONT.permitirBranco ? `<span class="suave">Vai montar com ${falta} slot(s) em branco.</span> <button class="peq" id="m-branco-nao">Desfazer</button>` : `<button class="acao sec" id="m-branco">Montar com ${falta} slot(s) em branco</button>`;
     h += `</div>`;
@@ -439,12 +441,14 @@ async function prepararMontagem() {
   plano.innerHTML = h;
   const ma = $("#m-atrib"); if (ma && window.desenharAtribuicao) window.desenharAtribuicao(ma, todosExtras, () => prepararMontagem(), true);  // qual imagem vale por qual carta pendente (e quantas cópias)
   const liga = (id, fn) => { const el = $("#" + id); if (el) el.onclick = async () => { fn(); await prepararMontagem(); }; };
+  document.querySelectorAll("[data-mcx]").forEach((inp) => (inp.onchange = async () => { window.definirCopiasExtra(sobra[+inp.dataset.mcx], inp.value); await prepararMontagem(); }));
+  document.querySelectorAll("[data-mca]").forEach((inp) => (inp.onchange = async () => { MONT.copiasAdd.set(MONT.adicionadas[+inp.dataset.mca], Math.max(1, Math.min(99, Math.round(+inp.value) || 1))); await prepararMontagem(); }));
   liga("m-extras-sim", () => (MONT.incluirExtras = true));
   liga("m-extras-nao", () => (MONT.incluirExtras = false));
   liga("m-extras-mudar", () => (MONT.incluirExtras = null));
   liga("m-branco", () => (MONT.permitirBranco = true));
   liga("m-branco-nao", () => (MONT.permitirBranco = false));
-  liga("m-add-limpar", () => (MONT.adicionadas = []));
+  liga("m-add-limpar", () => { MONT.adicionadas = []; MONT.copiasAdd = new Map(); });
   liga("m-pend-ignorar", () => (MONT.ignorarPend = true));
   liga("m-pend-nao", () => (MONT.ignorarPend = false));
   const brl = $("#m-reler"); if (brl) brl.onclick = async () => { brl.disabled = true; brl.textContent = "Lendo a pasta…"; try { await relerPasta(); } catch (e) { /* mantém a pasta atual */ } await prepararMontagem(); };
@@ -467,7 +471,7 @@ $("#m-rodar").addEventListener("click", async () => {
     if (!MONT.pronta) { status.innerHTML = `<span class="alerta">A pasta mudou: responda as perguntas acima antes de montar.</span>`; return; }
     const p = sessao.pasta, { raizXml, extras } = MONT.plano;
     // extras numerados para a ordem ficar: imagens da pasta (alfabética), depois as adicionadas
-    const todosExtras = [...extras, ...MONT.adicionadas.map((f) => ({ nome: f.name, ler: async () => f }))]
+    const todosExtras = [...extras, ...MONT.adicionadas.flatMap((f) => Array.from({ length: MONT.copiasAdd.get(f) || 1 }, () => ({ nome: f.name, ler: async () => f })))]
       .map((it, i) => ({ nome: String(i + 1).padStart(4, "0") + "_" + it.nome.replace(/[\\/]/g, "_"), ler: it.ler }));
     const grupos = [["raiz", raizXml], ["pares", p.pares], ["extras", todosExtras]];
     const total = grupos.reduce((n, [, it]) => n + it.length, 0);
