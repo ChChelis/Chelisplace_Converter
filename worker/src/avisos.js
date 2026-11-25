@@ -1,5 +1,5 @@
 // Lógica pura dos avisos (sem rede): leitura de cards, resumo, mensagens, links.
-import { prazoFinal, atrasado, somarUtil, fimDiaUtil, inicioJanela, CORTE_GRAFICA, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
+import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
 import { feriadosNacionais } from "./feriados.js";
 export { feriadosNacionais };
 
@@ -171,8 +171,8 @@ export function mensagemCliente(tipo, cards, agoraMs) {
   let t = `Olá ${nome}! Tudo joia? Seu pedido acabou de ${ACAO[tipo]}. O conteúdo é:\n\n${infos.map((i) => `* ${i.itemPedido}`).join("\n")}\n\n`;
   if (tipo === "retirada") {
     const paginas = infos.reduce((n, i) => n + (i.paginas || Math.max(1, Math.ceil(i.slots / 18))), 0), min = paginas * 30;   // meia hora por página (3h a cada kit de 6 páginas), sem arredondar
-    const ini = inicioJanela(agoraMs), fim = somarUtil(agoraMs, min, COLADOR);
-    t += `Começando na próxima janela apta, entre ${fmtDiaHora(ini)} e ${fmtDiaHora(fim)}, seu pedido precisa de ${fmtHoras(min)} horas para ser finalizado por um de nossos colaboradores. Te dou mais notícias assim que terminarmos!`;
+    const abre = COLADOR.seg[0].ini, fecha = COLADOR.seg.at(-1).fim, h = (m) => `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}`;   // janela fixa diária do colador (10h–23h)
+    t += `Começando na próxima janela apta, entre ${h(abre)} e ${h(fecha)}, seu pedido precisa de ${fmtHoras(min)} horas para ser finalizado por um de nossos colaboradores. Te dou mais notícias assim que terminarmos!`;
   } else if (tipo === "grafica") {
     t += `A gráfica cobra de 2 a 3 dias úteis para entregar o pedido, então seu pedido deve estar pronto por volta de ${fmtDia(fimDiaUtil(agoraMs, 3, 17 * 60))} para ser coletado às 17h desse dia. Te mantenho informado!`;
   } else {

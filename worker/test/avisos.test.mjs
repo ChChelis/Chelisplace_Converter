@@ -359,14 +359,14 @@ test("mensagem ao cliente junta os pedidos do mesmo cliente que estão na coluna
   const t = mensagemCliente("retirada", cards, br("2026-11-25T11:00:00"));   // quarta, 11h
   assert.match(t, /^Olá Natan! Tudo joia\? Seu pedido acabou de ser retirado na gráfica e segue para finalização\. O conteúdo é:\n\n\* Wolfir Deck\n\* Cubo\n\* Avulsos\n\n/);
   assert.match(t, /seu pedido precisa de 3 horas para ser finalizado/);   // 6 páginas = 3h
-  assert.match(t, /entre qua 25\/11 às 11h e /);
+  assert.match(t, /Começando na próxima janela apta, entre 10h e 23h, seu pedido/);
   assert.doesNotMatch(t, /R\$|999|Natan_|valor|Pix/i);
 });
 test("mensagem ao cliente: horas de colagem sem arredondar (meia hora por página) e pulando o almoço", () => {
   const c = { id: "a", name: "x", desc: montarCard({ cliente: "Ana_1_A", slots: 126, paginas: 7, valor: 1 }).desc };
   const t = mensagemCliente("retirada", [c], br("2026-11-25T12:00:00"));   // quarta 12h: 1h até o almoço, 2,5h depois das 15h
   assert.match(t, /precisa de 3,5 horas/);
-  assert.match(t, /entre qua 25\/11 às 12h e qua 25\/11 às 17h30,/);
+  assert.match(t, /entre 10h e 23h, /);
 });
 test("mensagem ao cliente (gráfica): previsão = dia 1 é o da entrada até 17h, depois conta do dia seguinte; pula fim de semana", () => {
   const c = { id: "a", name: "x", desc: montarCard({ cliente: "Ana_1_A", slots: 18, paginas: 1, valor: 1 }).desc };

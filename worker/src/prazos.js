@@ -68,9 +68,6 @@ export function alinharLoja(ms) {
   return noDia(proxDiaUtil(dia), EXPEDIENTE.ini);
 }
 
-// Primeiro instante em que o colador pode trabalhar a partir de `ms` (dentro da janela, dia útil).
-export function inicioJanela(ms, janela = COLADOR) { return somarUtil(ms, 1, janela) - MIN; }
-
 // Minutos de colagem pelo tamanho do pedido: 3h a cada 108 slots (arredondando para cima).
 export const minutosColagem = (slots) => 3 * 60 * Math.max(1, Math.ceil(slots / 108));
 
