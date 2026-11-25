@@ -231,10 +231,10 @@ def rodar_pipeline(nome, d, job):
             C.MODELO = modelo_atual()
         try:
             M.main(os.path.join(d, "lista.txt"), d, catalogo=False)
-            open(os.path.join(d, "pronto.txt"), "w").write(agora()); job["estado"] = "pronto"
+            open(os.path.join(d, "pronto.txt"), "w", encoding="utf-8").write(agora()); job["estado"] = "pronto"
         except Exception as e:  # noqa: BLE001
             job.update(estado="erro", erro=f"{type(e).__name__}: {e}")
-            open(os.path.join(d, "erro.txt"), "w").write(traceback.format_exc())
+            open(os.path.join(d, "erro.txt"), "w", encoding="utf-8").write(traceback.format_exc())
         finally:
             M.PROGRESS = lambda *a: None
 
@@ -323,7 +323,7 @@ def exportar_usos():
         for u in unidades.values():
             u.pop("refp", None)  # caminho do computador do usuário: sem valor aqui
         pedidos.append({"nome": p["nome"], "lista": open(os.path.join(d, "lista.txt"), encoding="utf-8").read(), "decisoes": lj(os.path.join(d, "decisions.json"), {}),
-                        "gabarito": lj(os.path.join(d, "gabarito.json")), "versoes": lj(os.path.join(d, "versoes.json"), {}), "model": (open(os.path.join(d, "model.txt")).read().strip() if os.path.exists(os.path.join(d, "model.txt")) else None),
+                        "gabarito": lj(os.path.join(d, "gabarito.json")), "versoes": lj(os.path.join(d, "versoes.json"), {}), "model": (open(os.path.join(d, "model.txt"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(d, "model.txt")) else None),
                         "unidades": unidades})
     ev = []
     pe = os.path.join(HOME, "uso", "eventos.jsonl")
@@ -536,7 +536,16 @@ def selftest():
     C.ocr_footer(p, "selftest"); print("selftest ok: modelo", (lj(modelo_atual()) or {}).get("key"), flush=True)
 
 
+def console_utf8():
+    """Windows: o console e os arquivos usam a página de código local (cp1252/cp850). Um nome de carta fora dela derrubava o processamento no print."""
+    for f in (sys.stdout, sys.stderr):
+        try: f.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001  (sem console, por exemplo)
+            pass
+
+
 def main():
+    console_utf8()
     if "--selftest" in sys.argv:
         return selftest()
     porta = int(sys.argv[sys.argv.index("--porta") + 1]) if "--porta" in sys.argv else PORTA_PADRAO

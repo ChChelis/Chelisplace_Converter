@@ -133,11 +133,11 @@ def models():
         h.update(open(fp, "rb").read())
     path = os.path.join(CACHE, f"model_{h.hexdigest()[:10]}.json")
     if os.path.exists(path):
-        d = json.load(open(path))
+        d = json.load(open(path, encoding="utf-8"))
         return tuple((np.array(m[0]), np.array(m[1]), np.array(m[2]), float(m[3])) for m in d)
     X, y, grp, _ = C.dataset()
     ms = (C.fit(X[:, CHEAP], y), C.fit(X, y))
-    json.dump([[list(map(float, m[0])), list(map(float, m[1])), list(map(float, m[2])), float(m[3])] for m in ms], open(path, "w"))
+    json.dump([[list(map(float, m[0])), list(map(float, m[1])), list(map(float, m[2])), float(m[3])] for m in ms], open(path, "w", encoding="utf-8"))
     return ms
 
 
@@ -180,18 +180,18 @@ def memory():
     """Escolhas já confirmadas pelo usuário: (set, número, face) -> ids aceitos, em ordem de preferência."""
     mem = {}
     tg = os.path.join(ROOT, "testset", "gabarito.json")
-    for k, v in (json.load(open(tg)) if os.path.exists(tg) else {}).items():
+    for k, v in (json.load(open(tg, encoding="utf-8")) if os.path.exists(tg) else {}).items():
         if v["status"] == "ok" and v.get("accept_ids"):
-            r = json.load(open(os.path.join(ROOT, "testset", k, "candidates.json")))["ref"]
+            r = json.load(open(os.path.join(ROOT, "testset", k, "candidates.json"), encoding="utf-8"))["ref"]
             mem[(r["set"].lower(), str(r["cn"]).lower(), 0)] = v["accept_ids"]
     od = os.path.join(ROOT, "order")
     for name in sorted(os.listdir(od)) if os.path.isdir(od) else []:
         gp = os.path.join(od, name, "gabarito.json")
         if not os.path.exists(gp):
             continue
-        for uid, v in json.load(open(gp)).items():
+        for uid, v in json.load(open(gp, encoding="utf-8")).items():
             if v["status"] == "ok" and v.get("accept_ids") and not v.get("excluded") and not v.get("bulk"):
-                u = json.load(open(os.path.join(od, name, "units", uid + ".json")))
+                u = json.load(open(os.path.join(od, name, "units", uid + ".json"), encoding="utf-8"))
                 mem[(u["set"].lower(), str(u["cn"]).lower(), u["face"])] = v["accept_ids"]  # pedido mais recente vence
     return mem
 
@@ -310,7 +310,7 @@ def main(lista, out, catalogo=True):  # catalogo=False (aplicativo): só as unid
     global TRUST; TRUST = trusted()
     mt = os.path.join(out, "model.txt")
     if not os.path.exists(mt):
-        open(mt, "w").write(C.data_key())
+        open(mt, "w", encoding="utf-8").write(C.data_key())
     refs = json.load(open(os.environ["REFS"], encoding="utf-8")) if os.environ.get("REFS") else {}
     shard = os.environ.get("SHARD")  # "k/n": processa só as cartas com índice % n == k (várias execuções em paralelo)
 
@@ -403,7 +403,7 @@ def build_catalog(unit_files, out, leve=False):
     """leve=True (aplicativo): devolve (cartas sem imagens embutidas, resumo do pedido) em vez de gravar os arquivos do catálogo."""
     fill_meta(unit_files)
     mt = os.path.join(out, "model.txt")  # modelo com que o pedido foi processado; só pedidos com o modelo atual usam o índice
-    cal = CAL.load() if os.path.exists(mt) and open(mt).read().strip() == C.data_key() else None
+    cal = CAL.load() if os.path.exists(mt) and open(mt, encoding="utf-8").read().strip() == C.data_key() else None
     cards, chunks, cur, size = [], [], [], 0
     total_qty = 0
     for up in unit_files:
@@ -458,7 +458,7 @@ def build_catalog(unit_files, out, leve=False):
     bracket = next((b for b in BRACKETS if b >= total_qty), BRACKETS[-1])
     liga_any = any(json.load(open(up, encoding="utf-8")).get("set") == "LIGA" for up in unit_files)
     onote = ("O índice de cada carta é a chance estimada de você aceitar a escolha do bot, calculada com as suas decisões anteriores (referências " + ("da Liga" if liga_any else "do Scryfall") + "). Audite só o que quiser; o painel do XML aceita um índice mínimo para entrar sem auditoria.") if cal else ("A referência de cada carta é a imagem da LigaMagic. As faixas de confiança ainda não foram calibradas para essas imagens: confira todas." if liga_any else "")
-    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote, "sources": sorted({s["name"] for s in sources().values()}, key=str.lower), "trusted": sorted(trusted())}}, open(os.path.join(out, "catalog.json"), "w"), ensure_ascii=False)
+    json.dump({"chunks": names, "order": {"quantity": total_qty, "bracket": bracket, "note": onote, "sources": sorted({s["name"] for s in sources().values()}, key=str.lower), "trusted": sorted(trusted())}}, open(os.path.join(out, "catalog.json"), "w", encoding="utf-8"), ensure_ascii=False)
     print("catálogo:", len(unit_files), "unidades,", len(names), "arquivos; quantidade", total_qty, "bracket", bracket)
 
 

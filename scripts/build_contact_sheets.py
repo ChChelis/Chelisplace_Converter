@@ -83,7 +83,7 @@ def main(name, sset, cn, cap=150):
         d.text((x + 4, y + 2), str(n), fill="yellow")
         meta.append({"n": n, "id": cid, "name": c["name"], "source": c["sourceName"], "dpi": c["dpi"], "prefilter": round(s, 2)})
     sheet.save(os.path.join(out, "sheet.jpg"), quality=85)
-    json.dump({"ref": {"name": sf["name"], "set": sset, "cn": cn}, "total_hits": len(res and ids), "candidates": meta}, open(os.path.join(out, "candidates.json"), "w"), ensure_ascii=False, indent=1)
+    json.dump({"ref": {"name": sf["name"], "set": sset, "cn": cn}, "total_hits": len(res and ids), "candidates": meta}, open(os.path.join(out, "candidates.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(out, len(ids), "hits;", len(scored), "baixados")
 
 

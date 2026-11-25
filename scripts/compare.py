@@ -112,20 +112,20 @@ def features(ref, rtok, cand, ctok):
 
 
 def pairs():
-    g = json.load(open(os.path.join(TS, "gabarito.json")))
+    g = json.load(open(os.path.join(TS, "gabarito.json"), encoding="utf-8"))
     for k in sorted(g):
-        meta = json.load(open(os.path.join(TS, k, "candidates.json")))
+        meta = json.load(open(os.path.join(TS, k, "candidates.json"), encoding="utf-8"))
         yield k, g[k], meta["candidates"], os.path.join(TS, k, "ref.jpg")
     od = os.path.join(ROOT, "order")  # pedidos conferidos: cada carta vira um par rotulado por id
     for name in sorted(os.listdir(od)) if os.path.isdir(od) else []:
         gp = os.path.join(od, name, "gabarito.json")
         if not os.path.exists(gp):
             continue
-        og = json.load(open(gp))
+        og = json.load(open(gp, encoding="utf-8"))
         for k in sorted(og):
             if og[k].get("excluded") or og[k].get("bulk"):  # resolvida à mão pelo usuário ou aceita em lote sem conferência: não é veredito de qualidade
                 continue
-            u = json.load(open(os.path.join(od, name, "units", k + ".json")))
+            u = json.load(open(os.path.join(od, name, "units", k + ".json"), encoding="utf-8"))
             yield k, {**og[k], "accept": []}, u["cands"], os.path.join(CACHE, f"sf_{k}.jpg")
 
 

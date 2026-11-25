@@ -61,9 +61,9 @@ def load():
         return json.load(open(C.MODELO, encoding="utf-8"))["calibracao"]
     path = os.path.join(CACHE, f"calib_{C.data_key()}.json")
     if os.path.exists(path):
-        return json.load(open(path))
+        return json.load(open(path, encoding="utf-8"))
     c = compute()
-    json.dump(c, open(path, "w"))
+    json.dump(c, open(path, "w", encoding="utf-8"))
     return c
 
 

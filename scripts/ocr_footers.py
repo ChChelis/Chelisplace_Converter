@@ -21,7 +21,7 @@ def read(im):
 
 d = sys.argv[1]
 want = {int(x) for x in sys.argv[2:]}
-meta = json.load(open(os.path.join(d, "candidates.json")))
+meta = json.load(open(os.path.join(d, "candidates.json"), encoding="utf-8"))
 print("REF", meta["ref"]["set"], meta["ref"]["cn"], "::", read(Image.open(os.path.join(d, "ref.jpg"))))
 for c in meta["candidates"]:
     if want and c["n"] not in want:

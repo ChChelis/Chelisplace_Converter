@@ -24,10 +24,10 @@ def foot(im, w=260):
 
 def main(out):
     os.makedirs(out, exist_ok=True)
-    pairs = json.load(open(os.path.join(TS, "pairs.json")))
+    pairs = json.load(open(os.path.join(TS, "pairs.json"), encoding="utf-8"))
     cards = []
     for d in sorted(pairs):
-        meta = json.load(open(os.path.join(TS, d, "candidates.json")))
+        meta = json.load(open(os.path.join(TS, d, "candidates.json"), encoding="utf-8"))
         ref = Image.open(os.path.join(TS, d, "ref.jpg"))
         cands = []
         for c in meta["candidates"]:

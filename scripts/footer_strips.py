@@ -7,7 +7,7 @@ from PIL import Image
 
 d, ns = sys.argv[1], [int(x) for x in sys.argv[2:] if x.isdigit()]
 outp = next((a for a in sys.argv[2:] if a.endswith(".png")), "/tmp/claude-0/probe/strips.png")
-cands = {c["n"]: c for c in json.load(open(os.path.join(d, "candidates.json")))["candidates"]}
+cands = {c["n"]: c for c in json.load(open(os.path.join(d, "candidates.json"), encoding="utf-8"))["candidates"]}
 cache = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "cache")
 ref = Image.open(os.path.join(d, "ref.jpg")).convert("RGB")
 W, H = ref.size
