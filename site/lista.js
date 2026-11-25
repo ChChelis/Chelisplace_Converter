@@ -89,7 +89,10 @@ function atribuir(itens, pendentes, manuais = [], bloqueios = []) {
   const usados = new Set(grupos.flatMap((g) => g.atrib.map((a) => a.arquivo))), cobrem = [];
   for (const g of grupos) for (const a of g.atrib) for (let k = 0; k < a.copias; k++) cobrem.push(itens.find((i) => idItem(i) === a.arquivo));
   for (const g of grupos) g.faltam = g.qtd - g.preenchidos;
-  return { grupos, cobrem, sobra: itens.filter((i) => !usados.has(idItem(i)) && !i.opcional) };
+  // verso (_back) de uma frente que já cobre uma vaga: faz parte da carta (dupla-face), não é extra nem pede decisão; vai logo depois da frente
+  const basesFrente = new Set(cobrem.filter((i) => !ehVerso(i.nome)).map((i) => baseVerso(i.nome)));
+  const versos = itens.filter((i) => !usados.has(idItem(i)) && !i.opcional && ehVerso(i.nome) && basesFrente.has(baseVerso(i.nome)));
+  return { grupos, cobrem, versos, sobra: itens.filter((i) => !usados.has(idItem(i)) && !i.opcional && !versos.includes(i)) };
 }
 
 // Sugestão pelo NOME, para o seletor e para "confirmar todas": para cada carta pendente que ainda falta, a imagem (de qualquer pasta, inclusive subpastas e completar/)

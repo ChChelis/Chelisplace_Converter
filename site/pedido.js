@@ -842,8 +842,10 @@ function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
   const cab = compacto ? "" : (faltam
     ? `<b class="aviso">${faltam} de ${pend.length} slot(s) esperam imagem</b> (nenhum serviu no bot, ou a arte foi trocada; já estão no orçamento). Suba as imagens da outra fonte na pasta do pedido (ou em <code>completar/</code>) e clique em <b>Reler a pasta</b>; se vierem sem sangria, use <b>Corrigir sangria…</b>. Abaixo você diz qual imagem vale por qual carta, e em quantos slots.<br><button class="acao sec" id="p-reler">Reler a pasta</button>`
     : `<b class="ok">Os ${pend.length} slot(s) pendente(s) já têm imagem na pasta.</b>`);
+  const nVersos = (r.versos || []).length;
+  const cab2 = nVersos ? `<p class="ok">${nVersos} verso(s) <code>_back</code> reconhecido(s) pelo nome: fazem parte das cartas acima, saem logo depois da frente e não contam como extra.</p>` : "";
   const acoes = `<div class="p-acoes">${nSug ? `<button class="acao" id="p-conf-todas">Confirmar as ${nSug} sugestões pelo nome</button>` : ""}${itens.length ? `<button class="acao sec" id="p-sg-pre">Corrigir sangria destas imagens…</button>` : ""}</div>`;
-  el.innerHTML = `<div class="conf">${cab}${acoes}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
+  el.innerHTML = `<div class="conf">${cab}${cab2}${acoes}` + r.grupos.map((g, gi) => `<div class="grp" data-g="${gi}" style="margin:8px 0;padding:6px 0;border-top:1px solid #0003">
       <b>${esc(g.nome)}</b>${g.set === "troca" ? ` <span class="suave">(troca de arte)</span>` : g.set ? ` <span class="suave">(${esc(g.set.toUpperCase())} ${esc(g.cn)})</span>` : ""} <span class="suave">×${g.qtd}</span> — <b class="${g.faltam ? "aviso" : "ok"}">${g.preenchidos}/${g.qtd}</b>
       ${g.atrib.map((a, ai) => `<span class="suave" style="margin-left:8px">${esc(rot(a.arquivo))} ×${a.copias}${a.auto ? " (pelo nome)" : ""} <button class="peq" data-rm="${gi}:${ai}" title="Tirar esta imagem desta carta">×</button></span>`).join("")}
       ${g.faltam && itens.length ? `<div style="margin-top:4px"><select data-sel="${gi}">${opc(g)}</select>${!g.atrib.length ? (sug.has(g.key) ? ` <span class="suave">(sugestão pelo nome)</span>` : ` <span class="aviso">nenhuma imagem com o nome desta carta: escolha</span>`) : ""} em <input type="number" min="1" max="${g.faltam}" value="${g.faltam}" size="3" style="width:4.5em" data-n="${gi}"> slot(s) <button class="peq" data-usar="${gi}">Usar esta imagem</button>${g.atrib.length ? ` <button class="peq" data-mult="${gi}">Completar os ${g.faltam} com a mesma imagem</button>` : ""}</div>` : ""}
@@ -863,7 +865,7 @@ function desenharAtribuicao(el, itens, aoMudar, compacto = false) {
 window.desenharAtribuicao = desenharAtribuicao;
 async function desenharExtras(itens, faltandoQtd = 0) {
   const el = $("#c-extras");
-  const { cobrem, sobra } = separarExtras(itens);  // só a sobra pede decisão; o que preenche pendentes entra sempre
+  const { cobrem, sobra, versos = [] } = separarExtras(itens);  // só a sobra pede decisão; o que preenche pendentes entra sempre
   const chave = chaveExtras(sobra);
   desenharAtribuicao($("#c-pend"), itens, () => conferir());
   itens = sobra;
@@ -871,7 +873,7 @@ async function desenharExtras(itens, faltandoQtd = 0) {
   if (!itens.length) {
     pedido.fontes = pedido.fontes.filter((f) => f.origem !== "completar");  // não há mais extras: tira a seção antiga
     sessao.extrasDecisao = null; renderFontes();
-    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta</b> (já estão no orçamento e na ficha; entram na montagem).</div>` : "";
+    el.innerHTML = cobrem.length ? `<div class="conf"><b class="ok">${cobrem.length} slot(s) pendente(s) do bot preenchido(s) por imagens da pasta</b> (já estão no orçamento e na ficha; entram na montagem)${versos.length ? `, com ${versos.length} verso(s) <code>_back</code> ligado(s) às frentes` : ""}.</div>` : "";
     return 0;
   }
   const dec = sessao.extrasDecisao && sessao.extrasDecisao.chave === chave ? sessao.extrasDecisao.valor : (noPedido ? "incluir" : null);

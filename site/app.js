@@ -270,7 +270,7 @@ async function conferir() {
   if (window.separarOriginaisTrocados) separarOriginaisTrocados(r);  // arte original de carta trocada (em todas as cópias) não é "extra"
   // imagens sem ID que já preenchem uma vaga pendente/troca não são "sobra": ficam numa seção à parte (os versos _back continuam na outra, pois ainda pedem decisão)
   const semCobertas = (nomes) => {
-    const todos = [...pasta.raiz, ...(pasta.completar || []), ...(pasta.subpastas || [])], cob = new Set(window.separarExtras ? window.separarExtras(todos).cobrem.map((i) => i.nome) : []);
+    const todos = [...pasta.raiz, ...(pasta.completar || []), ...(pasta.subpastas || [])], q = window.separarExtras ? window.separarExtras(todos) : { cobrem: [] }, cob = new Set([...q.cobrem, ...(q.versos || [])].map((i) => i.nome));
     return { cobertas: nomes.filter((n) => cob.has(n)), resto: nomes.filter((n) => !cob.has(n)) };
   };
   const secao = (t, cls, itens, f) => (itens.length ? `<h3 class="${cls}">${t} (${itens.length})</h3>${lista(itens, f)}` : "");
@@ -389,10 +389,10 @@ async function prepararMontagem() {
   const dec = sessao.extrasDecisao;  // já decidido na etapa 4 (Conferir), junto com o orçamento: não pergunta de novo
   if (sobra.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
   if (!sobra.length) MONT.incluirExtras = false;  // nada a perguntar
-  const extrasUsados = ordenarComVersos([...sep.cobrem, ...(MONT.incluirExtras ? sobra : [])]);   // verso (_back) logo depois da sua frente
+  const extrasUsados = ordenarComVersos([...sep.cobrem, ...(sep.versos || []), ...(MONT.incluirExtras ? sobra : [])]);   // verso (_back) logo depois da sua frente
   const nExtras = extrasUsados.length + MONT.adicionadas.length;
   const total = raizXml.length + p.pares.length + nExtras;
-  const resto = total % 18, pendFalta = Math.max(0, pend.length - nExtras), falta = resto ? 18 - resto : 0;
+  const resto = total % 18, pendFalta = Math.max(0, pend.length - (nExtras - (sep.versos || []).length)), falta = resto ? 18 - resto : 0;
   if (MONT.chavePend !== String(pendFalta)) { MONT.chavePend = String(pendFalta); MONT.ignorarPend = false; }
   const aguardando = pendFalta > 0 && !MONT.ignorarPend;  // enquanto faltam imagens dos pendentes, os brancos da última página ainda não fazem sentido
   if (MONT.chaveBranco !== String(falta)) { MONT.chaveBranco = String(falta); MONT.permitirBranco = false; }
@@ -404,6 +404,7 @@ async function prepararMontagem() {
   if (faltando) h += `<p class="aviso">${faltando} imagem(ns) do XML ainda não estão na pasta (veja a Checagem).</p>`;
   if (copiasTrocadas) h += `<p class="suave">${copiasTrocadas} cópia(s) da arte original que você trocou ficam de fora da montagem (na etapa 4 há um botão para guardá-las em copias_a_mais/).</p>`;
   if (padrao.length) h += `<p class="suave">O verso padrão (${esc(padrao[0].nome)}) está na pasta e não entra na montagem.</p>`;
+  if ((sep.versos || []).length) h += `<p class="ok">${sep.versos.length} verso(s) (_back) ligado(s) às frentes pendentes: entram logo depois delas.</p>`;
   if (sep.cobrem.length) h += `<p class="ok">${sep.cobrem.length} slot(s) pendente(s) preenchido(s) por imagens da pasta (com as cópias que você definiu); entram nos últimos slots, depois dos pares.</p>`;
   if (sobra.length) {
     h += `<div class="conf"><b class="aviso">${sobra.length} imagem(ns) na pasta não estão no XML nem são de slot pendente:</b>${lista(sobra, (x) => esc(x.nome))}`;
