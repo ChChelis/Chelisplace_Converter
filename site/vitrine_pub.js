@@ -95,10 +95,10 @@
     const marcadas = vit.itens.filter((i) => i.on), alvo = $("#vit-conf");
     vit.ocupado = true; atualizar();
     alvo.innerHTML = `<div class="conf"><span id="vit-prog">Compartilhando 0 de ${marcadas.length}…</span><div class="barra"><div id="vit-barra"></div></div></div>`;
-    const ok = [], falhas = []; let feitos = 0;
+    const ok = [], falhas = [], proprios = []; let feitos = 0;
     try {
       await emParalelo(marcadas, 4, async (i) => {
-        try { await Drive.compartilhar(i.id); ok.push(i); } catch (e) { falhas.push({ i, erro: e.message }); }
+        try { if ((await Drive.compartilhar(i.id)) !== "ja") proprios.push(i.id); ok.push(i); } catch (e) { falhas.push({ i, erro: e.message }); }
         feitos++; $("#vit-prog").textContent = `Compartilhando ${feitos} de ${marcadas.length}…`; $("#vit-barra").style.width = (100 * feitos / marcadas.length) + "%";
       });
       if (!ok.length) throw new Error("Nenhuma imagem pôde ser compartilhada. " + (falhas[0] ? falhas[0].erro : ""));
@@ -108,10 +108,11 @@
       try {
         const r = await fetch(base() + "/vitrine", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + token }, body: JSON.stringify({ titulo: $("#vit-titulo").value.trim(), minutos: minutos(), itens: ok.map((i) => ({ id: i.id, legenda: i.legenda.trim() })) }) });
         d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.erro || "erro " + r.status);
-      } catch (e) { await desfazer(ok.map((i) => i.id)).catch(() => {}); throw e; }  // não deixa imagem exposta sem vitrine
-      const reg = { slug: d.slug, titulo: $("#vit-titulo").value.trim(), ids: ok.map((i) => i.id), expira: d.expira };
+      } catch (e) { await desfazer(proprios).catch(() => {}); throw e; }  // não deixa imagem exposta sem vitrine
+      const reg = { slug: d.slug, titulo: $("#vit-titulo").value.trim(), ids: ok.map((i) => i.id), proprios, expira: d.expira };
+      const jaEram = ok.length - proprios.length;
       gravarNoAr([reg, ...lerNoAr()]);
-      alvo.innerHTML = `<div class="conf"><b class="ok">No ar.</b> ${ok.length} imagem(ns). Mande este link ao cliente:<br><code id="vit-link">${esc(linkDe(d.slug))}</code> <button class="peq" id="vit-copiar">Copiar</button> <a href="${esc(linkDe(d.slug))}" target="_blank" rel="noopener">abrir</a>${falhas.length ? `<p class="alerta">${falhas.length} imagem(ns) não puderam ser compartilhadas e ficaram de fora (${esc(falhas[0].erro.slice(0, 160))}). Se o Drive é de uma conta Workspace, o administrador pode bloquear compartilhamento por link.</p>` : ""}</div>`;
+      alvo.innerHTML = `<div class="conf"><b class="ok">No ar.</b> ${ok.length} imagem(ns). Mande este link ao cliente:<br><code id="vit-link">${esc(linkDe(d.slug))}</code> <button class="peq" id="vit-copiar">Copiar</button> <a href="${esc(linkDe(d.slug))}" target="_blank" rel="noopener">abrir</a>${jaEram ? `<p class="aviso">${jaEram} de ${ok.length} imagem(ns) <b>já eram públicas por link</b> (compartilhamento anterior ou herdado da pasta). Elas aparecem na vitrine, mas o <b>Despublicar não as fecha</b>: para fechar, tire o compartilhamento da pasta no Drive.</p>` : ""}${falhas.length ? `<p class="alerta">${falhas.length} imagem(ns) não puderam ser compartilhadas e ficaram de fora (${esc(falhas[0].erro.slice(0, 160))}). Se o Drive é de uma conta Workspace, o administrador pode bloquear compartilhamento por link.</p>` : ""}</div>`;
       $("#vit-copiar").onclick = async () => { try { await navigator.clipboard.writeText(linkDe(d.slug)); $("#vit-copiar").textContent = "Copiado"; } catch { $("#vit-copiar").textContent = "Selecione e copie à mão"; } };
       listarNoAr();
     } catch (e) { alvo.innerHTML = `<div class="conf alerta">Não publicou: ${esc(e.message)}</div>`; }
@@ -119,7 +120,12 @@
   }
 
   // ---------- no ar / despublicar ----------
-  const desfazer = (ids) => emParalelo(ids, 4, (id) => Drive.descompartilhar(id).catch((e) => { if (!/404/.test(e.message)) throw e; }));
+  // Desfaz só o que a página criou. Erro por arquivo não derruba o resto: volta {erros, herdadas}.
+  async function desfazer(ids) {
+    const r = { erros: [], herdadas: 0 };
+    await emParalelo(ids, 4, async (id) => { try { r.herdadas += (await Drive.descompartilhar(id)).herdadas; } catch (e) { if (!/404/.test(e.message)) r.erros.push({ id, erro: e.message }); } });
+    return r;
+  }
 
   async function despublicar(slug, aviso2) {
     const reg = lerNoAr().find((r) => r.slug === slug); if (!reg) return;
@@ -129,8 +135,15 @@
         const r = await fetch(`${base()}/vitrine/${encodeURIComponent(slug)}`, { method: "DELETE", headers: { authorization: "Bearer " + await Drive.tokenAtual() } });
         if (!r.ok && r.status !== 404) throw new Error("Worker " + r.status);
       }
-      await desfazer(reg.ids);
-      gravarNoAr(lerNoAr().filter((r) => r.slug !== slug)); listarNoAr();
+      const alvo = reg.proprios || reg.ids;   // registros antigos não sabem quais foram criados aqui: tenta todos (o que é herdado é só ignorado)
+      const r = await desfazer(alvo);
+      if (r.erros.length) {  // o link já saiu do ar; o que não deu para fechar fica registrado, sem repetir sozinho
+        gravarNoAr(lerNoAr().map((x) => (x.slug === slug ? { ...x, proprios: r.erros.map((e) => e.id), manual: true } : x))); listarNoAr();
+        const el = $("#vit-no-ar").querySelector(`[data-slug="${slug}"] [data-av]`); if (el) el.textContent = ` O link saiu do ar, mas ${r.erros.length} imagem(ns) continuam compartilhadas (${r.erros[0].erro.replace(/\s+/g, " ").slice(0, 140)}). Tire o compartilhamento no Drive.`;
+        return;
+      }
+      gravarNoAr(lerNoAr().filter((x) => x.slug !== slug)); listarNoAr();
+      const fim = $("#vit-conf"); if (r.herdadas) fim.innerHTML = `<div class="conf aviso">Vitrine fora do ar. ${r.herdadas} imagem(ns) herdam o compartilhamento da pasta e continuam visíveis por link direto: para fechar, tire o compartilhamento da pasta no Drive.</div>`;
     } catch (e) { aviso2.textContent = " Não deu: " + e.message; }
   }
 
@@ -139,9 +152,9 @@
     $("#vit-estado").textContent = l.length ? `${l.length} no ar` : "nenhuma no ar";
     el.innerHTML = l.length ? `<h3>No ar</h3>` : "";
     for (const r of l) {
-      const div = document.createElement("div"); div.className = "vit-no-ar-item";
+      const div = document.createElement("div"); div.className = "vit-no-ar-item"; div.dataset.slug = r.slug;
       const venceu = Date.now() >= r.expira;
-      div.innerHTML = `<b>${esc(r.titulo)}</b><span class="suave">${r.ids.length} imagens · ${venceu ? "prazo acabou (imagens ainda compartilhadas)" : "faltam " + quantoFalta(r.expira, Date.now())}</span><a href="${esc(linkDe(r.slug))}" target="_blank" rel="noopener">abrir</a><button class="peq" data-copiar>Copiar link</button><button class="peq" data-fora>Despublicar</button><span class="suave" data-av></span>`;
+      div.innerHTML = `<b>${esc(r.titulo)}</b><span class="suave">${r.ids.length} imagens · ${venceu ? (r.manual ? "prazo acabou; algumas imagens ainda compartilhadas" : (r.proprios && !r.proprios.length ? "prazo acabou" : "prazo acabou (imagens ainda compartilhadas)")) : "faltam " + quantoFalta(r.expira, Date.now())}</span><a href="${esc(linkDe(r.slug))}" target="_blank" rel="noopener">abrir</a><button class="peq" data-copiar>Copiar link</button><button class="peq" data-fora>Despublicar</button><span class="suave" data-av></span>`;
       div.querySelector("[data-copiar]").onclick = async (e) => { try { await navigator.clipboard.writeText(linkDe(r.slug)); e.target.textContent = "Copiado"; } catch { e.target.textContent = linkDe(r.slug); } };
       div.querySelector("[data-fora]").onclick = (e) => { e.target.disabled = true; despublicar(r.slug, div.querySelector("[data-av]")).finally(() => { e.target.disabled = false; }); };
       el.append(div);
@@ -152,9 +165,9 @@
   setInterval(async () => {
     listarNoAr();
     if (varrendo || !Drive.conectado()) return;
-    const vencidas = lerNoAr().filter((r) => Date.now() >= r.expira); if (!vencidas.length) return;
+    const vencidas = lerNoAr().filter((r) => Date.now() >= r.expira && !r.manual); if (!vencidas.length) return;
     varrendo = true;
-    try { for (const r of vencidas) { await desfazer(r.ids); gravarNoAr(lerNoAr().filter((x) => x.slug !== r.slug)); } } catch { /* tenta de novo no próximo ciclo */ }
+    try { for (const r of vencidas) { const f = await desfazer(r.proprios || r.ids); gravarNoAr(f.erros.length ? lerNoAr().map((x) => (x.slug === r.slug ? { ...x, proprios: f.erros.map((e) => e.id), manual: true } : x)) : lerNoAr().filter((x) => x.slug !== r.slug)); } } catch { /* tenta de novo no próximo ciclo */ }
     varrendo = false; listarNoAr();
   }, 30000);
   setInterval(atualizar, 1000);

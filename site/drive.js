@@ -106,10 +106,22 @@ const Drive = (() => {
   }
 
   // Compartilhamento por link (a vitrine do cliente usa as miniaturas públicas). Nunca apaga arquivo.
-  const compartilhar = (id) => req(`${API}/files/${id}/permissions?supportsAllDrives=true`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "reader", type: "anyone", allowFileDiscovery: false }) });
+  // Permissões "qualquer pessoa com o link" do arquivo (diretas ou herdadas da pasta).
+  async function publicas(id) {
+    const j = await (await req(`${API}/files/${id}/permissions?supportsAllDrives=true&fields=permissions(id,type,permissionDetails(inherited))`)).json();
+    return (j.permissions || []).filter((x) => x.type === "anyone").map((x) => ({ id: x.id, herdada: (x.permissionDetails || []).length > 0 && (x.permissionDetails || []).every((d) => d.inherited) }));
+  }
+  // Devolve "ja" se o arquivo já era público (direto ou herdado da pasta): nada é criado nem será removido depois. "novo" se fomos nós.
+  async function compartilhar(id) {
+    if ((await publicas(id)).length) return "ja";
+    await req(`${API}/files/${id}/permissions?supportsAllDrives=true`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "reader", type: "anyone", allowFileDiscovery: false }) });
+    return "novo";
+  }
+  // Tira só o que é direto do arquivo. Herdado (vem da pasta) o Google não deixa apagar aqui: é devolvido em `herdadas`.
   async function descompartilhar(id) {
-    const j = await (await req(`${API}/files/${id}/permissions?supportsAllDrives=true&fields=permissions(id,type)`)).json();
-    for (const p of (j.permissions || []).filter((x) => x.type === "anyone")) await req(`${API}/files/${id}/permissions/${p.id}?supportsAllDrives=true`, { method: "DELETE" });
+    let herdadas = 0;
+    for (const p of await publicas(id)) { if (p.herdada) herdadas++; else await req(`${API}/files/${id}/permissions/${p.id}?supportsAllDrives=true`, { method: "DELETE" }); }
+    return { herdadas };
   }
 
   return { compartilhar, descompartilhar, entrar, conectado, tokenAtual, sair, listar, raiz, pedidos, baixar, criarPasta, copiar, mover, enviar, PASTA, NOME_RAIZ };
