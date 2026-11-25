@@ -116,3 +116,25 @@ test("sugerirPorNome: reconhece pelo nome, com prefixo numérico, apóstrofo e s
   assert.equal(s.has(grupos.find((g) => g.nome === "Carta Sem Imagem").key), false);
   assert.ok(![...s.values()].some((i) => i.nome.includes("Solemn")), "não empurra Solemn Simulacrum para ninguém");
 });
+
+test("verso (_back): reconhece, não preenche a frente e vai logo depois dela", async () => {
+  const { ehVerso, ordenarComVersos } = createRequire(import.meta.url)("../lista.js");
+  assert.ok(ehVerso("001_Outland Liberator -- Frenzied Trapbreaker_back.png"));
+  assert.ok(!ehVerso("004_Immerwolf.png") && !ehVerso("Black Lotus.png") && !ehVerso("Flashback.png"));
+  // o verso vem ANTES da frente na ordem alfabética (numeração 004/005 trocada): não pode ocupar a vaga da frente
+  const itens = [{ nome: "004_Tovolar's Huntmaster -- Tovolar's Packleader_back.png" }, { nome: "005_Tovolar's Huntmaster -- Tovolar's Packleader.png" }];
+  const r = atribuir(itens, [{ nome: "Tovolar's Huntmaster", set: "mid", cn: "306" }]);
+  assert.equal(r.cobrem.length, 1); assert.equal(r.cobrem[0].nome, itens[1].nome);
+  assert.deepEqual(r.sobra.map((i) => i.nome), [itens[0].nome]);   // o verso continua sendo extra (conta como slot), só que ligado à frente
+  assert.equal(sugerirPorNome(itens, agruparPendentes([{ nome: "Tovolar's Huntmaster" }])).get("Tovolar's Huntmaster||").nome, itens[1].nome);
+  // ordem: A, B, verso de A -> A, verso de A, B
+  const l = [{ nome: "001_A -- X.png" }, { nome: "002_B.png" }, { nome: "001_A -- X_back.png" }, { nome: "009_Z_back.png" }];
+  assert.deepEqual(ordenarComVersos(l).map((i) => i.nome), ["001_A -- X.png", "001_A -- X_back.png", "002_B.png", "009_Z_back.png"]);
+});
+
+test("tirarSlotsDoXml na seção backs (troca de verso)", () => {
+  const xml = "<order><fronts><card><id>F</id><slots>0</slots></card></fronts><backs><card><id>V</id><slots>0</slots></card></backs></order>";
+  const r = tirarSlotsDoXml(xml, "V", 1, "backs");
+  assert.match(r, /<backs><\/backs>/); assert.match(r, /<fronts><card><id>F<\/id>/);
+  assert.equal(tirarSlotsDoXml(xml, "F", 1, "backs"), xml);   // id de frente não mexe nos versos
+});

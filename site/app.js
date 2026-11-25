@@ -268,6 +268,11 @@ async function conferir() {
   let r;
   try { r = await chamar("checar", { xml: sessao.xml.slice(0), nomes, ignorar: [...sessao.ignorar] }); } catch (e) { alvo.innerHTML = `<p class="alerta">${esc(e.message)}</p>`; return; }
   if (window.separarOriginaisTrocados) separarOriginaisTrocados(r);  // arte original de carta trocada (em todas as cópias) não é "extra"
+  // imagens sem ID que já preenchem uma vaga pendente/troca não são "sobra": ficam numa seção à parte (os versos _back continuam na outra, pois ainda pedem decisão)
+  const semCobertas = (nomes) => {
+    const todos = [...pasta.raiz, ...(pasta.completar || []), ...(pasta.subpastas || [])], cob = new Set(window.separarExtras ? window.separarExtras(todos).cobrem.map((i) => i.nome) : []);
+    return { cobertas: nomes.filter((n) => cob.has(n)), resto: nomes.filter((n) => !cob.has(n)) };
+  };
   const secao = (t, cls, itens, f) => (itens.length ? `<h3 class="${cls}">${t} (${itens.length})</h3>${lista(itens, f)}` : "");
   const todos = r.pares_incompletos.length > 1 ? `<p><button class="peq" data-ign-todos="1">Ignorar todos os pares incompletos</button></p>` : "";
   alvo.innerHTML =
@@ -277,7 +282,8 @@ async function conferir() {
     secao("A duplicar (o XML pede mais cópias)", "aviso", r.a_duplicar, ([n, q]) => `${esc(n)}: faltam ${q} cópia(s)`) +
     secao("Cópias a mais", "aviso", r.excesso, ([n, q]) => `${esc(n)}: ${q} a mais`) +
     secao("Fora da lista do XML (extras)", "aviso", r.fora_da_lista, esc) +
-    secao("Sem ID no nome (extras)", "aviso", r.sem_id, esc) +
+    secao("Sem ID no nome (extras)", "aviso", semCobertas(r.sem_id).resto, esc) +
+    secao("Sem ID no nome, já ligadas a uma carta pendente ou a uma troca", "suave", semCobertas(r.sem_id).cobertas, esc) +
     secao("Arte original de carta trocada (não entra no pedido)", "suave", r.originais_trocadas || [], esc) +
     ((pasta.completar || []).length ? secao("Na pasta completar/ (extras)", "aviso", pasta.completar, (x) => esc(x.nome)) : "") +
     secao("Verso padrão na pasta (não entra na montagem)", "suave", r.verso_padrao, esc) +
@@ -383,7 +389,7 @@ async function prepararMontagem() {
   const dec = sessao.extrasDecisao;  // já decidido na etapa 4 (Conferir), junto com o orçamento: não pergunta de novo
   if (sobra.length && dec && dec.chave === chave) MONT.incluirExtras = dec.valor === "incluir";
   if (!sobra.length) MONT.incluirExtras = false;  // nada a perguntar
-  const extrasUsados = [...sep.cobrem, ...(MONT.incluirExtras ? sobra : [])];
+  const extrasUsados = ordenarComVersos([...sep.cobrem, ...(MONT.incluirExtras ? sobra : [])]);   // verso (_back) logo depois da sua frente
   const nExtras = extrasUsados.length + MONT.adicionadas.length;
   const total = raizXml.length + p.pares.length + nExtras;
   const resto = total % 18, pendFalta = Math.max(0, pend.length - nExtras), falta = resto ? 18 - resto : 0;

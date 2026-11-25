@@ -50,6 +50,21 @@ function nomeParaBot(txt) {
 // Atribuições: as manuais (escolhidas pelo Chelis: {grupo, arquivo, copias}) valem primeiro; depois, automático pelo nome da carta no nome do
 // arquivo (1 cópia por imagem). `bloqueios` ("grupo|arquivo") desfazem um automático. Sobra = imagem sem atribuição (pede incluir ou não).
 const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/['’`´]/g, "").replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, " ").trim();
+// Verso de dupla-face pelo nome do arquivo: "001_Nome -- Outro_back.png". A base (sem número e sem "_back") liga o verso à sua frente.
+const ehVerso = (nome) => /[_\s-]back$/i.test(String(nome).replace(/\.[a-z0-9]+$/i, "").trim());
+const baseVerso = (nome) => semAcento(String(nome).replace(/\.[a-z0-9]+$/i, "").replace(/[_\s-]back$/i, "")).replace(/^\d+\s+/, "");
+// Põe cada verso (_back) logo depois da sua frente (mesma base de nome) na lista; verso sem frente na lista fica onde estava. Frente seguida do verso, como nos pares.
+function ordenarComVersos(lista) {
+  const versos = lista.filter((i) => ehVerso(i.nome)), frentes = lista.filter((i) => !ehVerso(i.nome));
+  const usado = new Set(), saida = [];
+  for (const f of lista) {
+    if (ehVerso(f.nome)) continue;
+    saida.push(f);
+    const b = baseVerso(f.nome);
+    for (const v of versos) if (!usado.has(v) && b && baseVerso(v.nome) === b) { usado.add(v); saida.push(v); }
+  }
+  return [...saida, ...versos.filter((v) => !usado.has(v))];
+}
 const idItem = (i) => i.chave || i.nome;  // imagens de subpastas têm chave própria (o mesmo nome pode existir em mais de uma pasta)
 const chaveGrupo = (c) => [c.nome, c.set || "", c.cn || ""].join("|");
 function agruparPendentes(pend) {
@@ -67,7 +82,7 @@ function atribuir(itens, pendentes, manuais = [], bloqueios = []) {
     g.atrib.push({ arquivo: m.arquivo, copias: n, auto: false }); g.preenchidos += n; usadoManual.add(m.arquivo);
   }
   for (const it of itens) {  // automático: o nome da carta aparece no nome do arquivo (imagens opcionais, de subpastas, só entram se você escolher)
-    if (it.opcional || usadoManual.has(idItem(it))) continue;
+    if (it.opcional || ehVerso(it.nome) || usadoManual.has(idItem(it))) continue;   // _back é verso: nunca preenche a frente
     const n = semAcento(it.nome), g = grupos.find((g) => g.preenchidos < g.qtd && !bloq.has(g.key + "|" + idItem(it)) && semAcento(g.nome) && n.includes(semAcento(g.nome)));
     if (g) { g.atrib.push({ arquivo: idItem(it), copias: 1, auto: true }); g.preenchidos++; }
   }
@@ -84,7 +99,7 @@ function sugerirPorNome(itens, grupos) {
   const usado = new Map(), sug = new Map();   // imagem -> nome da carta que a levou
   for (const g of grupos) {
     const alvo = semAcento(g.nome); if (!alvo || g.faltam <= 0) continue;
-    const cand = itens.filter((i) => (!usado.has(idItem(i)) || usado.get(idItem(i)) === alvo) && sem(i.nome).includes(alvo))   // a mesma imagem serve a impressões diferentes da mesma carta, não a cartas de nomes diferentes
+    const cand = itens.filter((i) => !ehVerso(i.nome) && (!usado.has(idItem(i)) || usado.get(idItem(i)) === alvo) && sem(i.nome).includes(alvo))   // a mesma imagem serve a impressões diferentes da mesma carta, não a cartas de nomes diferentes
       .sort((a, b) => (sem(a.nome) === alvo ? 0 : 1) - (sem(b.nome) === alvo ? 0 : 1) || (a.opcional ? 1 : 0) - (b.opcional ? 1 : 0) || sem(a.nome).length - sem(b.nome).length);
     if (cand[0]) { sug.set(g.key, cand[0]); usado.set(idItem(cand[0]), alvo); }
   }
@@ -92,8 +107,8 @@ function sugerirPorNome(itens, grupos) {
 }
 
 // Troca de arte: tira `k` cópias (slots) da carta `id` do <fronts> do XML (do último slot para o primeiro). Sem mais slots, a carta sai do XML.
-function tirarSlotsDoXml(txt, id, k) {
-  return txt.replace(/<fronts>([\s\S]*?)<\/fronts>/, (m, corpo) => {
+function tirarSlotsDoXml(txt, id, k, secao = "fronts") {   // secao "backs": troca de verso (dupla-face)
+  return txt.replace(new RegExp(`<${secao}>([\\s\\S]*?)<\\/${secao}>`), (m, corpo) => {
     const cartas = [...corpo.matchAll(/<card>[\s\S]*?<\/card>/g)].map((x) => ({ texto: x[0], index: x.index })), novos = cartas.map((c) => c.texto);
     let resta = k;
     for (let i = cartas.length - 1; i >= 0 && resta > 0; i--) {
@@ -106,8 +121,8 @@ function tirarSlotsDoXml(txt, id, k) {
     }
     let saida = "", pos = 0;
     cartas.forEach((c, i) => { saida += corpo.slice(pos, c.index) + (novos[i] === null ? "" : novos[i]); pos = c.index + c.texto.length; });
-    return "<fronts>" + saida + corpo.slice(pos) + "</fronts>";
+    return `<${secao}>` + saida + corpo.slice(pos) + `</${secao}>`;
   });
 }
 
-if (typeof module !== "undefined") module.exports = { sugerirPorNome, semAcento, lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo, idItem, tirarSlotsDoXml };
+if (typeof module !== "undefined") module.exports = { ehVerso, baseVerso, ordenarComVersos, sugerirPorNome, semAcento, lerLista, marcarFicha, listaParaBot, nomeParaBot, agruparPendentes, atribuir, chaveGrupo, idItem, tirarSlotsDoXml };
