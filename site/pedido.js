@@ -484,6 +484,9 @@ function renderAlteracoes() {
   c.querySelectorAll("[data-iadd]").forEach((b) => (b.onclick = () => { pedido.alteracoes[+b.dataset.iadd].itens.push({ texto: "" }); renderAlteracoes(); }));
 }
 $("#f-alt-add").onclick = () => { pedido.alteracoes.push({ titulo: "", itens: [{ texto: "" }] }); renderAlteracoes(); };
+let nomeClienteEditado = false;
+$("#f-nome-cliente").addEventListener("input", () => { nomeClienteEditado = true; renderFicha(); });
+$("#f-cliente").addEventListener("input", () => { if (!nomeClienteEditado) $("#f-nome-cliente").value = $("#f-cliente").value.includes("_") ? $("#f-cliente").value.split("_")[0] : ""; });   // sugere o que vem antes do primeiro "_"; você pode mudar
 ["#f-cliente", "#f-tel", "#f-conclusao"].forEach((s) => $(s).addEventListener("input", () => { if (s === "#f-cliente" && !clienteEditado) $("#m-cliente").value = $(s).value; renderFicha(); }));
 
 let fichaMd = "", fichaManual = false;
@@ -643,7 +646,7 @@ window.aoAbrirAba = (aba) => {
       precisaBot() ? `<p class="aviso">Seu pedido entrou como lista: o bot é necessário para achar as imagens e gerar o XML.</p>` : "";
     procurarBot();
   }
-  if (aba === "ficha") { if (!$("#f-cliente").value && sessao.pasta) $("#f-cliente").value = sessao.pasta.nome; renderFicha(); }
+  if (aba === "ficha") { if (!$("#f-cliente").value && sessao.pasta) $("#f-cliente").value = sessao.pasta.nome; if (!$("#f-nome-cliente").value && $("#f-cliente").value.includes("_")) $("#f-nome-cliente").value = $("#f-cliente").value.split("_")[0]; renderFicha(); }
 };
 renderFontes(); renderAlteracoes();
 pronto.then(carregarPrecos);
@@ -1159,8 +1162,8 @@ function novoPedido() {
   sessao.pasta = null; sessao.xml = null; sessao.xmlNome = ""; sessao.ignorar = new Set(); sessao.conferencia = null;
   Object.assign(MONT, { incluirExtras: null, chaveExtras: "", adicionadas: [], copiasAdd: new Map(), permitirBranco: false, chaveBranco: "", pronta: false, plano: null });
   sessao.extrasDecisao = null; sessao.trocas = {}; sessao.atribManuais = []; sessao.atribBloqueios = []; sessao.substituicoes = []; sessao.subIncluidas = []; sessao.copiasExtra = {};
-  clienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
-  for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
+  clienteEditado = false; nomeClienteEditado = false; fichaManual = false; pagoEditado = false; copiando = false; ultimoOrc = null; ultimoXmlTexto = ""; xmlDeFontes = false;
+  for (const s of ["#e-lista", "#e-xml", "#e-deck", "#c-xml", "#m-xml", "#f-cliente", "#f-nome-cliente", "#f-tel", "#f-conclusao", "#m-cliente", "#o-pago", "#f-previa"]) $(s).value = "";
   for (const s of ["#e-erro", "#c-resultado", "#c-pasta-nome", "#m-pasta-nome", "#c-xml-nome", "#m-xml-nome", "#m-plano", "#m-resumo", "#m-status", "#m-saida", "#b-pedidos", "#b-aviso", "#p-saida", "#f-aviso", "#c-env-saida", "#m-novo-conf", "#c-extras", "#c-trocas", "#t-aviso"]) { const el = $(s); if (el) el.textContent = ""; }
   $("#m-barra").hidden = true; $("#m-fim").hidden = true; $("#nav-aviso").hidden = true;
   renderFontes(); renderAlteracoes(); fichaMd = ""; atualizarRotulos();
@@ -1198,7 +1201,7 @@ $("#t-criar").onclick = async () => {
   if (!ultimoOrc || !(valorFinal() > 0)) { av.textContent = " Faça o orçamento antes (valor cobrado e slots)."; return; }
   const slots = ultimoOrc.slots, alts = pedido.alteracoes.filter((a) => a.titulo.trim() && a.itens.some((i) => i.texto.trim())).map((a) => ({ titulo: a.titulo.trim(), itens: a.itens.map((i) => i.texto.trim()).filter(Boolean) }));  // o Worker põe o resumo na descrição e o texto inteiro em comentários
   const corpo = {
-    cliente: $("#f-cliente").value.trim(), telefone: $("#f-tel").value.trim(), slots, paginas: Math.ceil(slots / 18), valor: valorFinal(),
+    cliente: $("#f-cliente").value.trim(), nomeCliente: $("#f-nome-cliente").value.trim(), telefone: $("#f-tel").value.trim(), slots, paginas: Math.ceil(slots / 18), valor: valorFinal(),
     pastaUrl: sessao.pasta && sessao.pasta.drive ? `https://drive.google.com/drive/folders/${sessao.pasta.drive.id}` : "",
     alteracoes: alts, cardId: pedido.cardId || undefined,
   };
@@ -1221,7 +1224,8 @@ function abrirWhatsApp(texto) {
   window.open(`https://wa.me/${n}?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
   $("#f-aviso").textContent = "WhatsApp aberto: confira o texto, envie e anexe o PDF à mão.";
 }
-const saudacao = () => { const nome = $("#f-cliente").value.trim(); return `Oi${nome ? ", " + nome : ""}!`; };
+const nomeDoCliente = () => $("#f-nome-cliente").value.trim() || $("#f-cliente").value.trim().split("_")[0];   // nas mensagens: o nome do cliente, nunca o nome do pedido ("Natan_2_Deck")
+const saudacao = () => { const nome = nomeDoCliente(); return `Oi${nome ? ", " + nome : ""}!`; };
 $("#f-wa-ficha").onclick = () => {
   abrirWhatsApp(`${saudacao()} Segue a ficha do seu pedido${ultimoOrc ? ` (${ultimoOrc.slots} slots)` : ""}, com os dados para o pagamento no PDF. Qualquer dúvida é só falar.`); // sem valores no texto
 };

@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 import { autorizado } from "./auth.js";
 import { rotaVitrine } from "./vitrine.js";
@@ -168,8 +168,10 @@ export default {
         if (Object.keys(params).length) await trello(env, `/cards/${a.data.card.id}`, params, "PUT").catch(() => {});
         if (due) await agendaRetirada(env, { id: a.data.card.id, name: card.name, desc: params.desc ?? card.desc }, due, card.shortUrl);
         else if (norm(a.data.listBefore.name).includes("grafica")) await agendaRetirada(env, { id: a.data.card.id }, null);
+        // pedidos do mesmo cliente que já estão na coluna de destino (a mensagem ao cliente os junta)
+        const irmaos = tipoMsgCliente(a.data.listAfter.name) ? await trello(env, `/lists/${a.data.listAfter.id}/cards`, { fields: "name,desc" }).catch(() => []) : [];
         const { texto, botoes } = avisoMovimento({
-          cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card, previsao,
+          cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card: { ...card, id: a.data.card.id }, previsao, irmaos, agoraMs: quando,
         });
         await enviar(env, texto, botoes);
       }

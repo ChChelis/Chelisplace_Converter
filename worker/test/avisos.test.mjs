@@ -346,3 +346,42 @@ test("relatório de colagem: finalizados da janela atual com valor por pedido, t
   assert.match(r, /Em andamento \(ainda não finalizados\): 1 pedido\(s\), R\$ 126 previstos/);
   assert.doesNotMatch(r, /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u);
 });
+
+import { nomesDoCliente, mensagemCliente } from "../src/avisos.js";
+test("nome do cliente e item da lista a partir do nome do pedido do bot", () => {
+  assert.deepEqual(nomesDoCliente("", "Natan_2_Wolfir_Deck"), { nomeCliente: "Natan", itemPedido: "Wolfir Deck" });
+  assert.deepEqual(nomesDoCliente("Natan Silva", "Natan_5_Avulsos"), { nomeCliente: "Natan Silva", itemPedido: "Avulsos" });
+  assert.deepEqual(nomesDoCliente("", "Ana"), { nomeCliente: "Ana", itemPedido: "Pedido" });
+});
+test("mensagem ao cliente junta os pedidos do mesmo cliente que estão na coluna e não traz valores", () => {
+  const mk = (cliente, pag) => ({ id: cliente, name: cliente + " · 1 slots", desc: montarCard({ cliente, nomeCliente: "Natan", telefone: "+55 31 9", slots: pag * 18, paginas: pag, valor: 999 }).desc });
+  const cards = ["Natan_1_Wolfir_Deck", "Natan_2_Cubo", "Natan_3_Avulsos"].map((c, i) => mk(c, i + 1));
+  const t = mensagemCliente("retirada", cards, br("2026-11-25T11:00:00"));   // quarta, 11h
+  assert.match(t, /^Olá Natan! Tudo joia\? Seu pedido acabou de ser retirado na gráfica e segue para finalização\. O conteúdo é:\n\n\* Wolfir Deck\n\* Cubo\n\* Avulsos\n\n/);
+  assert.match(t, /seu pedido precisa de 3 horas para ser finalizado/);   // 6 páginas = 3h
+  assert.match(t, /entre qua 25\/11 às 11h e /);
+  assert.doesNotMatch(t, /R\$|999|Natan_|valor|Pix/i);
+});
+test("mensagem ao cliente: horas de colagem sem arredondar (meia hora por página) e pulando o almoço", () => {
+  const c = { id: "a", name: "x", desc: montarCard({ cliente: "Ana_1_A", slots: 126, paginas: 7, valor: 1 }).desc };
+  const t = mensagemCliente("retirada", [c], br("2026-11-25T12:00:00"));   // quarta 12h: 1h até o almoço, 2,5h depois das 15h
+  assert.match(t, /precisa de 3,5 horas/);
+  assert.match(t, /entre qua 25\/11 às 12h e qua 25\/11 às 17h30,/);
+});
+test("mensagem ao cliente (gráfica): previsão = dia 1 é o da entrada até 17h, depois conta do dia seguinte; pula fim de semana", () => {
+  const c = { id: "a", name: "x", desc: montarCard({ cliente: "Ana_1_A", slots: 18, paginas: 1, valor: 1 }).desc };
+  assert.match(mensagemCliente("grafica", [c], br("2026-11-18T11:26:00")), /ser recebido na gráfica.*por volta de seg 23\/11 para ser coletado às 17h desse dia\. Te mantenho informado!/s);
+  assert.match(mensagemCliente("grafica", [c], br("2026-11-18T17:30:00")), /por volta de ter 24\/11 /);   // depois das 17h: dia 1 = 19/11
+});
+test("mensagem ao cliente (pronto): texto de entrega, sem valores", () => {
+  const c = { id: "a", name: "x", desc: "Cliente: Ana_1_A" };
+  const t = mensagemCliente("pronto", [c], 0);
+  assert.match(t, /ficar pronto para entrega\. O conteúdo é:\n\n\* A\n\nAgora é só combinar a entrega e ser feliz!/);
+});
+test("aviso de movimento: o último aviso do cliente lista todos os pedidos dele na coluna; de outro cliente não entra", () => {
+  const card = (id, cli) => ({ id, name: cli + " · 18 slots", desc: `Cliente: ${cli}\nTelefone: +55 31 98888-7777\nPáginas: 1` });
+  const irmaos = [card("1", "Natan_1_A"), card("2", "Natan_2_B"), card("3", "Natan_3_C"), card("9", "Outra_1_Z")];
+  const m = avisoMovimento({ cardNome: "x", de: "Montagem", para: "Gráfica", card: card("3", "Natan_3_C"), irmaos, agoraMs: br("2026-11-18T11:00:00") });
+  const cli = decodeURIComponent(m.botoes[0][0].url).split("?text=")[1];
+  assert.match(cli, /\* A\n\* B\n\* C\n/); assert.doesNotMatch(cli, /\* Z/);
+});

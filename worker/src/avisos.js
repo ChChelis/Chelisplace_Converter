@@ -1,5 +1,5 @@
 // Lógica pura dos avisos (sem rede): leitura de cards, resumo, mensagens, links.
-import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
+import { prazoFinal, atrasado, somarUtil, fimDiaUtil, inicioJanela, CORTE_GRAFICA, alinharLoja, minutosColagem, COLADOR, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
 import { feriadosNacionais } from "./feriados.js";
 export { feriadosNacionais };
 
@@ -8,6 +8,18 @@ export const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCas
 // Linhas de prazo/previsão por etapa (uma só aparece no card, conforme a coluna atual).
 export const ROTULOS = ["Prazo limite para montar", "Previsão de retirada da gráfica", "Prazo máximo de colagem", "Previsão de entrega"];
 const RE_PREVISAO = new RegExp("^\\s*(?:" + ROTULOS.join("|") + ")\\s*:.*$", "im");
+
+// "Natan_2_Wolfir_Deck": o nome do pedido (do bot) leva o cliente na frente. Para o cliente: nome = campo "Nome do cliente" (ou o que vem antes do primeiro "_");
+// item da lista = o resto, sem o número do pedido e com espaços no lugar de "_" ("Wolfir Deck").
+export function nomesDoCliente(nomeCampo, pedido) {
+  const partes = String(pedido || "").split("_").map((x) => x.trim()).filter(Boolean);
+  const nome = nomeCampo || (partes.length > 1 ? partes[0] : String(pedido || "").trim());
+  let resto = partes.length > 1 ? partes.slice(1) : [];
+  if (nomeCampo && !resto.length) resto = [];
+  if (resto.length && /^\d+$/.test(resto[0])) resto = resto.slice(1);
+  const item = resto.join(" ").trim() || (partes.length > 1 ? String(pedido).replace(/_/g, " ").trim() : "Pedido");
+  return { nomeCliente: nome, itemPedido: item };
+}
 
 // Dados que a página grava no card (título "Cliente · N slots"; linhas "Chave: valor" na descrição).
 export function lerCard(card) {
@@ -32,6 +44,7 @@ export function lerCard(card) {
     slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
     previsao: (desc.match(RE_PREVISAO) || [""])[0].trim(), // linha de prazo/previsão da etapa atual, se houver
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
+    ...nomesDoCliente(linha("Nome do cliente"), linha("Cliente") || (t ? t[1] : card.name || "")),
     telefone: linha("Telefone"),
     slots,
     url: card.url,
@@ -144,18 +157,32 @@ export function linkWaCliente(telefone, texto) {
   return `https://wa.me/${n}?text=${encodeURIComponent(texto)}`;
 }
 
-// Mensagens ao cliente por coluna (o Chelis revisa e clica em enviar).
-export const MSG_CLIENTE = {
-  grafica: (c) => `Olá, ${c}! Seu pedido foi enviado para a gráfica. Assim que estiver pronto eu aviso por aqui.`,
-  retirada: (c) => `Olá, ${c}! Seu pedido foi retirado na gráfica e segue para a finalização.`,
-  pronto: (c) => `Olá, ${c}! Seu pedido está pronto para entrega. Me diga o melhor jeito de combinarmos.`,
-};
-export function msgClientePorColuna(coluna) {
+// Mensagens ao cliente por coluna (o Chelis revisa e clica em enviar). A mensagem acumula todos os pedidos do mesmo cliente que estão na coluna de destino.
+const dia2 = (ms) => { const d = new Date(ms - 3 * 3600e3), p = (n) => String(n).padStart(2, "0"); return { sem: ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][d.getUTCDay()], data: `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}`, h: d.getUTCHours(), m: d.getUTCMinutes() }; };
+const horaCurta = (d) => `${d.h}h${d.m ? String(d.m).padStart(2, "0") : ""}`;
+export const fmtDiaHora = (ms) => { const d = dia2(ms); return `${d.sem} ${d.data} às ${horaCurta(d)}`; };
+export const fmtDia = (ms) => { const d = dia2(ms); return `${d.sem} ${d.data}`; };
+const fmtHoras = (min) => { const h = min / 60; return Number.isInteger(h) ? String(h) : String(h).replace(".", ","); };
+const ACAO = { grafica: "ser recebido na gráfica", retirada: "ser retirado na gráfica e segue para finalização", pronto: "ficar pronto para entrega" };
+// cards: todos os do cliente na coluna (inclui o que acabou de entrar); agoraMs: instante do movimento
+export function mensagemCliente(tipo, cards, agoraMs) {
+  const infos = cards.map((c) => lerCard(c)).sort((x, y) => x.cliente.localeCompare(y.cliente, "pt-BR", { numeric: true }));   // Natan_1, Natan_2, ... Natan_10
+  const nome = infos[0].nomeCliente;
+  let t = `Olá ${nome}! Tudo joia? Seu pedido acabou de ${ACAO[tipo]}. O conteúdo é:\n\n${infos.map((i) => `* ${i.itemPedido}`).join("\n")}\n\n`;
+  if (tipo === "retirada") {
+    const paginas = infos.reduce((n, i) => n + (i.paginas || Math.max(1, Math.ceil(i.slots / 18))), 0), min = paginas * 30;   // meia hora por página (3h a cada kit de 6 páginas), sem arredondar
+    const ini = inicioJanela(agoraMs), fim = somarUtil(agoraMs, min, COLADOR);
+    t += `Começando na próxima janela apta, entre ${fmtDiaHora(ini)} e ${fmtDiaHora(fim)}, seu pedido precisa de ${fmtHoras(min)} horas para ser finalizado por um de nossos colaboradores. Te dou mais notícias assim que terminarmos!`;
+  } else if (tipo === "grafica") {
+    t += `A gráfica cobra de 2 a 3 dias úteis para entregar o pedido, então seu pedido deve estar pronto por volta de ${fmtDia(fimDiaUtil(agoraMs, 3, 17 * 60))} para ser coletado às 17h desse dia. Te mantenho informado!`;
+  } else {
+    t += `Agora é só combinar a entrega e ser feliz! Podemos nos encontrar em uma loja ou você pode solicitar um entregador para buscar. Se for o caso, trocamos endereços! Muito obrigado pelo pedido e eu espero que esteja do seu gosto. Volte sempre, espalhe a palavra e, de novo, muito obrigado pela preferência!`;
+  }
+  return t;
+}
+export function tipoMsgCliente(coluna) {
   const n = norm(coluna);
-  if (n.includes("grafica")) return MSG_CLIENTE.grafica;
-  if (n.includes("retirada")) return MSG_CLIENTE.retirada;
-  if (n.includes("pronto")) return MSG_CLIENTE.pronto;
-  return null;
+  return n.includes("grafica") ? "grafica" : n.includes("retirada") ? "retirada" : n.includes("pronto") ? "pronto" : null;
 }
 
 // Janela de Finalizados: começa no 5º dia útil (seg–sex, sem feriados nacionais) mais recente, 00h de Brasília.
@@ -244,14 +271,17 @@ export function descricaoParaAviso(desc, linha) {
 }
 
 // Texto do aviso de movimento de card + botões opcionais (sem emojis: colam mal no WhatsApp).
-export function avisoMovimento({ cardNome, de, para, card, previsao }) { // previsao: linha "Rótulo: data" ou null
+export function avisoMovimento({ cardNome, de, para, card, previsao, irmaos, agoraMs }) { // previsao: linha "Rótulo: data" ou null
   const info = lerCard(card || { name: cardNome, desc: "" });
   const dados = descricaoParaAviso(card?.desc, previsao);
   const texto = `*PEDIDO MOVIDO:* ${info.cliente}${info.slots ? ` · ${info.slots} slots` : ""}\nDe _${de}_ para _${para}_.` + (dados ? `\n\n_Dados do pedido:_\n${dados}` : "");
   const botoes = [];
-  const gerar = msgClientePorColuna(para);
-  if (gerar) {
-    const msg = gerar(info.cliente);
+  const tipo = tipoMsgCliente(para);
+  if (tipo) {
+    // todos os pedidos do mesmo cliente que estão na coluna de destino (o que acabou de entrar sempre conta, mesmo se o Trello ainda não o listar)
+    const mesmo = (c) => norm(lerCard(c).nomeCliente) === norm(info.nomeCliente);
+    const outros = (irmaos || []).filter((c) => c.id !== (card && card.id) && mesmo(c));
+    const msg = mensagemCliente(tipo, [card || { name: cardNome, desc: "" }, ...outros], agoraMs ?? Date.now());
     const cli = linkWaCliente(info.telefone, msg);
     if (cli) botoes.push([{ text: "Avisar o cliente (WhatsApp)", url: cli }]);
     else botoes.push([{ text: "Mensagem ao cliente (sem telefone no card)", url: linkWaGrupo(msg) }]);
@@ -284,6 +314,7 @@ export function montarCard(b) {
   const valor = num(b.valor);
   const linhas = [
     `Cliente: ${cliente}`,
+    ...(txt(b.nomeCliente, 80) ? [`Nome do cliente: ${txt(b.nomeCliente, 80)}`] : []),
     `Telefone: ${txt(b.telefone, 40)}`,
     `Slots: ${slots}`,
     `Páginas: ${paginas}`,

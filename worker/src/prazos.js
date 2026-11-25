@@ -5,7 +5,8 @@ const MIN = 60e3;
 import { ehFeriado, chaveData } from "./feriados.js";
 
 export const EXPEDIENTE = { ini: 10 * 60, fim: 17 * 60 }; // 10h–17h
-export const GRAFICA = { ini: 9 * 60, fim: 18 * 60 }; // 9h–18h
+export const GRAFICA = { ini: 9 * 60, fim: 18 * 60 }; // 9h–18h (fim = prazo de atraso)
+export const CORTE_GRAFICA = 17 * 60; // entrada até 17h conta como dia 1; depois das 17h, o dia 1 é o dia útil seguinte
 
 // "relógio local" como um Date em UTC (getUTC* devolve a hora de Brasília)
 const local = (ms) => new Date(ms + DESLOC);
@@ -54,7 +55,7 @@ export function somarUtil(inicioMs, minutos, janela = EXPEDIENTE) {
 export function fimDiaUtil(inicioMs, n, minutoFim) {
   const l = local(inicioMs);
   let dia = meiaNoite(l);
-  if (!util(dia) || minDia(l) >= GRAFICA.fim) dia = proxDiaUtil(dia);
+  if (!util(dia) || minDia(l) >= CORTE_GRAFICA) dia = proxDiaUtil(dia);
   for (let i = 1; i < n; i++) dia = proxDiaUtil(dia);
   return noDia(dia, minutoFim);
 }
@@ -66,6 +67,9 @@ export function alinharLoja(ms) {
   if (util(dia) && m < EXPEDIENTE.ini) return noDia(dia, EXPEDIENTE.ini);
   return noDia(proxDiaUtil(dia), EXPEDIENTE.ini);
 }
+
+// Primeiro instante em que o colador pode trabalhar a partir de `ms` (dentro da janela, dia útil).
+export function inicioJanela(ms, janela = COLADOR) { return somarUtil(ms, 1, janela) - MIN; }
 
 // Minutos de colagem pelo tamanho do pedido: 3h a cada 108 slots (arredondando para cima).
 export const minutosColagem = (slots) => 3 * 60 * Math.max(1, Math.ceil(slots / 108));
