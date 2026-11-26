@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, prazosColagem, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 import { autorizado } from "./auth.js";
 import { rotaVitrine } from "./vitrine.js";
@@ -158,7 +158,10 @@ export default {
         // recalcula a previsão de entrega a partir da coluna nova e grava no card
         const info = lerCard(card);
         const quando = Date.parse(a.date) || Date.now();
-        const previsao = linhaPrevisao(a.data.listAfter.name, quando, info, Date.now());
+        // pedidos do mesmo cliente que já estão na coluna de destino: a mensagem ao cliente os junta e, na Colagem, o colador os cola um por vez (prazo em fila)
+        const naColuna = tipoMsgCliente(a.data.listAfter.name) || norm(a.data.listAfter.name).includes("colagem")
+          ? await trello(env, `/lists/${a.data.listAfter.id}/cards`, { fields: "name,desc" }).catch(() => []) : [];
+        const previsao = linhaPrevisao(a.data.listAfter.name, quando, info, Date.now(), naColuna.filter((c) => c.id !== a.data.card.id));
         const params = {};
         if ((previsao || "") !== info.previsao) params.desc = aplicarPrevisao(card.desc || "", previsao);
         // Google Agenda (Power-Up): entrando na Gráfica o vencimento vira a retirada prevista; saindo, o vencimento é dado como cumprido
@@ -168,8 +171,7 @@ export default {
         if (Object.keys(params).length) await trello(env, `/cards/${a.data.card.id}`, params, "PUT").catch(() => {});
         if (due) await agendaRetirada(env, { id: a.data.card.id, name: card.name, desc: params.desc ?? card.desc }, due, card.shortUrl);
         else if (norm(a.data.listBefore.name).includes("grafica")) await agendaRetirada(env, { id: a.data.card.id }, null);
-        // pedidos do mesmo cliente que já estão na coluna de destino (a mensagem ao cliente os junta)
-        const irmaos = tipoMsgCliente(a.data.listAfter.name) ? await trello(env, `/lists/${a.data.listAfter.id}/cards`, { fields: "name,desc" }).catch(() => []) : [];
+        const irmaos = naColuna;
         const { texto, botoes } = avisoMovimento({
           cardNome: a.data.card.name, de: a.data.listBefore.name, para: a.data.listAfter.name, card: { ...card, id: a.data.card.id }, previsao, irmaos, agoraMs: quando,
         });
@@ -264,6 +266,17 @@ export default {
           });
         }
         return json({ ok: true, atualizados: feitos });
+      }
+      if (acao === "colagem-fila") { // recalcula o prazo de colagem dos cards que já estão na Colagem, em fila por cliente (sem ?aplicar=1 só mostra)
+        const q = await carregarQuadro(env), aplicar = url.searchParams.get("aplicar") === "1", feitos = [];
+        const ids = new Set(q.listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
+        const doGrupo = q.cards.filter((c) => ids.has(c.idList)), fila = prazosColagem(doGrupo, q.entradas);
+        for (const c of doGrupo) {
+          const info = lerCard(c), prazo = fila.get(c.id), linha = `${ROTULOS[2]}: ${dataHoraBR(prazo)}`;
+          if (aplicar && linha !== info.previsao) await trello(env, `/cards/${c.id}`, { desc: aplicarPrevisao(c.desc || "", linha) }, "PUT");
+          feitos.push({ cliente: info.cliente, nomeCliente: info.nomeCliente, antes: info.previsao || null, depois: linha, mudou: linha !== info.previsao });
+        }
+        return json({ ok: true, aplicado: aplicar, cards: feitos });
       }
       if (acao === "fixar-entradas") { // confirma, agora, a data "Entrou na coluna" dos cards que a têm: movimentos de teste anteriores deixam de valer
         const q = await carregarQuadro(env), feitos = [], agora = dataHoraBR(Date.now());

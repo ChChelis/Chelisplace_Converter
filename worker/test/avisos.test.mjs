@@ -385,3 +385,26 @@ test("aviso de movimento: o último aviso do cliente lista todos os pedidos dele
   const cli = decodeURIComponent(m.botoes[0][0].url).split("?text=")[1];
   assert.match(cli, /\* A\n\* B\n\* C\n/); assert.doesNotMatch(cli, /\* Z/);
 });
+
+import { prazosColagem } from "../src/avisos.js";
+test("colagem em fila por cliente: 3 cards movidos no mesmo minuto não têm o mesmo prazo (cada um começa quando o anterior termina)", () => {
+  const mk = (id, cli, previsao) => ({ id, name: cli + " · 108 slots", desc: montarCard({ cliente: cli, nomeCliente: cli.split("_")[0], telefone: "+55 31 9", slots: 108, paginas: 6, valor: 1 }).desc + (previsao ? `\n${previsao}` : "") });
+  const c1 = mk("1", "Natan_1_A"), c2 = mk("2", "Natan_2_B"), c3 = mk("3", "Natan_3_C"), outro = mk("9", "Ana_1_Z");
+  // quarta 25/11, 11h; colador 10h-13h e 15h-23h; 3 h por 108 slots
+  const l1 = linhaPrevisao("Colagem", br("2026-11-25T11:00:00"), lerCard(c1), 0, []);
+  assert.equal(l1, "Prazo máximo de colagem: 25/11/2026 16:00");   // 2h até o almoço + 1h depois das 15h
+  const c1p = mk("1", "Natan_1_A", l1);
+  const l2 = linhaPrevisao("Colagem", br("2026-11-25T11:01:00"), lerCard(c2), 0, [c1p]);
+  assert.equal(l2, "Prazo máximo de colagem: 25/11/2026 19:00");
+  const c2p = mk("2", "Natan_2_B", l2);
+  assert.equal(linhaPrevisao("Colagem", br("2026-11-25T11:02:00"), lerCard(c3), 0, [c1p, c2p]), "Prazo máximo de colagem: 25/11/2026 22:00");
+  // outro cliente não entra na fila
+  assert.equal(linhaPrevisao("Colagem", br("2026-11-25T11:02:00"), lerCard(outro), 0, [c1p, c2p]), "Prazo máximo de colagem: 25/11/2026 16:02");   // outra cliente: a fila de Natan não a atrasa
+  // o recálculo geral (resumo, atrasos, correção do que já está no quadro) dá a mesma fila
+  const f = prazosColagem([c1, c2, c3, outro], { 1: br("2026-11-25T11:00:00"), 2: br("2026-11-25T11:01:00"), 3: br("2026-11-25T11:02:00"), 9: br("2026-11-25T11:02:00") });
+  assert.deepEqual([...f.values()], [br("2026-11-25T16:00:00"), br("2026-11-25T19:00:00"), br("2026-11-25T22:00:00"), br("2026-11-25T16:02:00")]);
+  // resumo às 17h: o 1º venceu, o 2º (prazo 19h) não está atrasado; em paralelo, os três apareceriam como atrasados
+  const r = montarResumo({ listas: [{ id: "L", name: "Colagem" }], cards: [c1, c2, c3].map((c) => ({ ...c, idList: "L" })), entradas: { 1: br("2026-11-25T11:00:00"), 2: br("2026-11-25T11:01:00"), 3: br("2026-11-25T11:02:00") }, agoraMs: br("2026-11-25T17:00:00"), titulo: "R" });
+  assert.equal((r.match(/ATRASADO/g) || []).length, 1);
+  assert.match(r, /3 pedido\(s\), 1 atrasado\(s\)/);
+});

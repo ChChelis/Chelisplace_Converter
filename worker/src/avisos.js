@@ -43,6 +43,7 @@ export function lerCard(card) {
     entrouEm, prazoManual, confirmadaEm, paginas,
     slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
     previsao: (desc.match(RE_PREVISAO) || [""])[0].trim(), // linha de prazo/previsão da etapa atual, se houver
+    previsaoMs: dataBR(((desc.match(RE_PREVISAO) || [""])[0].split(":").slice(1).join(":")).trim()),
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
     ...nomesDoCliente(linha("Nome do cliente"), linha("Cliente") || (t ? t[1] : card.name || "")),
     telefone: linha("Telefone"),
@@ -53,10 +54,39 @@ export function lerCard(card) {
 
 // Prazo do card: o "Prazo:" informado à mão vale só enquanto o card está na coluna em que foi criado
 // (entrada = a data "Entrou na coluna"); depois de qualquer movimento volta a regra da coluna.
-export function prazoDe(coluna, entradaMs, info) {
+// `fila` (opcional): prazos da Colagem já calculados em fila por cliente (prazosColagem).
+export function prazoDe(coluna, entradaMs, info, fila) {
   if (info.prazoManual && info.entrouEm && info.entrouEm === entradaMs) return info.prazoManual;
+  if (fila && norm(coluna).includes("colagem") && fila.has(info.id)) return fila.get(info.id);
   return prazoFinal(coluna, entradaMs, info.slotsPrazo ?? info.slots);
 }
+
+// O colador cola um pedido por vez: os pedidos de um mesmo cliente (pelo "Nome do cliente") que estão na Colagem entram numa fila, na ordem de entrada
+// na coluna; o prazo de cada um começa quando o anterior termina (ou na própria entrada, se o colador já estiver livre), na janela do colador.
+// cards: cards que estão na coluna Colagem; entradas: {idCard: ms}. Devolve Map idCard -> prazo (ms).
+export function prazosColagem(cards, entradas) {
+  const porCliente = new Map();
+  for (const c of cards) {
+    const info = lerCard(c), k = norm(info.nomeCliente);
+    if (!porCliente.has(k)) porCliente.set(k, []);
+    porCliente.get(k).push({ info, ent: entradas[c.id] ?? Date.now() });
+  }
+  const saida = new Map();
+  for (const fila of porCliente.values()) {
+    fila.sort((a, b) => a.ent - b.ent || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
+    let livre = 0;
+    for (const { info, ent } of fila) {
+      const manual = info.prazoManual && info.entrouEm && info.entrouEm === ent;
+      const prazo = manual ? info.prazoManual : somarUtil(Math.max(ent, livre), minutosColagem(info.slotsPrazo ?? info.slots), COLADOR);
+      saida.set(info.id, prazo); livre = Math.max(livre, prazo);
+    }
+  }
+  return saida;
+}
+const filaDaColagem = (listas, cards, entradas) => {
+  const ids = new Set(listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
+  return prazosColagem(cards.filter((c) => ids.has(c.idList)), entradas);
+};
 
 export const dataHoraBR = (ms) => {
   const d = new Date(ms - 3 * 3600e3), p = (n) => String(n).padStart(2, "0");
@@ -81,12 +111,16 @@ export function vencimentoGrafica(coluna, entradaMs, info, agoraMs) {
   const dia10 = pegada - ((new Date(pegada - 3 * 3600e3).getUTCHours() * 60 + new Date(pegada - 3 * 3600e3).getUTCMinutes()) - HORA_VIAGEM) * 60e3;
   return new Date(dia10 > agoraMs ? dia10 : pegada).toISOString();
 }
-export function linhaPrevisao(coluna, entradaMs, info, agoraMs) {
+// irmaos: cards do mesmo cliente que já estão na Colagem (com a linha de prazo deles): o colador só começa este depois do último deles.
+export function linhaPrevisao(coluna, entradaMs, info, agoraMs, irmaos = []) {
   const n = norm(coluna);
   const slots = info.slotsPrazo ?? info.slots;
   if (n.includes("montagem")) return `${ROTULOS[0]}: ${dataHoraBR(prazoDe(coluna, entradaMs, info))}`;
   if (n.includes("grafica")) return `${ROTULOS[1]}: ${dataHoraBR(pegadaGrafica(entradaMs, info, agoraMs))}`;
-  if (n.includes("colagem")) return `${ROTULOS[2]}: ${dataHoraBR(somarUtil(entradaMs, minutosColagem(slots), COLADOR))}`;
+  if (n.includes("colagem")) {
+    const ocupadoAte = Math.max(0, ...irmaos.map((c) => lerCard(c)).filter((i) => i.id !== info.id && norm(i.nomeCliente) === norm(info.nomeCliente)).map((i) => i.previsaoMs || 0));
+    return `${ROTULOS[2]}: ${dataHoraBR(somarUtil(Math.max(entradaMs, ocupadoAte), minutosColagem(slots), COLADOR))}`;
+  }
   return null;
 }
 
@@ -210,7 +244,7 @@ export function inicioJanelaFinalizados(agoraMs) {
 export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
   const linhas = [titulo];
   let atrasados = 0, total = 0;
-  const ini = inicioJanelaFinalizados(agoraMs);
+  const ini = inicioJanelaFinalizados(agoraMs), fila = filaDaColagem(listas, cards, entradas);
   for (const l of listas) {
     let doL = cards.filter((c) => c.idList === l.id);
     const fin = norm(l.name).includes("finalizad");
@@ -220,7 +254,7 @@ export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
     for (const c of doL) {
       const info = lerCard(c);
       const ent = entradas[c.id];
-      const prazo = prazoDe(l.name, ent, info);
+      const prazo = prazoDe(l.name, ent, info, fila);
       const atr = prazo !== null && agoraMs > prazo;
       total++; if (atr) atrasados++;
       const extra = atr ? ` - *ATRASADO* (prazo era ${fmtBR(prazo)})` : "";
@@ -240,12 +274,12 @@ export function fmtBR(ms) {
 
 // Cards cujo prazo venceu na última hora (aviso estável, sem guardar estado).
 export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
-  const out = [];
+  const out = [], fila = filaDaColagem(listas, cards, entradas);
   for (const c of cards) {
     const l = listas.find((x) => x.id === c.idList);
     if (!l) continue;
     const info = lerCard(c);
-    const p = prazoDe(l.name, entradas[c.id], info);
+    const p = prazoDe(l.name, entradas[c.id], info, fila);
     if (p !== null && p <= agoraMs && p >= agoraMs - 3600e3) out.push({ info, coluna: l.name, prazo: p });
   }
   return out;
