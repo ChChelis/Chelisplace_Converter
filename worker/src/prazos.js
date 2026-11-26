@@ -15,6 +15,8 @@ const util = diaUtil;
 const minDia = (d) => d.getUTCHours() * 60 + d.getUTCMinutes();
 
 // Janela do colador: 10h–23h com 2h de almoço (13h–15h, suposição a corrigir pelo Chelis).
+// Quantos coladores trabalham ao mesmo tempo (hoje 1). Com mais de um, cada pedido da fila vai para o primeiro que ficar livre.
+export const COLADORES = 1;
 export const COLADOR = { seg: [{ ini: 10 * 60, fim: 13 * 60 }, { ini: 15 * 60, fim: 23 * 60 }] };
 
 const proxDiaUtil = (dia) => { // dia: Date em "relógio local" à meia-noite

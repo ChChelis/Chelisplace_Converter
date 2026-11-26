@@ -158,7 +158,7 @@ export default {
         // recalcula a previsão de entrega a partir da coluna nova e grava no card
         const info = lerCard(card);
         const quando = Date.parse(a.date) || Date.now();
-        // pedidos do mesmo cliente que já estão na coluna de destino: a mensagem ao cliente os junta e, na Colagem, o colador os cola um por vez (prazo em fila)
+        // cards que já estão na coluna de destino: a mensagem ao cliente junta os do mesmo cliente e, na Colagem, o prazo entra na fila geral do colador
         const naColuna = tipoMsgCliente(a.data.listAfter.name) || norm(a.data.listAfter.name).includes("colagem")
           ? await trello(env, `/lists/${a.data.listAfter.id}/cards`, { fields: "name,desc" }).catch(() => []) : [];
         const previsao = linhaPrevisao(a.data.listAfter.name, quando, info, Date.now(), naColuna.filter((c) => c.id !== a.data.card.id));
