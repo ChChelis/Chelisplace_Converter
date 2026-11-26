@@ -450,3 +450,34 @@ test("previsão da fila: pedido que fecha no domingo mostra as duas contas; pedi
   const v = previsaoFila({ listas: L, cards: [card("a", "c", "Ana_1_A", 108), card("b", "r", "Bia_1_B", 108)], entradas: { a: br("2026-11-23T10:00:00"), b: br("2026-11-24T10:00:00") }, agoraMs: br("2026-11-25T11:00:00") });
   assert.match(v, /- Bia_1_B - 6 páginas \(3 h\) - entra já, colagem de qua 25\/11 às 11h até \*qua 25\/11 às 16h\*/);   // 11h–13h + 15h–16h
 });
+
+import { episodiosColagem } from "../src/avisos.js";
+test("o pedido que sobrou na Colagem é o 3º de uma sequência de 3: os que já saíram ocuparam o colador até a hora em que saíram", () => {
+  const L = [{ id: "r", name: "Retirada" }, { id: "c", name: "Colagem" }, { id: "p", name: "Pronto para entrega" }];
+  const mover = (id, de, para, quando) => ({ type: "updateCard", date: new Date(br(quando)).toISOString(), data: { card: { id }, listBefore: { id: de }, listAfter: { id: para } } });
+  const acoes = [
+    mover("1", "r", "c", "2026-11-24T15:00:00"), mover("2", "r", "c", "2026-11-24T15:00:20"), mover("3", "r", "c", "2026-11-24T15:00:40"),
+    mover("1", "c", "p", "2026-11-24T18:00:00"), mover("2", "c", "p", "2026-11-24T21:00:00"),
+  ];
+  const eps = episodiosColagem(acoes, L);
+  assert.deepEqual(eps.map((e) => [e.id, e.saiu]), [["1", br("2026-11-24T18:00:00")], ["2", br("2026-11-24T21:00:00")]]);
+  const c3 = { id: "3", idList: "c", name: "Natan_3_C · 108 slots", desc: montarCard({ cliente: "Natan_3_C", nomeCliente: "Natan", telefone: "+55 31 9", slots: 108, paginas: 6, valor: 1 }).desc };
+  const ent = { 3: br("2026-11-24T15:00:40") };
+  // sozinho (como era): 15h + 3h = 18h, "atrasado" desde ontem. Com a sequência: começa quando o 2º saiu (21h): 2h até as 23h + 1h na terça = 11h
+  assert.equal(prazosColagem([c3], ent).get("3"), br("2026-11-24T18:00:40"));
+  assert.equal(prazosColagem([c3], ent, undefined, undefined, eps).get("3"), br("2026-11-25T11:00:00"));
+  // o resumo das 10h de terça não o marca como atrasado; às 12h marca
+  const m = (agora) => montarResumo({ listas: L, cards: [c3], entradas: ent, agoraMs: br(agora), titulo: "R", episodios: eps });
+  assert.doesNotMatch(m("2026-11-25T10:00:00"), /ATRASADO/);
+  assert.match(m("2026-11-25T12:00:00"), /ATRASADO/);
+  // /fila mostra o mesmo: termina ter 25/11 às 11h
+  assert.match(previsaoFila({ listas: L, cards: [c3], entradas: ent, agoraMs: br("2026-11-25T08:00:00"), episodios: eps }), /\*ter 25\/11 às 11h\*|\*qua 25\/11 às 11h\*/);
+});
+test("/fila: pedidos em Retirada seguem a ordem da lista do Trello (de cima para baixo), não o nome nem a hora", () => {
+  const L = [{ id: "r", name: "Retirada" }];
+  const card = (id, cli, pos) => ({ id, idList: "r", pos, name: `${cli} · 108 slots`, desc: montarCard({ cliente: cli, nomeCliente: cli.split("_")[0], telefone: "+55 31 9", slots: 108, paginas: 6, valor: 1 }).desc });
+  const cards = [card("a", "Ana_1_A", 3000), card("b", "Zeca_1_B", 1000), card("c", "Bia_1_C", 2000)];
+  const t = previsaoFila({ listas: L, cards, entradas: { a: br("2026-11-25T09:00:00"), b: br("2026-11-25T10:00:00"), c: br("2026-11-24T10:00:00") }, agoraMs: br("2026-11-25T11:00:00") });
+  const ordem = [...t.matchAll(/- (\w+_1_\w) /g)].map((m) => m[1]);
+  assert.deepEqual(ordem, ["Zeca_1_B", "Bia_1_C", "Ana_1_A"]);
+});

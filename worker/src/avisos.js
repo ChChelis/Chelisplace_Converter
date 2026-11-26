@@ -39,7 +39,7 @@ export function lerCard(card) {
   const prazoManual = dataBR(linha("Prazo"));
   const confirmadaEm = dataBR(linha("Entrada confirmada em"));
   return {
-    id: card.id,
+    id: card.id, pos: Number(card.pos) || 0,   // posição na coluna do Trello (ordem da lista, de cima para baixo)
     entrouEm, prazoManual, confirmadaEm, paginas,
     slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
     previsao: (desc.match(RE_PREVISAO) || [""])[0].trim(), // linha de prazo/previsão da etapa atual, se houver
@@ -62,24 +62,44 @@ export function prazoDe(coluna, entradaMs, info, fila) {
   return prazoFinal(coluna, entradaMs, info.slotsPrazo ?? info.slots);
 }
 
-// O colador cola um pedido por vez: todos os cards da coluna Colagem entram numa fila geral, na ordem de entrada na coluna, e cada um vai para o
-// primeiro colador que ficar livre (COLADORES = 1 hoje: o prazo de cada um começa quando o anterior termina; na própria entrada, se estiver livre),
-// na janela do colador, 3 h a cada 108 slots. cards: os que estão na Colagem; entradas: {idCard: ms}. Devolve Map idCard -> prazo (ms).
-export function prazosColagem(cards, entradas, coladores = COLADORES, janela = COLADOR) {
-  const fila = cards.map((c) => ({ info: lerCard(c), ent: entradas[c.id] ?? Date.now() }));
-  fila.sort((a, b) => a.ent - b.ent || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
+// Episódios passados na Colagem, vistos no histórico do quadro: {id, entrou, saiu}. Quem já saiu (finalizado) ocupou o colador até a hora em que saiu, então o pedido
+// que continua lá é o 3º de uma sequência de 3 e não o primeiro. acoes: ações do quadro (mover entre colunas, criar, copiar), em qualquer ordem.
+export function episodiosColagem(acoes, listas) {
+  const col = new Set(listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
+  const abertos = new Map(), saida = [];
+  for (const a of [...acoes].sort((x, y) => Date.parse(x.date) - Date.parse(y.date))) {
+    const id = a.data?.card?.id, quando = Date.parse(a.date);
+    if (!id || !Number.isFinite(quando)) continue;
+    const antes = a.type === "updateCard" ? a.data?.listBefore?.id : null, depois = a.type === "updateCard" ? a.data?.listAfter?.id : a.data?.listAfter?.id || a.data?.list?.id;
+    if (antes && col.has(antes) && abertos.has(id)) { saida.push({ id, entrou: abertos.get(id), saiu: quando }); abertos.delete(id); }
+    if (depois && col.has(depois) && !abertos.has(id)) abertos.set(id, quando);
+  }
+  return saida;   // só os que já saíram; quem ainda está na coluna vem dos cards
+}
+
+// O colador cola um pedido por vez: todos os cards da coluna Colagem entram numa fila geral, na ordem de entrada na coluna (empate: ordem da lista), e cada um vai
+// para o primeiro colador que ficar livre (COLADORES = 1 hoje: o prazo de cada um começa quando o anterior termina; na própria entrada, se estiver livre),
+// na janela do colador, meia hora por página. Os pedidos que já saíram da Colagem (`episodios`) ocupam o colador até a hora em que saíram.
+// cards: os que estão na Colagem; entradas: {idCard: ms}. Devolve Map idCard -> prazo (ms).
+export function prazosColagem(cards, entradas, coladores = COLADORES, janela = COLADOR, episodios = []) {
+  const fila = [
+    ...cards.map((c) => ({ info: lerCard(c), ent: entradas[c.id] ?? Date.now() })),
+    ...episodios.map((e) => ({ saiu: e.saiu, ent: e.entrou, info: { id: "ep:" + e.id + e.entrou, cliente: "", pos: 0 } })),
+  ];
+  fila.sort((a, b) => a.ent - b.ent || (a.info.pos || 0) - (b.info.pos || 0) || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
   const livres = Array.from({ length: Math.max(1, coladores) }, () => 0), saida = new Map();
-  for (const { info, ent } of fila) {
+  for (const { info, ent, saiu } of fila) {
     const k = livres.indexOf(Math.min(...livres));
+    if (saiu) { livres[k] = Math.max(livres[k], saiu); continue; }   // já terminou: o colador ficou ocupado até aqui
     const manual = info.prazoManual && info.entrouEm && info.entrouEm === ent;
     const prazo = manual ? info.prazoManual : somarUtil(Math.max(ent, livres[k]), minutosColagem(info.slotsPrazo ?? info.slots), janela);
     saida.set(info.id, prazo); livres[k] = Math.max(livres[k], prazo);
   }
   return saida;
 }
-const filaDaColagem = (listas, cards, entradas) => {
+const filaDaColagem = (listas, cards, entradas, episodios = []) => {
   const ids = new Set(listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
-  return prazosColagem(cards.filter((c) => ids.has(c.idList)), entradas);
+  return prazosColagem(cards.filter((c) => ids.has(c.idList)), entradas, COLADORES, COLADOR, episodios);
 };
 
 export const dataHoraBR = (ms) => {
@@ -239,10 +259,10 @@ export function inicioJanelaFinalizados(agoraMs) {
 }
 
 // Resumo das 10h/17h: por coluna, na ordem do quadro, só colunas com cards.
-export function montarResumo({ listas, cards, entradas, agoraMs, titulo }) {
+export function montarResumo({ listas, cards, entradas, agoraMs, titulo, episodios = [] }) {
   const linhas = [titulo];
   let atrasados = 0, total = 0;
-  const ini = inicioJanelaFinalizados(agoraMs), fila = filaDaColagem(listas, cards, entradas);
+  const ini = inicioJanelaFinalizados(agoraMs), fila = filaDaColagem(listas, cards, entradas, episodios);
   for (const l of listas) {
     let doL = cards.filter((c) => c.idList === l.id);
     const fin = norm(l.name).includes("finalizad");
@@ -271,8 +291,8 @@ export function fmtBR(ms) {
 }
 
 // Cards cujo prazo venceu na última hora (aviso estável, sem guardar estado).
-export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
-  const out = [], fila = filaDaColagem(listas, cards, entradas);
+export function recemAtrasados({ listas, cards, entradas, agoraMs, episodios = [] }) {
+  const out = [], fila = filaDaColagem(listas, cards, entradas, episodios);
   for (const c of cards) {
     const l = listas.find((x) => x.id === c.idList);
     if (!l) continue;
@@ -286,7 +306,7 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
 // Previsão da fila de colagem (comando /fila): quem está na Colagem agora, quem vai entrar (Retirada: entra já) e quem ainda está na Gráfica (entra na retirada
 // prevista), todos numa fila só pela ordem de entrada, cada um depois do colador ficar livre. Sempre as duas contas: sem domingo e com domingo (folga facultativa).
 // Um pedido da Colagem já vencido conta como se terminasse agora (o colador ainda está nele). `filtro`: só mostra os pedidos cujo nome contém o texto (a fila é a inteira).
-export function previsaoFila({ listas, cards, entradas, agoraMs, filtro = "" }) {
+export function previsaoFila({ listas, cards, entradas, agoraMs, filtro = "", episodios = [] }) {
   const ids = (parte, exceto) => new Set(listas.filter((l) => norm(l.name).includes(parte) && !(exceto && norm(l.name).includes(exceto))).map((l) => l.id));
   const col = ids("colagem"), ret = ids("retirada", "pronto"), gra = ids("grafica");
   const ordem = { colagem: 0, retirada: 1, grafica: 2 }, itens = [];
@@ -300,10 +320,14 @@ export function previsaoFila({ listas, cards, entradas, agoraMs, filtro = "" }) 
     const paginas = info.paginas || Math.max(1, Math.ceil(info.slots / 18)), min = minutosColagem(info.slotsPrazo ?? info.slots);
     itens.push({ info, origem, ent, min, paginas });
   }
-  itens.sort((a, b) => a.ent - b.ent || ordem[a.origem] - ordem[b.origem] || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
+  // empate de entrada (ex.: a Retirada inteira entra "agora"): vale a ordem da lista do Trello (de cima para baixo)
+  itens.sort((a, b) => a.ent - b.ent || ordem[a.origem] - ordem[b.origem] || a.info.pos - b.info.pos || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
   const simular = (janela) => {
     const livres = Array.from({ length: Math.max(1, COLADORES) }, () => 0), r = new Map();
-    for (const it of itens) {
+    // pedidos que já saíram da Colagem (e os de Colagem) ocupam o colador na ordem de entrada: o pedido que ficou é o 3º da sequência, não o 1º
+    const todos = [...episodios.map((e) => ({ ep: e, ent: e.entrou, origem: "colagem", info: { pos: -1, cliente: "" } })), ...itens].sort((a, b) => a.ent - b.ent || ordem[a.origem] - ordem[b.origem] || a.info.pos - b.info.pos);
+    for (const it of todos) {
+      if (it.ep) { const k = livres.indexOf(Math.min(...livres)); livres[k] = Math.max(livres[k], it.ep.saiu); continue; }
       const k = livres.indexOf(Math.min(...livres)), inicio = Math.max(it.ent, livres[k]), fim = somarUtil(inicio, it.min, janela);
       r.set(it, { comeca: inicioJanela(inicio, janela), fim });
       livres[k] = it.origem === "colagem" ? Math.max(fim, agoraMs) : fim;

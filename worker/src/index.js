@@ -2,7 +2,7 @@
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
 import { diaUtil, COLADOR_COM_DOMINGO } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, prazosColagem, linhaColagem, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, previsaoFila, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, prazosColagem, episodiosColagem, linhaColagem, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, previsaoFila, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 import { autorizado } from "./auth.js";
 import { rotaVitrine } from "./vitrine.js";
@@ -39,10 +39,10 @@ async function carregarQuadro(env) {
   const b = env.TRELLO_BOARD_ID;
   const [listas, cards, acoes] = await Promise.all([
     trello(env, `/boards/${b}/lists`, { fields: "name" }),
-    trello(env, `/boards/${b}/cards`, { fields: "name,desc,idList,dateLastActivity,url,due,dueComplete" }),
+    trello(env, `/boards/${b}/cards`, { fields: "name,desc,idList,dateLastActivity,url,due,dueComplete,pos" }),
     trello(env, `/boards/${b}/actions`, { filter: "updateCard:idList,createCard,copyCard,moveCardToBoard", limit: "1000" }),
   ]);
-  return { listas, cards, entradas: entradasPorCard(acoes, cards) };
+  return { listas, cards, entradas: entradasPorCard(acoes, cards), episodios: episodiosColagem(acoes, listas) };
 }
 
 // Google Agenda: evento da viagem para retirar na gráfica (vencimento do card); sem vencimento, remove o evento.
@@ -161,7 +161,17 @@ export default {
         // cards que já estão na coluna de destino: a mensagem ao cliente junta os do mesmo cliente e, na Colagem, o prazo entra na fila geral do colador
         const naColuna = tipoMsgCliente(a.data.listAfter.name) || norm(a.data.listAfter.name).includes("colagem")
           ? await trello(env, `/lists/${a.data.listAfter.id}/cards`, { fields: "name,desc" }).catch(() => []) : [];
-        const previsao = linhaPrevisao(a.data.listAfter.name, quando, info, Date.now(), naColuna.filter((c) => c.id !== a.data.card.id));
+        let previsao = linhaPrevisao(a.data.listAfter.name, quando, info, Date.now(), naColuna.filter((c) => c.id !== a.data.card.id));
+        if (norm(a.data.listAfter.name).includes("colagem")) {
+          // fila do colador com o histórico: quem já saiu da Colagem ocupou o colador até sair, então este é o próximo da sequência (não o 1º)
+          try {
+            const q = await carregarQuadro(env), idsCol = new Set(q.listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
+            const doGrupo = q.cards.filter((c) => idsCol.has(c.idList) && c.id !== a.data.card.id).concat([{ ...card, id: a.data.card.id, idList: a.data.listAfter.id }]);
+            const ent = { ...q.entradas, [a.data.card.id]: quando };
+            const sem = prazosColagem(doGrupo, ent, undefined, undefined, q.episodios), com = prazosColagem(doGrupo, ent, undefined, COLADOR_COM_DOMINGO, q.episodios);
+            previsao = linhaColagem(sem.get(a.data.card.id), com.get(a.data.card.id));
+          } catch { /* mantém a conta pelos cards que já estão na coluna */ }
+        }
         const params = {};
         if ((previsao || "") !== info.previsao) params.desc = aplicarPrevisao(card.desc || "", previsao);
         // Google Agenda (Power-Up): entrando na Gráfica o vencimento vira a retirada prevista; saindo, o vencimento é dado como cumprido
@@ -271,7 +281,7 @@ export default {
       if (acao === "colagem-fila") { // recalcula o prazo de colagem dos cards que já estão na Colagem, em fila por cliente (sem ?aplicar=1 só mostra)
         const q = await carregarQuadro(env), aplicar = url.searchParams.get("aplicar") === "1", feitos = [];
         const ids = new Set(q.listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
-        const doGrupo = q.cards.filter((c) => ids.has(c.idList)), fila = prazosColagem(doGrupo, q.entradas), filaDom = prazosColagem(doGrupo, q.entradas, undefined, COLADOR_COM_DOMINGO);
+        const doGrupo = q.cards.filter((c) => ids.has(c.idList)), fila = prazosColagem(doGrupo, q.entradas, undefined, undefined, q.episodios), filaDom = prazosColagem(doGrupo, q.entradas, undefined, COLADOR_COM_DOMINGO, q.episodios);
         for (const c of doGrupo) {
           const info = lerCard(c), linha = linhaColagem(fila.get(c.id), filaDom.get(c.id));
           if (aplicar && linha !== info.previsao) await trello(env, `/cards/${c.id}`, { desc: aplicarPrevisao(c.desc || "", linha) }, "PUT");
