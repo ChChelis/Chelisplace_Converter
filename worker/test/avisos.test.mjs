@@ -425,13 +425,14 @@ test("previsão da fila (/fila): Colagem agora, Retirada entra já e Gráfica en
   ];
   const entradas = { a: br("2026-11-25T10:00:00"), b: br("2026-11-24T16:00:00"), c: br("2026-11-24T09:00:00"), d: br("2026-11-23T09:00:00"), z: br("2026-11-20T09:00:00") };
   const t = previsaoFila({ listas: L, cards, entradas, agoraMs: br("2026-11-25T11:00:00") });
-  assert.match(t, /\*Na Colagem agora \(1\):\*\n- Ana_1_A - 6 páginas \(3 h\) - colagem de qua 25\/11 às 10h até \*qua 25\/11 às 13h\* \(com domingo: igual\)/);
+  assert.match(t, /\*Na colagem agora\*\n\n\*Ana_1_A\* · 6 páginas · 3 h\ncolagem qua 25\/11 10h às \*13h\*\n_com domingo: igual_/);
   // Retirada entra já, mas só começa quando o colador acabar o A (13h; almoço até 15h); 12 páginas = 6 h: 15h às 21h
-  assert.match(t, /Em Retirada \(vão entrar na Colagem\) \(1\):\*\n- Bia_1_B - 12 páginas \(6 h\) - entra já, colagem de qua 25\/11 às 15h até \*qua 25\/11 às 21h\*/);
+  assert.match(t, /\*Em retirada, vão entrar\*\n\n\*Bia_1_B\* · 12 páginas · 6 h\n_entra já_\ncolagem qua 25\/11 15h às \*21h\*/);
   // Gráfica: retirada prevista depois do fim da fila => começa na própria retirada (17h), sem esperar
-  assert.match(t, /- Davi_1_D - 6 páginas \(3 h\) - retirada prevista qui 26\/11 às 17h, colagem de qui 26\/11 às 17h até \*qui 26\/11 às 20h\*/);
-  assert.match(t, /- Cris_1_C - 6 páginas \(3 h\) - retirada prevista seg 30\/11 às 17h, colagem de seg 30\/11 às 17h até \*seg 30\/11 às 20h\*/);
-  assert.match(t, /Colador livre depois do último pedido:\* seg 30\/11 às 20h/);
+  assert.match(t, /\*Davi_1_D\* · 6 páginas · 3 h\n_retirada prevista qui 26\/11 17h_\ncolagem qui 26\/11 17h às \*20h\*/);
+  assert.match(t, /\*Cris_1_C\* · 6 páginas · 3 h\n_retirada prevista seg 30\/11 17h_\ncolagem seg 30\/11 17h às \*20h\*/);
+  assert.match(t, /\*Colador livre depois do último:\* seg 30\/11 20h\n_com domingo: igual_/);
+  assert.match(t, /\*Ana_1_A\*[^\n]*\n[^\n]*\n[^\n]*\n\n\*/);   // uma linha em branco entre um pedido e o seguinte
   assert.doesNotMatch(t, /Zeca/);   // Pronto para entrega não entra
   // filtro por nome: só o pedido da Cris, mas a fila continua a inteira
   const f = previsaoFila({ listas: L, cards, entradas, agoraMs: br("2026-11-25T11:00:00"), filtro: "cris" });
@@ -445,10 +446,10 @@ test("previsão da fila: pedido que fecha no domingo mostra as duas contas; pedi
   const card = (id, lista, cli, slots) => ({ id, idList: lista, name: `${cli} · ${slots} slots`, desc: montarCard({ cliente: cli, nomeCliente: cli.split("_")[0], telefone: "+55 31 9", slots, paginas: slots / 18, valor: 1 }).desc });
   // sábado 28/11 22h: 1h até as 23h, restam 2h: sem domingo vão para segunda 10h-12h; com domingo, domingo 10h-12h
   const t = previsaoFila({ listas: L, cards: [card("a", "c", "Ana_1_A", 108)], entradas: { a: br("2026-11-28T22:00:00") }, agoraMs: br("2026-11-28T22:10:00") });
-  assert.match(t, /\*seg 30\/11 às 12h\* \(com domingo: sáb 28\/11 às 22h até dom 29\/11 às 12h\)/);
+  assert.match(t, /colagem sáb 28\/11 22h até \*seg 30\/11 12h\*\n_com domingo: sáb 28\/11 22h até dom 29\/11 12h_/);
   // o A venceu faz tempo (entrou segunda 10h, 3h) e ainda está na coluna: o B (Retirada) começa agora, não no passado
   const v = previsaoFila({ listas: L, cards: [card("a", "c", "Ana_1_A", 108), card("b", "r", "Bia_1_B", 108)], entradas: { a: br("2026-11-23T10:00:00"), b: br("2026-11-24T10:00:00") }, agoraMs: br("2026-11-25T11:00:00") });
-  assert.match(v, /- Bia_1_B - 6 páginas \(3 h\) - entra já, colagem de qua 25\/11 às 11h até \*qua 25\/11 às 16h\*/);   // 11h–13h + 15h–16h
+  assert.match(v, /\*Bia_1_B\* · 6 páginas · 3 h\n_entra já_\ncolagem qua 25\/11 11h às \*16h\*/);   // 11h–13h + 15h–16h
 });
 
 import { episodiosColagem } from "../src/avisos.js";
@@ -471,13 +472,13 @@ test("o pedido que sobrou na Colagem é o 3º de uma sequência de 3: os que já
   assert.doesNotMatch(m("2026-11-25T10:00:00"), /ATRASADO/);
   assert.match(m("2026-11-25T12:00:00"), /ATRASADO/);
   // /fila mostra o mesmo: termina ter 25/11 às 11h
-  assert.match(previsaoFila({ listas: L, cards: [c3], entradas: ent, agoraMs: br("2026-11-25T08:00:00"), episodios: eps }), /\*ter 25\/11 às 11h\*|\*qua 25\/11 às 11h\*/);
+  assert.match(previsaoFila({ listas: L, cards: [c3], entradas: ent, agoraMs: br("2026-11-25T08:00:00"), episodios: eps }), /colagem qua 25\/11 21h até \*qua 25\/11 11h\*|colagem [^\n]* \*[^\n]*11h\*/);
 });
 test("/fila: pedidos em Retirada seguem a ordem da lista do Trello (de cima para baixo), não o nome nem a hora", () => {
   const L = [{ id: "r", name: "Retirada" }];
   const card = (id, cli, pos) => ({ id, idList: "r", pos, name: `${cli} · 108 slots`, desc: montarCard({ cliente: cli, nomeCliente: cli.split("_")[0], telefone: "+55 31 9", slots: 108, paginas: 6, valor: 1 }).desc });
   const cards = [card("a", "Ana_1_A", 3000), card("b", "Zeca_1_B", 1000), card("c", "Bia_1_C", 2000)];
   const t = previsaoFila({ listas: L, cards, entradas: { a: br("2026-11-25T09:00:00"), b: br("2026-11-25T10:00:00"), c: br("2026-11-24T10:00:00") }, agoraMs: br("2026-11-25T11:00:00") });
-  const ordem = [...t.matchAll(/- (\w+_1_\w) /g)].map((m) => m[1]);
+  const ordem = [...t.matchAll(/\*(\w+_1_\w)\* · /g)].map((m) => m[1]);
   assert.deepEqual(ordem, ["Zeca_1_B", "Bia_1_C", "Ana_1_A"]);
 });

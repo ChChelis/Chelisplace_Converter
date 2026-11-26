@@ -338,20 +338,27 @@ export function previsaoFila({ listas, cards, entradas, agoraMs, filtro = "", ep
   const horas = (min) => String(min / 60).replace(".", ",");
   const f = norm(filtro).trim();
   const quer = (it) => !f || norm(`${it.info.cliente} ${it.info.nomeCliente}`).includes(f);
+  // "qua 25/11 10h" (curto); no mesmo dia mostra só a hora do fim; o horário final, que é o que se diz ao cliente, vai em negrito
+  const curto = (ms) => fmtDiaHora(ms).replace(" às ", " ");
+  const intervalo = (a) => (fmtDia(a.comeca) === fmtDia(a.fim) ? `${curto(a.comeca)} às *${curto(a.fim).split(" ").slice(2).join(" ")}*` : `${curto(a.comeca)} até *${curto(a.fim)}*`);
   const secao = (titulo, origem) => {
     const doGrupo = itens.filter((i) => i.origem === origem && quer(i));
     if (!doGrupo.length) return [];
-    return ["", `*${titulo} (${doGrupo.length}):*`, ...doGrupo.map((i) => {
-      const a = sem.r.get(i), b = com.r.get(i);
-      const entra = origem === "grafica" ? `retirada prevista ${fmtDiaHora(i.ent)}, ` : origem === "retirada" ? "entra já, " : "";
-      return `- ${i.info.cliente} - ${i.paginas} páginas (${horas(i.min)} h) - ${entra}colagem de ${fmtDiaHora(a.comeca)} até *${fmtDiaHora(a.fim)}* (com domingo: ${a.fim === b.fim && a.comeca === b.comeca ? "igual" : `${fmtDiaHora(b.comeca)} até ${fmtDiaHora(b.fim)}`})`;
-    })];
+    const blocos = doGrupo.map((i) => {
+      const a = sem.r.get(i), b = com.r.get(i), igual = a.fim === b.fim && a.comeca === b.comeca;
+      const nota = origem === "grafica" ? `retirada prevista ${curto(i.ent)}` : origem === "retirada" ? "entra já" : "";
+      return [`*${i.info.cliente}* · ${i.paginas} páginas · ${horas(i.min)} h`, nota && `_${nota}_`, `colagem ${intervalo(a)}`, `_com domingo: ${igual ? "igual" : intervalo(b).replace(/\*/g, "")}_`].filter(Boolean).join("\n");
+    });
+    return ["", `*${titulo}*`, "", blocos.join("\n\n")];
   };
-  const saida = [`*Previsão da fila de colagem* (agora ${fmtDiaHora(agoraMs)})`, `_Colador: segunda a sábado, 10h às 23h, almoço 13h às 15h, meia hora por página${COLADORES > 1 ? `, ${COLADORES} coladores` : ""}. Domingo é folga facultativa: sempre as duas contas (sem domingo e com domingo)._`,
-    ...secao("Na Colagem agora", "colagem"), ...secao("Em Retirada (vão entrar na Colagem)", "retirada"), ...secao("Na Gráfica (entram na retirada prevista)", "grafica")];
-  if (!itens.length) saida.push("", "Nenhum pedido na fila (Colagem, Retirada ou Gráfica).");
+  const saida = [`*Fila de colagem* · ${curto(agoraMs)}`, "", `_Colador de segunda a sábado, 10h às 23h, almoço 13h às 15h, meia hora por página${COLADORES > 1 ? `, ${COLADORES} coladores` : ""}. Domingo é opcional: mostro sempre as duas contas._`,
+    ...secao("Na colagem agora", "colagem"), ...secao("Em retirada, vão entrar", "retirada"), ...secao("Na gráfica, entram na retirada", "grafica")];
+  if (!itens.length) saida.push("", "Nenhum pedido na fila (colagem, retirada ou gráfica).");
   else if (f && !itens.some(quer)) saida.push("", `Nenhum pedido encontrado para "${filtro.trim()}".`);
-  if (itens.length) saida.push("", `*Colador livre depois do último pedido:* ${fmtDiaHora(Math.max(sem.livre, agoraMs))} (com domingo: ${Math.max(com.livre, agoraMs) === Math.max(sem.livre, agoraMs) ? "igual" : fmtDiaHora(Math.max(com.livre, agoraMs))}).`);
+  if (itens.length) {
+    const a = Math.max(sem.livre, agoraMs), b = Math.max(com.livre, agoraMs);
+    saida.push("", `*Colador livre depois do último:* ${curto(a)}`, `_com domingo: ${a === b ? "igual" : curto(b)}_`);
+  }
   return saida.join("\n");
 }
 
