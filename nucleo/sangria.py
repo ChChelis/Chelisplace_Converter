@@ -18,6 +18,12 @@ from PIL import Image
 CW, CH = 816, 1110       # canvas
 W, H = 744, 1040         # carta
 DPI = 299.9994
+# A faca (FACA_CHELISPLACE.pdf, A3 com 18 cartas) corta um retângulo de ~749x1038 px com quinas de raio ~26, praticamente rente à carta de 744x1040
+# (raio ~37): o que o corte inclui além da arte é só sangria inventada (estrias e quinas borradas), e a tolerância física do corte (alguns px) a expõe.
+# Por isso, nos modos "borda" e "preto" a arte é AMPLIADA por COBERTURA (proporcional, sem distorção) até cobrir a faca com folga de ~6 px (franja de 2 px da borda fica 4 px fora do corte)
+# (medido nas quinas, que mandam: 1,6% cobre com 3 px de folga, 2,0% com 5 px, 2,5% com ~6,5 px, 2,8% com 8 px); o que passa da faca é arte de verdade, não preenchimento. "branco" não muda.
+COBERTURA = 1.025
+FRANJA = 2   # px de arte rente às quinas transparentes que são descartados e refeitos
 MODOS = ("borda", "branco", "preto")
 LIMITE = (W * 2, H * 2)  # imagens enormes são reduzidas antes (a saída é 744x1040 de qualquer jeito)
 
@@ -28,6 +34,23 @@ def _anel_e_distancia(h, w, np):
     yy, xx = np.mgrid[:h, :w]
     dist = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy))
     return anel, dist
+
+
+def _preencher_suave(arr, valido, alvo, np, ndimage):
+    """Cor para os pixels `alvo`: média gaussiana ponderada só pelos pixels `valido` (convolução normalizada), da escala fina para a grossa."""
+    rgb, w = arr[:, :, :3].astype(float), valido.astype(float)
+    saida = np.zeros(rgb.shape, float)
+    falta = alvo.copy()
+    for sigma in (1.5, 3, 6, 12, 24, 48, 96):
+        den = ndimage.gaussian_filter(w, sigma)
+        ok = falta & (den > 0.02)
+        if ok.any():
+            for c in range(3):
+                saida[:, :, c][ok] = ndimage.gaussian_filter(rgb[:, :, c] * w, sigma)[ok] / den[ok]
+            falta &= ~ok
+        if not falta.any():
+            break
+    return np.clip(saida[alvo] + 0.5, 0, 255).astype(np.uint8)
 
 
 def corrigir(origem, modo="borda"):
@@ -70,18 +93,34 @@ def corrigir(origem, modo="borda"):
             arr[faixa, :3] = med
             arr[faixa, 3] = 255
     elif externo.any():
-        # RGB escondido sob alpha baixo vira cinza: o buraco copia o RGB do vizinho opaco, nunca o original
-        idx = ndimage.distance_transform_edt(buraco, return_distances=False, return_indices=True)
-        cheio = arr[idx[0], idx[1]]
-        arr[externo, :3] = cheio[externo, :3]
-        arr[externo, 3] = 255
+        # buraco externo (quinas arredondadas e transparência da franja): média local suave das cores opacas vizinhas, de escala fina para grossa.
+        # O "pixel opaco mais próximo" deixava estrias radiais nas quinas; o RGB escondido sob alpha baixo (cinza) nunca é usado.
+        # além do buraco, FRANJA px de arte rente a ele também são refeitos: é a franja anti-aliased/clara das quinas arredondadas
+        franja = ndimage.binary_dilation(externo, iterations=FRANJA) & ~externo & ~buraco
+        alvo = externo | franja
+        arr[alvo, :3] = _preencher_suave(arr, ~buraco & ~franja, alvo, np, ndimage)
+        arr[alvo, 3] = 255
     img = Image.fromarray(arr, "RGBA")
     if img.size != (W, H):
         img = img.resize((W, H), Image.LANCZOS)
-    oy, ox = (CH - H) // 2, (CW - W) // 2
-    pads = ((oy, CH - H - oy), (ox, CW - W - ox), (0, 0))
+    ampliar = COBERTURA if preencher == "borda" else 1.0
+    sw, sh = round(W * ampliar), round(H * ampliar)
+    if (sw, sh) != (W, H):
+        img = img.resize((sw, sh), Image.LANCZOS)
+    oy, ox = (CH - sh) // 2, (CW - sw) // 2
+    pads = ((oy, CH - sh - oy), (ox, CW - sw - ox), (0, 0))
     base = np.array(img)
-    cheio = np.pad(base, pads, mode="constant", constant_values=255) if preencher == "constante" else np.pad(base, pads, mode="edge")
+    if preencher == "constante":
+        return Image.fromarray(np.pad(base, pads, mode="constant", constant_values=255), "RGBA")
+    cheio = np.pad(base, pads, mode="edge")
+    # o que sobra além da arte ampliada (só aparece se o corte desregistrar além da folga): o último pixel repetido, suavizado ao longo da borda (sem estrias)
+    yy, xx = np.mgrid[:CH, :CW]
+    dist = np.maximum.reduce([ox - xx, xx - (ox + sw - 1), oy - yy, yy - (oy + sh - 1)])
+    peso = (np.clip(dist / 8.0, 0, 1) * (dist > 0))[:, :, None]
+    if peso.any():
+        rgb = cheio[:, :, :3].astype(float)
+        borrado = np.stack([ndimage.gaussian_filter(rgb[:, :, c], 5) for c in range(3)], -1)
+        cheio[:, :, :3] = np.clip(rgb * (1 - peso) + borrado * peso + 0.5, 0, 255).astype(np.uint8)
     return Image.fromarray(cheio, "RGBA")
 
 

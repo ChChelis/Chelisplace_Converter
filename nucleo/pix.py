@@ -37,34 +37,32 @@ def payload(chave, nome, cidade, valor=None, txid="***"):
 
 
 def pdf_cobranca(matriz, codigo, cliente, valor, saida=None):
-    """PDF A5 com o QR (matriz de 0/1 vinda da página), o valor e o copia-e-cola. Devolve bytes."""
-    n = len(matriz)
-    mod = max(8, 900 // (n + 8))
-    lado = (n + 8) * mod
-    qr = Image.new("L", (lado, lado), 255)
-    d = ImageDraw.Draw(qr)
-    for y, linha in enumerate(matriz):
-        for x, v in enumerate(linha):
-            if v:
-                d.rectangle([(x + 4) * mod, (y + 4) * mod, (x + 5) * mod - 1, (y + 5) * mod - 1], fill=0)
-    W, H = 1240, 1748  # A5 a 300 dpi... retrato
-    pag = Image.new("RGB", (W, H), "white")
-    pd = ImageDraw.Draw(pag)
-    try:
-        f1, f2, f3 = (ImageFont.load_default(size=s) for s in (64, 44, 28))
-    except TypeError:
-        f1 = f2 = f3 = ImageFont.load_default()
-    pd.text((W // 2, 140), "Pagamento via Pix", fill="black", font=f1, anchor="mm")
-    pd.text((W // 2, 240), cliente, fill="black", font=f2, anchor="mm")
+    """PDF A5 com o QR (matriz de 0/1 vinda da página), o valor e o copia-e-cola. Texto selecionável (o copia-e-cola dá para copiar); QR em vetor. Devolve bytes."""
+    from . import ficha_pdf, pdf_vetor
+    arq_r, arq_b = ficha_pdf._arquivo_fonte(False), ficha_pdf._arquivo_fonte(True)
+    if not arq_r or not arq_b:
+        raise RuntimeError("fonte Liberation Sans/DejaVu não encontrada para embutir no PDF")
+    W, H = 620, 874   # A5 em px a 150 dpi (as medidas do desenho antigo, a 300 dpi, divididas por 2)
+    doc = pdf_vetor.Documento(W, H)
+    doc.fonte("FRegular", arq_r); doc.fonte("FBold", arq_b)
+    pag = doc.nova_pagina()
+
+    def centro(y, txt, tam, chave="FRegular"):   # y = meio da linha, como o anchor "mm" do desenho antigo
+        f = doc.fontes[chave]
+        doc.texto(pag, chave, (W - f.largura(txt, tam)) / 2, y + tam * 0.34, txt, tam)
+
+    centro(70, "Pagamento via Pix", 32, "FBold")
+    centro(120, cliente, 22)
     if valor:
-        pd.text((W // 2, 330), "R$ " + f"{float(valor):.2f}".replace(".", ","), fill="black", font=f1, anchor="mm")
-    qr = qr.resize((900, 900), Image.NEAREST).convert("RGB")
-    pag.paste(qr, ((W - 900) // 2, 420))
-    pd.text((W // 2, 1380), "Pix copia e cola", fill="black", font=f3, anchor="mm")
+        centro(165, "R$ " + f"{float(valor):.2f}".replace(".", ","), 32, "FBold")
+    n, lado = len(matriz), 450
+    mod = lado / (n + 8)
+    x0, y0 = (W - lado) / 2, 210
+    doc.preenchidos(pag, [(x0 + (x + 4) * mod, y0 + (y + 4) * mod, mod, mod) for y, lin in enumerate(matriz) for x, v in enumerate(lin) if v])
+    centro(690, "Pix copia e cola", 14)
     for i in range(0, len(codigo), 56):
-        pd.text((W // 2, 1440 + 36 * (i // 56)), codigo[i:i + 56], fill="black", font=f3, anchor="mm")
-    buf = io.BytesIO()
-    pag.save(buf, "PDF", resolution=300, quality=95)
+        centro(720 + 18 * (i // 56), codigo[i:i + 56], 14)
+    dados = doc.salvar()
     if saida:
-        open(saida, "wb").write(buf.getvalue())
-    return buf.getvalue()
+        open(saida, "wb").write(dados)
+    return dados

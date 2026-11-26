@@ -131,6 +131,47 @@ class TestSangria(Base):
         interno = img.getpixel((36 + 372, 35 + 520))  # dentro da caixa (60..80 de 140 ≈ 445..594 de 1040)
         self.assertLess(interno[3], 255)
 
+    def test_pdfs_da_ficha_e_do_pix_tem_texto_selecionavel(self):
+        """Antes eram páginas desenhadas como imagem: o texto não dava para selecionar nem copiar. Agora é texto do PDF (fonte embutida + ToUnicode)."""
+        import shutil
+        import subprocess
+        if not shutil.which("pdftotext"):
+            self.skipTest("pdftotext não instalado")
+        md = "#### Nome\nNatan Silva\n### Pedido: 120 slots\n#### Natan_2_Deck → 118 slots\n1. Verso trocado • ação não conseguida\n### Valor do pedido: 405 reais\n### Pix\nchave@exemplo.com\n"
+        mat = [[1 if (i * j) % 3 == 0 else 0 for j in range(29)] for i in range(29)]
+        f, p = self.d / "f.pdf", self.d / "p.pdf"
+        ficha_pdf.gerar(md, {}, {}, mat, str(f))
+        pix.pdf_cobranca(mat, "00020126chave@exemplo.com5204", "Natan Silva", 405, str(p))
+        t1 = subprocess.run(["pdftotext", str(f), "-"], capture_output=True, text=True).stdout
+        t2 = subprocess.run(["pdftotext", str(p), "-"], capture_output=True, text=True).stdout
+        for trecho in ("Natan Silva", "Natan_2_Deck → 118 slots", "ação não conseguida", "Valor do pedido: 405 reais", "chave@exemplo.com"):
+            self.assertIn(trecho, t1)
+        for trecho in ("Pagamento via Pix", "R$ 405,00", "00020126chave@exemplo.com5204"):
+            self.assertIn(trecho, t2)
+        self.assertTrue(f.read_bytes().startswith(b"%PDF") and p.read_bytes().startswith(b"%PDF"))
+
+    def test_arte_cobre_a_faca_e_o_fiapo_da_borda_fica_fora_do_corte(self):
+        """Faca real (FACA_CHELISPLACE.pdf): 749x1038 px, quinas de raio 26, centrada no canvas. A borda da carta (onde ficam a franja e o 'esticado')
+        tem de ficar FORA do corte, com folga; antes a faca cortava rente à borda e o esticado entrava no adesivo."""
+        import numpy as np
+        from PIL import ImageDraw
+        W, H, R = 744, 1040, 37
+        m = Image.new("L", (W * 4, H * 4), 0); ImageDraw.Draw(m).rounded_rectangle([0, 0, W * 4 - 1, H * 4 - 1], R * 4, fill=255)
+        alfa = np.array(m.resize((W, H), Image.LANCZOS))
+        carta = np.zeros((H, W, 4), np.uint8); carta[:, :, :3] = (200, 30, 30); carta[:, :, 3] = alfa
+        anel = (alfa > 0) & (np.array(Image.fromarray(alfa).filter(__import__("PIL.ImageFilter", fromlist=["x"]).MinFilter(5))) < 255)
+        carta[anel, :3] = (0, 255, 0)                      # franja verde de ~2 px na borda real da carta
+        carta[alfa < 255, 3] = alfa[alfa < 255]
+        Image.fromarray(carta, "RGBA").save(self.d / "faca.png")
+        out = np.array(sangria.corrigir(self.d / "faca.png").convert("RGB")).astype(int)
+        k = Image.new("L", (816 * 4, 1110 * 4), 0)
+        folga = 1.5   # medido: com COBERTURA 1,025 a franja fica a >= 2 px do corte no ponto mais apertado (transição reta/quina) e ~5 px nas retas
+        ImageDraw.Draw(k).rounded_rectangle([(408 - 749 / 2 - folga) * 4, (555 - 1038 / 2 - folga) * 4, (408 + 749 / 2 + folga) * 4, (555 + 1038 / 2 + folga) * 4], (26 + folga) * 4, fill=255)
+        dentro = np.array(k.resize((816, 1110), Image.LANCZOS)) > 127
+        verde = (out[:, :, 1] > 150) & (out[:, :, 0] < 120)
+        self.assertEqual(int((verde & dentro).sum()), 0, "franja da borda ainda cai dentro da faca")
+        self.assertEqual(sangria.corrigir(self.d / "faca.png").size, (816, 1110))
+
     def test_branco_e_preto(self):
         b = sangria.corrigir(self._carta("b.png"), "branco")
         self.assertEqual(b.getpixel((0, 0)), (255, 255, 255, 255))

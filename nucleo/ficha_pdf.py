@@ -8,6 +8,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from . import pdf_vetor
+
 DPI = 150
 W, H = 1240, 1754                 # A4 a 150 dpi
 ESQ, DIR_ = 108, 108              # margens laterais
@@ -64,8 +66,10 @@ def _qr(matriz, lado):
 
 
 class _Folha:
+    """Desenha a página em PIL (usada nos testes e na conferência) e GRAVA as mesmas operações em `ops`, de onde sai o PDF com texto de verdade."""
+
     def __init__(self):
-        self.paginas = []
+        self.paginas, self.ops = [], []
         self.nova(TOPO1)
 
     def nova(self, topo=TOPO):
@@ -73,6 +77,26 @@ class _Folha:
         self.d = ImageDraw.Draw(self.img)
         self.y = topo
         self.paginas.append(self.img)
+        self.ops.append([])
+
+    def texto(self, x, y, txt, tam, negrito=False, cor="black"):
+        f = fonte(tam, negrito)
+        self.d.text((x, y), txt, fill=cor, font=f)
+        self.ops[-1].append(("texto", x, y + f.getmetrics()[0], txt, tam, negrito, 0.0 if cor == "black" else cor[0] / 255))
+
+    def retangulo(self, x0, y0, x1, y1):
+        self.d.rectangle([x0, y0, x1, y1], outline=CINZA)
+        self.ops[-1].append(("ret", x0, y0, x1, y1))
+
+    def colar(self, im, x, y):
+        self.img.paste(im, (x, y))
+        self.ops[-1].append(("img", im, x, y))
+
+    def qr(self, matriz, lado, x, y):
+        im = _qr(matriz, lado).resize((lado, lado), Image.NEAREST)
+        self.img.paste(im, (x, y))
+        n = len(matriz); mod = lado / (n + 8)
+        self.ops[-1].append(("qr", [(x + (cx + 4) * mod, y + (cy + 4) * mod, mod, mod) for cy, lin in enumerate(matriz) for cx, v in enumerate(lin) if v]))
 
     def cabe(self, h):
         if self.y + h > H - BASE:
@@ -80,7 +104,7 @@ class _Folha:
 
     def linha(self, texto, tam, negrito=False, x=ESQ, passo=PASSO_BLOCO, cor="black"):
         self.cabe(passo)
-        self.d.text((x, self.y), texto, fill=cor, font=fonte(tam, negrito))
+        self.texto(x, self.y, texto, tam, negrito, cor)
         self.y += passo
 
     def quebrar(self, texto, tam, recuo=0):
@@ -96,16 +120,43 @@ class _Folha:
 
 def gerar(md, imagens=None, miniaturas=None, matriz=None, saida=None):
     """md: texto da ficha. imagens: {url: bytes}. miniaturas: {texto do item: [url, ...]}. matriz: QR (0/1) ou None."""
-    paginas = desenhar(md, imagens, miniaturas, matriz)
-    buf = io.BytesIO()
-    paginas[0].save(buf, "PDF", resolution=DPI, save_all=True, append_images=paginas[1:])
+    folha = _compor(md, imagens, miniaturas, matriz)
+    dados = pdf_de_ops(folha.ops)
     if saida:
-        Path(saida).write_bytes(buf.getvalue())
-    return buf.getvalue()
+        Path(saida).write_bytes(dados)
+    return dados
+
+
+def pdf_de_ops(ops_por_pagina):
+    """PDF A4 com texto selecionável (fonte embutida), miniaturas em JPEG e QR vetorial, a partir das operações gravadas pelo desenho."""
+    doc = pdf_vetor.Documento(W, H)
+    chaves = {False: ("FRegular", _arquivo_fonte(False)), True: ("FBold", _arquivo_fonte(True))}
+    if not all(a for _, a in chaves.values()):
+        raise RuntimeError("fonte Liberation Sans/DejaVu não encontrada para embutir no PDF")
+    for k, a in chaves.values():
+        doc.fonte(k, a)
+    for ops in ops_por_pagina:
+        pag = doc.nova_pagina()
+        for op in ops:
+            if op[0] == "texto":
+                _, x, base, txt, tam, neg, cinza = op
+                doc.texto(pag, chaves[neg][0], x, base, txt, tam, cinza)
+            elif op[0] == "ret":
+                doc.retangulo(pag, *op[1:])
+            elif op[0] == "img":
+                doc.imagem(pag, op[1], op[2], op[3])
+            elif op[0] == "qr":
+                doc.preenchidos(pag, op[1])
+    return doc.salvar()
 
 
 def desenhar(md, imagens=None, miniaturas=None, matriz=None):
     """Desenha a ficha e devolve as páginas (imagens PIL)."""
+    return _compor(md, imagens, miniaturas, matriz).paginas
+
+
+def _compor(md, imagens=None, miniaturas=None, matriz=None):
+    """Monta a ficha: devolve a _Folha com as páginas (PIL) e as operações de desenho gravadas."""
     imagens, miniaturas = imagens or {}, miniaturas or {}
     p = _Folha()
     em_pix = pulando = apos_item = False
@@ -145,8 +196,8 @@ def desenhar(md, imagens=None, miniaturas=None, matriz=None):
             for k, parte in enumerate(partes):  # item comprido continua na linha de baixo, alinhado ao texto
                 p.cabe(PASSO_ITEM)
                 if k == 0:
-                    p.d.text((ESQ + RECUO - 8 - p.d.textlength(num, font=fonte(TAM["txt"])), p.y), num, fill=CINZA, font=fonte(TAM["txt"]))
-                p.d.text((ESQ + RECUO, p.y), parte, fill="black", font=fonte(TAM["txt"]))
+                    p.texto(ESQ + RECUO - 8 - p.d.textlength(num, font=fonte(TAM["txt"])), p.y, num, TAM["txt"], False, CINZA)
+                p.texto(ESQ + RECUO, p.y, parte, TAM["txt"])
                 p.y += PASSO_ITEM
             apos_item = True
             urls = [u for u in miniaturas.get(it.group(2).strip(), []) if u]
@@ -157,10 +208,10 @@ def desenhar(md, imagens=None, miniaturas=None, matriz=None):
                 for u in urls:
                     mini = _miniatura(imagens[u], alvo) if u in imagens else None
                     if mini:
-                        p.img.paste(mini, (x, p.y)); x += mini.width + 16
+                        p.colar(mini, x, p.y); x += mini.width + 16
                     else:
-                        p.d.rectangle([x, p.y, x + 108, p.y + alvo], outline=CINZA)
-                        p.d.text((x + 10, p.y + alvo // 2 - 10), "sem imagem", fill=CINZA, font=fonte(18))
+                        p.retangulo(x, p.y, x + 108, p.y + alvo)
+                        p.texto(x + 10, p.y + alvo // 2 - 10, "sem imagem", 18, False, CINZA)
                         x += 124
                 p.y += alvo + 20
             continue
@@ -174,5 +225,5 @@ def desenhar(md, imagens=None, miniaturas=None, matriz=None):
         lado = 420
         p.cabe(lado + 20)
         p.y += 10
-        p.img.paste(_qr(matriz, lado).resize((lado, lado), Image.NEAREST), (ESQ, p.y))
-    return p.paginas
+        p.qr(matriz, lado, ESQ, p.y)
+    return p
