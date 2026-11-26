@@ -14,10 +14,14 @@ export const diaUtil = (d) => d.getUTCDay() >= 1 && d.getUTCDay() <= 5 && !ehFer
 const util = diaUtil;
 const minDia = (d) => d.getUTCHours() * 60 + d.getUTCMinutes();
 
-// Janela do colador: 10h–23h com 2h de almoço (13h–15h, suposição a corrigir pelo Chelis).
+// Janela do colador: 10h–23h com 2h de almoço (13h–15h), confirmada pelo Chelis.
 // Quantos coladores trabalham ao mesmo tempo (hoje 1). Com mais de um, cada pedido da fila vai para o primeiro que ficar livre.
 export const COLADORES = 1;
-export const COLADOR = { seg: [{ ini: 10 * 60, fim: 13 * 60 }, { ini: 15 * 60, fim: 23 * 60 }] };
+// Dias de trabalho do colador: segunda a sábado (feriado nacional não conta); o domingo é folga facultativa, então há sempre duas contas:
+// COLADOR (sem domingo) e COLADOR_COM_DOMINGO (se ele topar trabalhar no domingo). Dias da semana como em Date#getUTCDay (0 = domingo).
+const TURNOS_COLADOR = [{ ini: 10 * 60, fim: 13 * 60 }, { ini: 15 * 60, fim: 23 * 60 }];   // 10h–23h, almoço 13h–15h
+export const COLADOR = { seg: TURNOS_COLADOR, dias: [1, 2, 3, 4, 5, 6] };
+export const COLADOR_COM_DOMINGO = { seg: TURNOS_COLADOR, dias: [0, 1, 2, 3, 4, 5, 6] };
 
 const proxDiaUtil = (dia) => { // dia: Date em "relógio local" à meia-noite
   const d = new Date(dia);
@@ -27,7 +31,7 @@ const proxDiaUtil = (dia) => { // dia: Date em "relógio local" à meia-noite
 const meiaNoite = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 const noDia = (dia, minuto) => dia.getTime() + minuto * MIN - DESLOC; // epoch real de "dia às minuto"
 
-// Soma `minutos` de tempo útil (dentro da janela ou das janelas {seg:[...]}, seg–sex) a partir de `inicioMs`.
+// Soma `minutos` de tempo útil (dentro da janela ou das janelas {seg:[...]}; dias úteis seg–sex, ou os `dias` da janela) a partir de `inicioMs`.
 export function somarUtil(inicioMs, minutos, janela = EXPEDIENTE) {
   const segs = janela.seg || [{ ini: janela.ini, fim: janela.fim }];
   let t = local(inicioMs).getTime();
@@ -35,7 +39,8 @@ export function somarUtil(inicioMs, minutos, janela = EXPEDIENTE) {
   for (let i = 0; i < 3650; i++) {
     const d = new Date(t);
     const m = minDia(d);
-    const seg = util(d) ? segs.find((x) => m < x.fim) : null;
+    const diaOk = janela.dias ? janela.dias.includes(d.getUTCDay()) && !ehFeriado(d) : util(d);
+    const seg = diaOk ? segs.find((x) => m < x.fim) : null;
     if (!seg) {
       const prox = new Date(t);
       prox.setUTCDate(prox.getUTCDate() + 1);
@@ -70,8 +75,11 @@ export function alinharLoja(ms) {
   return noDia(proxDiaUtil(dia), EXPEDIENTE.ini);
 }
 
-// Minutos de colagem pelo tamanho do pedido: 3h a cada 108 slots (arredondando para cima).
-export const minutosColagem = (slots) => 3 * 60 * Math.max(1, Math.ceil(slots / 108));
+// Minutos de colagem: meia hora por página inteira de 18 (3 h por kit de 6 páginas), sem arredondar para o kit; o mesmo número que a mensagem ao cliente informa.
+export const minutosColagem = (slots) => 30 * Math.max(1, Math.ceil(slots / 18));
+
+// Primeiro instante em que o colador pode trabalhar a partir de `ms` (dentro da janela, em dia de trabalho da janela).
+export function inicioJanela(ms, janela = COLADOR) { return somarUtil(ms, 1, janela) - MIN; }
 
 // Prazo por coluna. Gráfica: 3 dias úteis (entrada = dia 1) até 18h. Colagem: tamanho do pedido, janela do colador.
 export function regraDaColuna(nome, slots = 0) {

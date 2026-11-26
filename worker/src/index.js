@@ -1,8 +1,8 @@
 // Worker chelisplace-avisos: webhook do Trello + resumos 10h/17h + avisos de atraso -> Telegram.
 // Segredos (Cloudflare, tipo "Segredo"): TRELLO_KEY, TRELLO_TOKEN, TELEGRAM_TOKEN, ADMIN_SECRET.
 // Variáveis comuns: TELEGRAM_CHAT_ID, TRELLO_BOARD_ID.
-import { diaUtil } from "./prazos.js";
-import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, prazosColagem, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
+import { diaUtil, COLADOR_COM_DOMINGO } from "./prazos.js";
+import { entradasPorCard, montarResumo, recemAtrasados, avisoMovimento, tipoMsgCliente, prazosColagem, linhaColagem, linkWaGrupo, fmtBR, montarCard, norm, avisoNovo, lerCard, setLinha, dataHoraBR, relatorioColagem, previsaoFila, linhaPrevisao, aplicarPrevisao, ROTULOS, paraTelegram, vencimentoGrafica, lembretesRetirada } from "./avisos.js";
 
 import { autorizado } from "./auth.js";
 import { rotaVitrine } from "./vitrine.js";
@@ -201,9 +201,10 @@ export default {
       if (!msg?.text || String(msg.chat?.id) !== String(env.TELEGRAM_CHAT_ID).trim()) return new Response("ok");
       const cmd = msg.text.trim().split(/\s+/)[0].split("@")[0].toLowerCase();
       try {
-        if (cmd === "/colagem") { const q = await carregarQuadro(env); await enviar(env, relatorioColagem({ ...q, agoraMs: Date.now() })); }
+        if (cmd === "/fila") { const q = await carregarQuadro(env); await enviar(env, previsaoFila({ ...q, agoraMs: Date.now(), filtro: msg.text.trim().split(/\s+/).slice(1).join(" ") })); }
+        else if (cmd === "/colagem") { const q = await carregarQuadro(env); await enviar(env, relatorioColagem({ ...q, agoraMs: Date.now() })); }
         else if (cmd === "/resumo") await resumo(env, Date.now(), "*Resumo agora*");
-        else if (cmd === "/ajuda" || cmd === "/start") await enviar(env, "*Comandos*\n/colagem - quanto pagar de colagem na janela atual\n/resumo - resumo dos pedidos agora");
+        else if (cmd === "/ajuda" || cmd === "/start") await enviar(env, "*Comandos*\n/fila [nome] - previsão da fila de colagem (Colagem, Retirada e Gráfica), com e sem domingo\n/colagem - quanto pagar de colagem na janela atual\n/resumo - resumo dos pedidos agora");
       } catch (e) { await enviar(env, `Não consegui responder ao comando (${e.message}).`).catch(() => {}); }
       return new Response("ok");
     }
@@ -270,9 +271,9 @@ export default {
       if (acao === "colagem-fila") { // recalcula o prazo de colagem dos cards que já estão na Colagem, em fila por cliente (sem ?aplicar=1 só mostra)
         const q = await carregarQuadro(env), aplicar = url.searchParams.get("aplicar") === "1", feitos = [];
         const ids = new Set(q.listas.filter((l) => norm(l.name).includes("colagem")).map((l) => l.id));
-        const doGrupo = q.cards.filter((c) => ids.has(c.idList)), fila = prazosColagem(doGrupo, q.entradas);
+        const doGrupo = q.cards.filter((c) => ids.has(c.idList)), fila = prazosColagem(doGrupo, q.entradas), filaDom = prazosColagem(doGrupo, q.entradas, undefined, COLADOR_COM_DOMINGO);
         for (const c of doGrupo) {
-          const info = lerCard(c), prazo = fila.get(c.id), linha = `${ROTULOS[2]}: ${dataHoraBR(prazo)}`;
+          const info = lerCard(c), linha = linhaColagem(fila.get(c.id), filaDom.get(c.id));
           if (aplicar && linha !== info.previsao) await trello(env, `/cards/${c.id}`, { desc: aplicarPrevisao(c.desc || "", linha) }, "PUT");
           feitos.push({ cliente: info.cliente, nomeCliente: info.nomeCliente, antes: info.previsao || null, depois: linha, mudou: linha !== info.previsao });
         }

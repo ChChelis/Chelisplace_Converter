@@ -159,7 +159,7 @@ test("Gráfica com Prazo manual e prazo vencido (parte de agora)", () => {
 test("entrar na Colagem: prazo máximo de colagem pelo tamanho (Rodrigo: 54 páginas = 27h na janela do colador)", () => {
   const { desc } = montarCard({ cliente: "Rodrigo Grupo", slots: 956, paginas: 54, valor: 1260 });
   const info = lerCard({ id: "x", name: "Rodrigo Grupo · 956 slots", desc });
-  assert.equal(linhaPrevisao("Colagem", br("2026-11-23T17:00:00"), info, 0), "Prazo máximo de colagem: 25/11/2026 22:00");
+  assert.equal(linhaPrevisao("Colagem", br("2026-11-23T17:00:00"), info, 0), "Prazo máximo de colagem: 25/11/2026 22:00 (com domingo: 25/11/2026 22:00)");
 });
 test("sem previsão em Novos pedidos, Retirada, Pronto para entrega e Finalizado", () => {
   for (const c of ["Novos pedidos", "Retirada", "Pronto para entrega", "Finalizado", "Qualquer"]) assert.equal(linhaPrevisao(c, 0, info18(), 0), null, c);
@@ -392,15 +392,15 @@ test("colagem em fila geral: 3 cards movidos no mesmo minuto não têm o mesmo p
   const c1 = mk("1", "Natan_1_A"), c2 = mk("2", "Natan_2_B"), c3 = mk("3", "Natan_3_C"), outro = mk("9", "Ana_1_Z");   // outro cliente
   // quarta 25/11, 11h; colador 10h-13h e 15h-23h; 3 h por 108 slots
   const l1 = linhaPrevisao("Colagem", br("2026-11-25T11:00:00"), lerCard(c1), 0, []);
-  assert.equal(l1, "Prazo máximo de colagem: 25/11/2026 16:00");   // 2h até o almoço + 1h depois das 15h
+  assert.equal(l1, "Prazo máximo de colagem: 25/11/2026 16:00 (com domingo: 25/11/2026 16:00)");   // 2h até o almoço + 1h depois das 15h
   const c1p = mk("1", "Natan_1_A", l1);
   const l2 = linhaPrevisao("Colagem", br("2026-11-25T11:01:00"), lerCard(c2), 0, [c1p]);
-  assert.equal(l2, "Prazo máximo de colagem: 25/11/2026 19:00");
+  assert.equal(l2, "Prazo máximo de colagem: 25/11/2026 19:00 (com domingo: 25/11/2026 19:00)");
   const c2p = mk("2", "Natan_2_B", l2);
-  assert.equal(linhaPrevisao("Colagem", br("2026-11-25T11:02:00"), lerCard(c3), 0, [c1p, c2p]), "Prazo máximo de colagem: 25/11/2026 22:00");
+  assert.equal(linhaPrevisao("Colagem", br("2026-11-25T11:02:00"), lerCard(c3), 0, [c1p, c2p]), "Prazo máximo de colagem: 25/11/2026 22:00 (com domingo: 25/11/2026 22:00)");
   // fila GERAL: outro cliente também espera (um colador só); a conta continua pela janela do colador: 22h + 1h até as 23h, +2h no dia seguinte
-  const c3p = mk("3", "Natan_3_C", "Prazo máximo de colagem: 25/11/2026 22:00");
-  assert.equal(linhaPrevisao("Colagem", br("2026-11-25T11:02:00"), lerCard(outro), 0, [c1p, c2p, c3p]), "Prazo máximo de colagem: 26/11/2026 12:00");
+  const c3p = mk("3", "Natan_3_C", "Prazo máximo de colagem: 25/11/2026 22:00 (com domingo: 25/11/2026 22:00)");
+  assert.equal(linhaPrevisao("Colagem", br("2026-11-25T11:02:00"), lerCard(outro), 0, [c1p, c2p, c3p]), "Prazo máximo de colagem: 26/11/2026 12:00 (com domingo: 26/11/2026 12:00)");
   // o recálculo geral (resumo, atrasos, correção do que já está no quadro) dá a mesma fila
   const f = prazosColagem([c1, c2, c3, outro], { 1: br("2026-11-25T11:00:00"), 2: br("2026-11-25T11:01:00"), 3: br("2026-11-25T11:02:00"), 9: br("2026-11-25T11:02:00") });
   assert.deepEqual([...f.values()], [br("2026-11-25T16:00:00"), br("2026-11-25T19:00:00"), br("2026-11-25T22:00:00"), br("2026-11-26T12:00:00")]);
@@ -411,4 +411,42 @@ test("colagem em fila geral: 3 cards movidos no mesmo minuto não têm o mesmo p
   const r = montarResumo({ listas: [{ id: "L", name: "Colagem" }], cards: [c1, c2, c3].map((c) => ({ ...c, idList: "L" })), entradas: { 1: br("2026-11-25T11:00:00"), 2: br("2026-11-25T11:01:00"), 3: br("2026-11-25T11:02:00") }, agoraMs: br("2026-11-25T17:00:00"), titulo: "R" });
   assert.equal((r.match(/ATRASADO/g) || []).length, 1);
   assert.match(r, /3 pedido\(s\), 1 atrasado\(s\)/);
+});
+
+import { previsaoFila } from "../src/avisos.js";
+test("previsão da fila (/fila): Colagem agora, Retirada entra já e Gráfica entra na retirada prevista, tudo numa fila só", () => {
+  const L = [{ id: "g", name: "Gráfica" }, { id: "r", name: "Retirada" }, { id: "c", name: "Colagem" }, { id: "p", name: "Pronto para entrega" }];
+  const card = (id, lista, cli, slots, extra = "") => ({ id, idList: lista, name: `${cli} · ${slots} slots`, desc: montarCard({ cliente: cli, nomeCliente: cli.split("_")[0], telefone: "+55 31 9", slots, paginas: slots / 18, valor: 1 }).desc + extra });
+  const cards = [
+    card("a", "c", "Ana_1_A", 108), card("b", "r", "Bia_1_B", 216),
+    card("c", "g", "Cris_1_C", 108, "\nPrevisão de retirada da gráfica: 30/11/2026 17:00"),
+    card("d", "g", "Davi_1_D", 108, "\nPrevisão de retirada da gráfica: 26/11/2026 17:00"),
+    card("z", "p", "Zeca_1_Z", 108),
+  ];
+  const entradas = { a: br("2026-11-25T10:00:00"), b: br("2026-11-24T16:00:00"), c: br("2026-11-24T09:00:00"), d: br("2026-11-23T09:00:00"), z: br("2026-11-20T09:00:00") };
+  const t = previsaoFila({ listas: L, cards, entradas, agoraMs: br("2026-11-25T11:00:00") });
+  assert.match(t, /\*Na Colagem agora \(1\):\*\n- Ana_1_A - 6 páginas \(3 h\) - colagem de qua 25\/11 às 10h até \*qua 25\/11 às 13h\* \(com domingo: igual\)/);
+  // Retirada entra já, mas só começa quando o colador acabar o A (13h; almoço até 15h); 12 páginas = 6 h: 15h às 21h
+  assert.match(t, /Em Retirada \(vão entrar na Colagem\) \(1\):\*\n- Bia_1_B - 12 páginas \(6 h\) - entra já, colagem de qua 25\/11 às 15h até \*qua 25\/11 às 21h\*/);
+  // Gráfica: retirada prevista depois do fim da fila => começa na própria retirada (17h), sem esperar
+  assert.match(t, /- Davi_1_D - 6 páginas \(3 h\) - retirada prevista qui 26\/11 às 17h, colagem de qui 26\/11 às 17h até \*qui 26\/11 às 20h\*/);
+  assert.match(t, /- Cris_1_C - 6 páginas \(3 h\) - retirada prevista seg 30\/11 às 17h, colagem de seg 30\/11 às 17h até \*seg 30\/11 às 20h\*/);
+  assert.match(t, /Colador livre depois do último pedido:\* seg 30\/11 às 20h/);
+  assert.doesNotMatch(t, /Zeca/);   // Pronto para entrega não entra
+  // filtro por nome: só o pedido da Cris, mas a fila continua a inteira
+  const f = previsaoFila({ listas: L, cards, entradas, agoraMs: br("2026-11-25T11:00:00"), filtro: "cris" });
+  assert.match(f, /Cris_1_C/); assert.doesNotMatch(f, /Davi|Bia|Ana_1/);
+  assert.match(previsaoFila({ listas: L, cards, entradas, agoraMs: br("2026-11-25T11:00:00"), filtro: "xpto" }), /Nenhum pedido encontrado para "xpto"/);
+  // fila vazia
+  assert.match(previsaoFila({ listas: L, cards: [], entradas: {}, agoraMs: br("2026-11-25T11:00:00") }), /Nenhum pedido na fila/);
+});
+test("previsão da fila: pedido que fecha no domingo mostra as duas contas; pedido da Colagem já vencido conta como terminando agora", () => {
+  const L = [{ id: "c", name: "Colagem" }, { id: "r", name: "Retirada" }];
+  const card = (id, lista, cli, slots) => ({ id, idList: lista, name: `${cli} · ${slots} slots`, desc: montarCard({ cliente: cli, nomeCliente: cli.split("_")[0], telefone: "+55 31 9", slots, paginas: slots / 18, valor: 1 }).desc });
+  // sábado 28/11 22h: 1h até as 23h, restam 2h: sem domingo vão para segunda 10h-12h; com domingo, domingo 10h-12h
+  const t = previsaoFila({ listas: L, cards: [card("a", "c", "Ana_1_A", 108)], entradas: { a: br("2026-11-28T22:00:00") }, agoraMs: br("2026-11-28T22:10:00") });
+  assert.match(t, /\*seg 30\/11 às 12h\* \(com domingo: sáb 28\/11 às 22h até dom 29\/11 às 12h\)/);
+  // o A venceu faz tempo (entrou segunda 10h, 3h) e ainda está na coluna: o B (Retirada) começa agora, não no passado
+  const v = previsaoFila({ listas: L, cards: [card("a", "c", "Ana_1_A", 108), card("b", "r", "Bia_1_B", 108)], entradas: { a: br("2026-11-23T10:00:00"), b: br("2026-11-24T10:00:00") }, agoraMs: br("2026-11-25T11:00:00") });
+  assert.match(v, /- Bia_1_B - 6 páginas \(3 h\) - entra já, colagem de qua 25\/11 às 11h até \*qua 25\/11 às 16h\*/);   // 11h–13h + 15h–16h
 });

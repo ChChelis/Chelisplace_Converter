@@ -1,5 +1,5 @@
 // Lógica pura dos avisos (sem rede): leitura de cards, resumo, mensagens, links.
-import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, COLADOR, COLADORES, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
+import { prazoFinal, atrasado, somarUtil, fimDiaUtil, alinharLoja, minutosColagem, inicioJanela, COLADOR, COLADOR_COM_DOMINGO, COLADORES, EXPEDIENTE, chaveDia, chaveProximoDiaUtil } from "./prazos.js";
 import { feriadosNacionais } from "./feriados.js";
 export { feriadosNacionais };
 
@@ -44,6 +44,7 @@ export function lerCard(card) {
     slotsPrazo: paginas ? paginas * 18 : slots, // Colagem conta pela página inteira (páginas x 18)
     previsao: (desc.match(RE_PREVISAO) || [""])[0].trim(), // linha de prazo/previsão da etapa atual, se houver
     previsaoMs: dataBR(((desc.match(RE_PREVISAO) || [""])[0].split(":").slice(1).join(":")).trim()),
+    previsaoDomMs: dataBR(((desc.match(RE_PREVISAO) || [""])[0].match(/com domingo:\s*(\d[^)]*)\)/) || [, ""])[1].trim()),   // 2ª conta da Colagem (se o colador trabalhar no domingo)
     cliente: linha("Cliente") || (t ? t[1] : card.name || ""),
     ...nomesDoCliente(linha("Nome do cliente"), linha("Cliente") || (t ? t[1] : card.name || "")),
     telefone: linha("Telefone"),
@@ -64,14 +65,14 @@ export function prazoDe(coluna, entradaMs, info, fila) {
 // O colador cola um pedido por vez: todos os cards da coluna Colagem entram numa fila geral, na ordem de entrada na coluna, e cada um vai para o
 // primeiro colador que ficar livre (COLADORES = 1 hoje: o prazo de cada um começa quando o anterior termina; na própria entrada, se estiver livre),
 // na janela do colador, 3 h a cada 108 slots. cards: os que estão na Colagem; entradas: {idCard: ms}. Devolve Map idCard -> prazo (ms).
-export function prazosColagem(cards, entradas, coladores = COLADORES) {
+export function prazosColagem(cards, entradas, coladores = COLADORES, janela = COLADOR) {
   const fila = cards.map((c) => ({ info: lerCard(c), ent: entradas[c.id] ?? Date.now() }));
   fila.sort((a, b) => a.ent - b.ent || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
   const livres = Array.from({ length: Math.max(1, coladores) }, () => 0), saida = new Map();
   for (const { info, ent } of fila) {
     const k = livres.indexOf(Math.min(...livres));
     const manual = info.prazoManual && info.entrouEm && info.entrouEm === ent;
-    const prazo = manual ? info.prazoManual : somarUtil(Math.max(ent, livres[k]), minutosColagem(info.slotsPrazo ?? info.slots), COLADOR);
+    const prazo = manual ? info.prazoManual : somarUtil(Math.max(ent, livres[k]), minutosColagem(info.slotsPrazo ?? info.slots), janela);
     saida.set(info.id, prazo); livres[k] = Math.max(livres[k], prazo);
   }
   return saida;
@@ -104,6 +105,7 @@ export function vencimentoGrafica(coluna, entradaMs, info, agoraMs) {
   const dia10 = pegada - ((new Date(pegada - 3 * 3600e3).getUTCHours() * 60 + new Date(pegada - 3 * 3600e3).getUTCMinutes()) - HORA_VIAGEM) * 60e3;
   return new Date(dia10 > agoraMs ? dia10 : pegada).toISOString();
 }
+export const linhaColagem = (prazoMs, prazoDomMs) => `${ROTULOS[2]}: ${dataHoraBR(prazoMs)} (com domingo: ${dataHoraBR(prazoDomMs)})`;
 // irmaos: os outros cards que já estão na Colagem (com a linha de prazo deles): este só começa quando um colador ficar livre
 // (com 1 colador, depois do maior prazo da fila; com N, depois do N-ésimo maior).
 export function linhaPrevisao(coluna, entradaMs, info, agoraMs, irmaos = []) {
@@ -112,9 +114,10 @@ export function linhaPrevisao(coluna, entradaMs, info, agoraMs, irmaos = []) {
   if (n.includes("montagem")) return `${ROTULOS[0]}: ${dataHoraBR(prazoDe(coluna, entradaMs, info))}`;
   if (n.includes("grafica")) return `${ROTULOS[1]}: ${dataHoraBR(pegadaGrafica(entradaMs, info, agoraMs))}`;
   if (n.includes("colagem")) {
-    const prazos = irmaos.map((c) => lerCard(c)).filter((i) => i.id !== info.id).map((i) => i.previsaoMs || 0).sort((a, b) => b - a);
-    const ocupadoAte = prazos.length >= COLADORES ? prazos[COLADORES - 1] : 0;
-    return `${ROTULOS[2]}: ${dataHoraBR(somarUtil(Math.max(entradaMs, ocupadoAte), minutosColagem(slots), COLADOR))}`;
+    // sempre duas contas: sem domingo (colador de segunda a sábado) e com domingo (folga facultativa); cada uma segue a fila dos cards que já estão na coluna
+    const ocupadoAte = (campo) => { const ps = irmaos.map((c) => lerCard(c)).filter((i) => i.id !== info.id).map((i) => i[campo] || i.previsaoMs || 0).sort((a, b) => b - a); return ps.length >= COLADORES ? ps[COLADORES - 1] : 0; };
+    const min = minutosColagem(slots);
+    return linhaColagem(somarUtil(Math.max(entradaMs, ocupadoAte("previsaoMs")), min, COLADOR), somarUtil(Math.max(entradaMs, ocupadoAte("previsaoDomMs")), min, COLADOR_COM_DOMINGO));
   }
   return null;
 }
@@ -278,6 +281,54 @@ export function recemAtrasados({ listas, cards, entradas, agoraMs }) {
     if (p !== null && p <= agoraMs && p >= agoraMs - 3600e3) out.push({ info, coluna: l.name, prazo: p });
   }
   return out;
+}
+
+// Previsão da fila de colagem (comando /fila): quem está na Colagem agora, quem vai entrar (Retirada: entra já) e quem ainda está na Gráfica (entra na retirada
+// prevista), todos numa fila só pela ordem de entrada, cada um depois do colador ficar livre. Sempre as duas contas: sem domingo e com domingo (folga facultativa).
+// Um pedido da Colagem já vencido conta como se terminasse agora (o colador ainda está nele). `filtro`: só mostra os pedidos cujo nome contém o texto (a fila é a inteira).
+export function previsaoFila({ listas, cards, entradas, agoraMs, filtro = "" }) {
+  const ids = (parte, exceto) => new Set(listas.filter((l) => norm(l.name).includes(parte) && !(exceto && norm(l.name).includes(exceto))).map((l) => l.id));
+  const col = ids("colagem"), ret = ids("retirada", "pronto"), gra = ids("grafica");
+  const ordem = { colagem: 0, retirada: 1, grafica: 2 }, itens = [];
+  for (const c of cards) {
+    const info = lerCard(c), ent0 = entradas[c.id] ?? agoraMs;
+    let origem, ent, entra;
+    if (col.has(c.idList)) { origem = "colagem"; ent = ent0; }
+    else if (ret.has(c.idList)) { origem = "retirada"; ent = Math.max(ent0, agoraMs); }
+    else if (gra.has(c.idList)) { origem = "grafica"; entra = info.previsaoMs || pegadaGrafica(ent0, info, agoraMs); ent = Math.max(entra, agoraMs); }
+    else continue;
+    const paginas = info.paginas || Math.max(1, Math.ceil(info.slots / 18)), min = minutosColagem(info.slotsPrazo ?? info.slots);
+    itens.push({ info, origem, ent, min, paginas });
+  }
+  itens.sort((a, b) => a.ent - b.ent || ordem[a.origem] - ordem[b.origem] || a.info.cliente.localeCompare(b.info.cliente, "pt-BR", { numeric: true }));
+  const simular = (janela) => {
+    const livres = Array.from({ length: Math.max(1, COLADORES) }, () => 0), r = new Map();
+    for (const it of itens) {
+      const k = livres.indexOf(Math.min(...livres)), inicio = Math.max(it.ent, livres[k]), fim = somarUtil(inicio, it.min, janela);
+      r.set(it, { comeca: inicioJanela(inicio, janela), fim });
+      livres[k] = it.origem === "colagem" ? Math.max(fim, agoraMs) : fim;
+    }
+    return { r, livre: Math.min(...livres) };
+  };
+  const sem = simular(COLADOR), com = simular(COLADOR_COM_DOMINGO);
+  const horas = (min) => String(min / 60).replace(".", ",");
+  const f = norm(filtro).trim();
+  const quer = (it) => !f || norm(`${it.info.cliente} ${it.info.nomeCliente}`).includes(f);
+  const secao = (titulo, origem) => {
+    const doGrupo = itens.filter((i) => i.origem === origem && quer(i));
+    if (!doGrupo.length) return [];
+    return ["", `*${titulo} (${doGrupo.length}):*`, ...doGrupo.map((i) => {
+      const a = sem.r.get(i), b = com.r.get(i);
+      const entra = origem === "grafica" ? `retirada prevista ${fmtDiaHora(i.ent)}, ` : origem === "retirada" ? "entra já, " : "";
+      return `- ${i.info.cliente} - ${i.paginas} páginas (${horas(i.min)} h) - ${entra}colagem de ${fmtDiaHora(a.comeca)} até *${fmtDiaHora(a.fim)}* (com domingo: ${a.fim === b.fim && a.comeca === b.comeca ? "igual" : `${fmtDiaHora(b.comeca)} até ${fmtDiaHora(b.fim)}`})`;
+    })];
+  };
+  const saida = [`*Previsão da fila de colagem* (agora ${fmtDiaHora(agoraMs)})`, `_Colador: segunda a sábado, 10h às 23h, almoço 13h às 15h, meia hora por página${COLADORES > 1 ? `, ${COLADORES} coladores` : ""}. Domingo é folga facultativa: sempre as duas contas (sem domingo e com domingo)._`,
+    ...secao("Na Colagem agora", "colagem"), ...secao("Em Retirada (vão entrar na Colagem)", "retirada"), ...secao("Na Gráfica (entram na retirada prevista)", "grafica")];
+  if (!itens.length) saida.push("", "Nenhum pedido na fila (Colagem, Retirada ou Gráfica).");
+  else if (f && !itens.some(quer)) saida.push("", `Nenhum pedido encontrado para "${filtro.trim()}".`);
+  if (itens.length) saida.push("", `*Colador livre depois do último pedido:* ${fmtDiaHora(Math.max(sem.livre, agoraMs))} (com domingo: ${Math.max(com.livre, agoraMs) === Math.max(sem.livre, agoraMs) ? "igual" : fmtDiaHora(Math.max(com.livre, agoraMs))}).`);
+  return saida.join("\n");
 }
 
 // Valor da colagem (custo pago ao colador): páginas x 18 x R$ 0,13, arredondado (mesma regra do orçamento).
